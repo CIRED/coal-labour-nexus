@@ -3,3 +3,4 @@
 *.csv
 
 /notebooks/shapefiles
+/notebooks/__pycache__

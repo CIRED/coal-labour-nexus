@@ -23,7 +23,6 @@ import xycmap
 from matplotlib.colors import PowerNorm
 from matplotlib import ticker
 import seaborn as sns
-from IPython.display import Markdown as md
 
 plt.rcParams['font.size'] = 9
 matplotlib.rcParams["legend.frameon"] = False
@@ -37,43 +36,7 @@ formatter.set_powerlimits((-1, 1))
 
 
 #%% Plotting functions
-#    Stacked bars function
-def get_cumulated_array(data, **kwargs):
-    cum = data.clip(**kwargs)
-    cum = np.cumsum(cum, axis=0)
-    d = np.zeros(np.shape(data))
-    d[1:] = cum[:-1]
-    return d
-
-#    Rectangle stripes function
-from matplotlib.patches import Rectangle
-from matplotlib.legend_handler import HandlerBase
-
-class HandlerColormap(HandlerBase):
-    def __init__(self, cmap, num_stripes=8, **kw):
-        HandlerBase.__init__(self, **kw)
-        self.cmap = cmap
-        self.num_stripes = num_stripes
-
-    def create_artists(self, legend, orig_handle, xdescent, ydescent, width,
-                       height, fontsize, trans):
-        stripes = []
-        for i in range(self.num_stripes):
-            s = Rectangle([xdescent + i * width / self.num_stripes, ydescent],
-                          width / self.num_stripes,
-                          height,
-                          fc=self.cmap((2 * i + 1) / (2 * self.num_stripes)),
-                          transform=trans)
-            stripes.append(s)
-        return stripes
-    
-# Functions used for bivariate plot 
-def weighted_average(df, value, weight, country):
-    return (df[df['Region'] == country][value] * df[df['Region'] == country][weight]).sum() / df[df['Region'] == country][weight].sum()
-
-def interpol(x, xlim, ylim):
-    y = ylim[0] + (ylim[1]-ylim[0])/(xlim[1]-xlim[0])*(x-xlim[0])
-    return y
+from plotting_functions import *
 
 
 #%%
@@ -333,7 +296,7 @@ fig.legend(handles=alines,
 
 
 # Defining the colormap
-b_xlim = [0.4,1]
+
 b_xlim = [0.3,0.85]
 b_ylim = [np.log(6e-4),np.log(0.06)]
 
@@ -371,15 +334,9 @@ for s_index in [0,2,1]:
     ax = axs[s_index]
     scenario = Scenarios[s_index]
 
-    share_n_finding = []
-    cntry = []
-    Dc=[]
-    DI=[]
-    share_destruction =[]
-    destruction = []
-    Ls = []
-
-
+    
+    Data_Chn, key_data = plot_bivariate(scenario, ax, Regions, Result_data, cmap, b_xlim, b_ylim, T, t0, t1, Asia, s_index, key_data, Scenarios_names)
+    """
     # Iterating over regions
     for region in list(Regions):
 
@@ -446,9 +403,6 @@ for s_index in [0,2,1]:
     Asia_Data['share_destruction'] = pd.to_numeric(Asia_Data['share_destruction'], errors='coerce')
     Asia_Data['destruction'] = pd.to_numeric(Asia_Data['destruction'], errors='coerce')
 
-    norm = ([PowerNorm(gamma=1, vmin=0, vmax=1)] * 3 +
-            [PowerNorm(gamma=1, vmin=0, vmax=1)] * 3)[s_index]
-
 
     cmapi = xycmap.bivariate_color(sx=Asia_Data.dropna(subset=['share_n_finding','share_destruction'])['share_n_finding'].values, sy=Asia_Data.dropna(subset=['share_n_finding','share_destruction'])['share_destruction'].values, cmap=cmap, xlims=b_xlim,ylims=b_ylim)
     cmapi = pd.DataFrame(data=np.array([cmapi,Asia_Data.dropna(subset=['share_n_finding','share_destruction'])['Region_Nam'].values]).transpose(),
@@ -482,6 +436,7 @@ for s_index in [0,2,1]:
     ax.set_yticks([])
     ax.set_xlim([65,140])
     ax.set_ylim([7,55])
+    """
 
 axs[-1].set_axis_off()
 
@@ -1027,3 +982,4 @@ for s_i, scenario in enumerate(Scenarios):
         axn.plot(T,u,label=country,color=Colors[scenario],linestyle=['-','--'][c_i])
 axn.set_ylabel('Unemployment rate [%]')
 axn.set_ylim([0,14])
+# %%
