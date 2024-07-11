@@ -335,7 +335,7 @@ for s_index in [0,2,1]:
     scenario = Scenarios[s_index]
 
     
-    Data_Chn, key_data = plot_bivariate(scenario, ax, Regions, Result_data, cmap, b_xlim, b_ylim, T, t0, t1, Asia, s_index, key_data, Scenarios_names)
+    Asia_Data, key_data = plot_bivariate(scenario, ax, Regions, Result_data, cmap, b_xlim, b_ylim, T, t0, t1, Asia, s_index, key_data, Scenarios_names)
     """
     # Iterating over regions
     for region in list(Regions):
