@@ -18,10 +18,18 @@ from matplotlib.colors import PowerNorm
 from matplotlib import ticker
 import seaborn as sns
 #=========================================================================================================
-def nnf(a):
-    return np.array(a)
+
+def defining_waysout_colour_scheme():
+    Colors = {'NPI':sns.color_palette()[3],
+            'NDC':sns.color_palette()[2],
+            'NZ':sns.color_palette()[0],
+            'NPI_gem':sns.color_palette('pastel')[3],
+            'NDC_gem':sns.color_palette('pastel')[2],
+            'NZ_gem':sns.color_palette('pastel')[0]}
+    return Colors
 
 
+#=========================================================================================================
 #    Stacked bars function
 def get_cumulated_array(data, **kwargs):
     cum = data.clip(**kwargs)
@@ -41,7 +49,22 @@ def interpol(x, xlim, ylim):
     return y
 
 
-def plot_bivariate(scenario, ax, Regions, Result_data, cmap, b_xlim, b_ylim, T, t0, t1, Asia, s_index, key_data, Scenarios_names):
+def plot_vulnerability_bivariate(scenario, ax, Regions, Result_data, T, t0, t1, Asia, s_index, key_data, Scenarios_names):
+    
+    # Defining the colormap
+
+    b_xlim = [0.3,0.85]
+    b_ylim = [np.log(3e-4),np.log(0.065)]
+
+
+    n = (10, 10)  # x, y
+
+    corner_colors = ("#e8e8e8",   "#C85a5a", "#64acbe", "#574249")
+    cmap = xycmap.custom_xycmap(corner_colors=corner_colors, n=n)
+
+    cmap_zip = [cmap, b_xlim, b_ylim, n]
+    
+    
     share_n_finding = []
     cntry = []
     Dc=[]
@@ -150,4 +173,73 @@ def plot_bivariate(scenario, ax, Regions, Result_data, cmap, b_xlim, b_ylim, T, 
     ax.set_xlim([65,140])
     ax.set_ylim([7,55])
 
-    return key_data
+
+    return Asia_Data,key_data,cmap_zip
+
+
+
+def defining_province_grid():
+    provincesChina = {
+        'Heilongjiang': (0, 5),
+        'Xinjiang': (1, 0),
+        'Qinghai': (1, 1),
+        'Ningxia': (1, 2),
+        'Inner Mongolia': (1, 3),
+        'Liaoning': (1, 4),
+        'Jilin': (1, 5),
+        'Tibet': (2, 0),
+        'Gansu': (2, 1),
+        'Shaanxi': (2, 2),
+        'Shanxi': (2, 3),
+        'Hebei': (2, 4),
+        'Sichuan': (3, 1),
+        'Chongqing': (3, 2),
+        'Hubei': (3, 3),
+        'Henan': (3, 4),
+        'Shandong': (3, 5),
+        'Yunnan': (4, 1),
+        'Guizhou': (4, 2),
+        'Hunan': (4, 3),
+        'Anhui': (4, 4),
+        'Jiangsu': (4, 5),
+        'Guangxi': (5, 2),
+        'Jiangxi': (5, 3),
+        'Zhejiang': (5, 4),
+        'Shanghai': (5, 5),
+        'Guangdong': (6, 3),
+        'Fujian': (6, 4),
+        'Hainan': (7, 4)
+    }
+
+    provincesIndia = {
+        'Jammu & Kashmir': (0, 2),
+        'Punjab': (1, 2),
+        'Himachal Pradesh': (1, 3),
+        'Uttarakhand': (1, 4),
+        'Nagaland': (1, 7),
+        'Rajasthan': (2, 1),
+        'Haryana': (2, 2),
+        'Uttar Pradesh': (2, 3),
+        'Bihar': (2, 4),
+        'Sikkim': (2, 5),
+        'Assam': (2, 6),
+        'Manipur': (2, 7),
+        'Gujarat': (3, 0),
+        'Madhya Pradesh': (3, 1),
+        'Delhi': (3, 2),
+        'Chhattisgarh': (3, 3),
+        'Jharkhand': (3, 4),
+        'Meghalaya': (3, 5),
+        'Tripura': (3, 6),
+        'Maharashtra': (4, 1),
+        'Telangana': (4, 2),
+        'Odisha': (4, 3),
+        'West Bengal': (4, 4),
+        'Goa': (5, 1),
+        'Karnataka': (5, 2),
+        'Andhra Pradesh': (5, 3),
+        'Kerala': (6, 2),
+        'Puducherry': (6, 3),
+        'Tamil Nadu': (7, 3)
+    }
+    return provincesChina,provincesIndia
