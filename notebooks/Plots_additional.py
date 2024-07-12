@@ -304,7 +304,7 @@ Regions = ['CHN','IND']
 fig, axs = plt.subplots(1,2, figsize=(10, 10))
 for ind_reg, region in enumerate(Regions):
     ax = axs[ind_reg]
-    base = Imaclim_data[(Imaclim_data['Scenario']=='WO-NPI-ElecIndus') & (Imaclim_data['Region']==region) & (Imaclim_data['Variables']==var)].values[0][5:]
+    base = Imaclim_data[(Imaclim_data['Scenario']=='WO-NPi-ElecIndus') & (Imaclim_data['Region']==region) & (Imaclim_data['Variables']==var)].values[0][5:]
     for ind_scenario, scenario in enumerate(Scenarios):
         y = (Imaclim_data[(Imaclim_data['Scenario']==scenario) & (Imaclim_data['Region']==region) & (Imaclim_data['Variables']==var)].values[0][5:]-base)/base*100
 

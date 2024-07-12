@@ -415,6 +415,8 @@ fig.subplots_adjust(hspace=0.02, wspace=0.1)
 
 
 ## Aditional informations ================
+ds = pd.DataFrame(data_save).T
+ds.columns = ['R', 'D', 'I', 'U', 'H']
 # Leaving into retirement
 scenario = 'NDC'
 t1 = 2050
