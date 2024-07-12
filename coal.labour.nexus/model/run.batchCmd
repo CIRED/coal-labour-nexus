@@ -1,0 +1,1 @@
+nohup nice /data/software/scilab-5.4.1/bin/scilab -nb -nwni -f V2_batch.labour.sce > /dev/null 2> run.batch.err < /dev/null

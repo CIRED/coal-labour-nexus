@@ -1,0 +1,2 @@
+/usr/bin/chcon: failed to change context of '/data/software/scilab-5.4.1/bin/scilab-bin' to ‘unconfined_u:object_r:execmem_exec_t:s0’: Operation not permitted
+/usr/bin/chcon: failed to change context of '/data/software/scilab-5.4.1/bin/scilab-cli-bin' to ‘unconfined_u:object_r:execmem_exec_t:s0’: Operation not permitted
