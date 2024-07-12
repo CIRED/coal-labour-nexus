@@ -18,11 +18,16 @@ from matplotlib.colors import PowerNorm
 from matplotlib import ticker
 import seaborn as sns
 #=========================================================================================================
+# Defining the colors for the different scenarios centrally
+
 
 def defining_waysout_colour_scheme():
     Colors = {'NPI':sns.color_palette()[3],
             'NDC':sns.color_palette()[2],
             'NZ':sns.color_palette()[0],
+            'WO-NPi-ElecIndus':sns.color_palette()[3],
+            'WO-NDCLTT-ElecIndus':sns.color_palette()[2],
+            'WO-15C-ElecIndus':sns.color_palette()[0],
             'NPI_gem':sns.color_palette('pastel')[3],
             'NDC_gem':sns.color_palette('pastel')[2],
             'NZ_gem':sns.color_palette('pastel')[0]}
@@ -41,6 +46,10 @@ def get_cumulated_array(data, **kwargs):
     
 # Functions used for bivariate plot 
 def weighted_average(df, value, weight, country):
+    """
+    The weighted average function is used to when mapping the vulnerability of regions to the coal transition
+    It allows to calculate the average of a variable in a country, using a weight such as the workforce
+    """
     return (df[df['Region'] == country][value] * df[df['Region'] == country][weight]).sum() / df[df['Region'] == country][weight].sum()
 
 
@@ -49,10 +58,14 @@ def interpol(x, xlim, ylim):
     return y
 
 
+#=========================================================================================================
 def plot_vulnerability_bivariate(scenario, ax, Regions, Result_data, T, t0, t1, Asia, s_index, key_data, Scenarios_names):
-    
+    """
+    This function maps the exposure (ratio of coal job destruction to labour force)
+    and vulnerability (share of laid off workers going to unemployment) 
+    of regions of China and India to the coal transition
+    """
     # Defining the colormap
-
     b_xlim = [0.3,0.85]
     b_ylim = [np.log(3e-4),np.log(0.065)]
 
@@ -61,10 +74,10 @@ def plot_vulnerability_bivariate(scenario, ax, Regions, Result_data, T, t0, t1, 
 
     corner_colors = ("#e8e8e8",   "#C85a5a", "#64acbe", "#574249")
     cmap = xycmap.custom_xycmap(corner_colors=corner_colors, n=n)
-
     cmap_zip = [cmap, b_xlim, b_ylim, n]
     
     
+    # Initializing the lists
     share_n_finding = []
     cntry = []
     Dc=[]
@@ -178,6 +191,87 @@ def plot_vulnerability_bivariate(scenario, ax, Regions, Result_data, T, t0, t1, 
 
 
 
+#=========================================================================================================
+def destination_bar(Result_data, X, T, t0, t1, Scenario, ax, region, provinces, data_save, s_index):
+    """
+    This function is used to graph a stacked bar plot of the destination of exiting coal workers
+    """
+    
+    Retirement = 0
+    Direct = 0
+    Indirect = 0
+    Unemployed = 0
+    Hire = 0
+    for province, pos in provinces.items():
+
+        R= sum(Result_data[
+            (Result_data['Variable'] == 'Coal Worker Destination|Retire')
+            & (Result_data['Scenario'] == Scenario) &
+            (Result_data['Downscaled Region']
+                == province)].values.flat[6:][(T < t1) & (T > t0)])
+        D= sum(Result_data[
+            (Result_data['Variable'] == 'Coal Worker Destination|Instant Match')
+            & (Result_data['Scenario'] == Scenario) &
+            (Result_data['Downscaled Region']
+                == province)].values.flat[6:][(T < t1) & (T > t0)])
+        I= sum(
+            Result_data[(Result_data['Variable'] == 'Coal Worker Destination|Delayed Match')
+                        & (Result_data['Scenario'] == Scenario) &
+                        (Result_data['Downscaled Region']
+                            == province)].values.flat[6:][(T < t1)
+                                                        & (T > t0)])
+        U= sum(
+            Result_data[(Result_data['Variable'] == 'Coal Worker Destination|Unemployment')
+                        & (Result_data['Scenario'] == Scenario) &
+                        (Result_data['Downscaled Region']
+                            == province)].values.flat[6:][(T < t1)
+                                                        & (T > t0)])
+        H= sum(-Result_data[
+            (Result_data['Variable'] == 'Coal Worker Destination|Hire')
+            & (Result_data['Scenario'] == Scenario)
+            & (Result_data['Downscaled Region'] == province)].values.flat[6:][
+                (T < t1) & (T > t0)])
+        
+        data_save[(province, Scenario,t1)] = np.array([R, D, I, U, H]) / 1e6
+        Retirement += R
+        Direct += D
+        Indirect += I
+        Unemployed += U
+        Hire += H
+
+    data = np.array([Retirement, Direct, Indirect, Unemployed, Hire
+                        ]) / 1e6
+    
+    data_save[(region, Scenario,t1)]=data
+    data_shape = np.shape(data)
+    cumulated_data = get_cumulated_array(data, min=0)
+    cumulated_data_neg = get_cumulated_array(data, max=0)
+
+    # Re-merge negative and positive data.
+    row_mask = (data < 0)
+    cumulated_data[row_mask] = cumulated_data_neg[row_mask]
+    data_stack = cumulated_data
+
+    clrs = [sns.color_palette()[x] for x in [1, 2, 4, 3, 6]]
+    alines = []
+    labelz = [
+        'Retirement', "Instantaneous \nmatches", "Delayed \nmatches",
+        'Unemployed', 'Hire'
+    ]
+    for i in np.arange(0, data_shape[0]):
+        alines.append([
+            ax.bar(X[s_index],
+                    data[i],
+                    bottom=data_stack[i],
+                    width=0.8,
+                    alpha=0.6,
+                    color=clrs[i],
+                    label=labelz[i])
+        ])
+
+    return data_save, alines
+
+#=========================================================================================================
 def defining_province_grid():
     provincesChina = {
         'Heilongjiang': (0, 5),
