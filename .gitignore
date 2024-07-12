@@ -5,3 +5,6 @@
 /notebooks/shapefiles
 /notebooks/__pycache__
 /coal.labour.nexus/.svn
+
+#imaclim.variables.sce contains snippets from the Imaclim model
+/coal.labour.nexus/model/imaclim.variables.sce
