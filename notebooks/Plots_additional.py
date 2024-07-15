@@ -16,22 +16,14 @@ not necessarily meant to be published but still useful for scenario analysis.
 import geopandas as gpd
 import pandas as pd
 import numpy as np
-from datetime import date
-from pyproj import CRS
 import os
-
-# Plotting parameters
 import matplotlib.pyplot as plt
 import matplotlib
-from shapely.geometry import Point
-from matplotlib.patches import FancyArrowPatch
-import matplotlib.lines as mlines
-from matplotlib.font_manager import FontProperties
 import xycmap
-from matplotlib.colors import PowerNorm
 from matplotlib import ticker
 import seaborn as sns
 
+# Setting plotting parameters
 plt.rcParams['font.size'] = 9
 matplotlib.rcParams["legend.frameon"] = False
 matplotlib.rcParams["legend.fancybox"] = False
@@ -49,8 +41,7 @@ from plotting_functions import *
 
 
 # ===========================================================================================================================
-#%%
-#Importing module results
+#%% Importing module results
 T = range(2015, 2101)
 T = np.array(T)
 
@@ -67,7 +58,7 @@ Result_data.iloc[:, 6:] = Result_data.iloc[:, 6:].apply(pd.to_numeric, errors='c
 
 
 
-#%% #Importing Imaclim results
+#%% Importing Imaclim results
 
 scenarios = list(np.array([[ x + y  for x in ['WO-NPi-ElecIndus','WO-NDCLTT-ElecIndus','WO-15C-ElecIndus']] for y in ['']]).flatten())
 

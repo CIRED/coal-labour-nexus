@@ -10,22 +10,14 @@
 import geopandas as gpd
 import pandas as pd
 import numpy as np
-from datetime import date
-from pyproj import CRS
 import os
-
-# Plotting parameters
 import matplotlib.pyplot as plt
 import matplotlib
-from shapely.geometry import Point
-from matplotlib.patches import FancyArrowPatch
-import matplotlib.lines as mlines
-from matplotlib.font_manager import FontProperties
 import xycmap
-from matplotlib.colors import PowerNorm
 from matplotlib import ticker
 import seaborn as sns
 
+# Setting plotting parameters
 plt.rcParams['font.size'] = 9
 matplotlib.rcParams["legend.frameon"] = False
 matplotlib.rcParams["legend.fancybox"] = False
@@ -43,8 +35,7 @@ from plotting_functions import *
 
 
 # ===========================================================================================================================
-#%%
-#Importing module results
+#%% Importing module results
 T = range(2015, 2101)
 T = np.array(T)
 
@@ -61,7 +52,7 @@ Result_data.iloc[:, 6:] = Result_data.iloc[:, 6:].apply(pd.to_numeric, errors='c
 
 
 
-#%% #Importing Imaclim results
+#%% Importing Imaclim results
 
 scenarios = list(np.array([[ x + y  for x in ['WO-NPi-ElecIndus','WO-NDCLTT-ElecIndus','WO-15C-ElecIndus']] for y in ['']]).flatten())
 
@@ -229,11 +220,6 @@ fig.legend(handles=alines,
            frameon=False)
 # %% 2) Exposure and vulnerability of regions to coal transition betweeen 2020 and 2050
 # ===========================================================================================================================
-
-
-
-
-
 Regions = np.unique(Result_data[~Result_data['Downscaled Region'].isin(
     ['China','India', 'Rest of Asia', 'Asia without Indonesia', 'Indonesia'])]
                     ['Downscaled Region'].values)
@@ -260,16 +246,11 @@ key_data = {}
 # Iterating over scenarios
 for s_index in [0,2,1]:
     ax = axs[s_index]
-    scenario = Scenarios[s_index]
-
-    
+    scenario = Scenarios[s_index] 
     Asia_Data, key_data, cmap_zip = plot_vulnerability_bivariate(scenario, ax, Regions, Result_data, T, t0, t1, Asia, s_index, key_data, Scenarios_names)
     
-
 cmap, b_xlim, b_ylim, n = cmap_zip
 axs[-1].set_axis_off()
-
-
 
 # ====================================
 # Legend
@@ -375,9 +356,8 @@ for c_index in [0, 1]:
         Scenarios = Scenarioss[stype_index]
         Sc = Scenarios
         X = Xs[stype_index]
-        for s_index in range(len(Scenarios)):
-            Scenario = Scenarios[s_index]
-
+        for s_index, Scenario in enumerate(Scenarios):
+            
             data_save, alines = destination_bar(Result_data, X, T, t0, t1, Scenario, ax, region, provinces, data_save, s_index)
 
             x += 1
@@ -455,8 +435,6 @@ ind1 = 100-(ds.loc[('India',scenario,t1),'D'])/sum(ds.loc[('India',scenario,t1),
 print(f'- In the long run, the 1.5°C scenario leads to a significant share of laid-off workers not finding employment by 2050, \n with {chn1:.1f}% of Chinese workers and {ind1:.1f}% of Indian workers not finding new employment \n against {chn0:.1f}% and {ind0:.1f}% respectively in the NPI scenario.')
 
 
-
-
 #%%
 # ===========================================================================================================================
 # ===========================================================================================================================
@@ -469,15 +447,11 @@ print(f'- In the long run, the 1.5°C scenario leads to a significant share of l
 # ===========================================================================================================================
 #%% 1.1) Calibration source
 # ===========================================================================================================================
-
-
 Result_data[Result_data['Downscaled Region']=='Odisha']=='Odisha'
 
 Regions = np.unique(Result_data[~Result_data['Downscaled Region'].isin(
     ['China','India', 'Rest of Asia', 'Asia without Indonesia', 'Indonesia'])]
                     ['Downscaled Region'].values)
-
-
 
 Scenarios =  ['NPI','NDC','NZ','NPI_gem','NDC_gem','NZ_gem']
 
@@ -492,7 +466,6 @@ t0 = 2019
 t1 = 2050
 Data_Chn=[]
 Data_Ind=[]
-
 
 key_data = {}
 s0 = 0
@@ -540,6 +513,8 @@ for region in ['China','India','Shanxi','Inner Mongolia','Jharkhand','Odisha','C
     cax.annotate(region,(xs[0],ys[0]-0.1),ha='center',va='top',fontsize=8)
 
 
+
+# Defining a legend mannualy 
 alines = []
 alines.append(cax.scatter([], [], color=Colors['NPI'], marker='o',edgecolor='k',linewidth=0.4, s=40))
 alines.append(cax.scatter([], [], color=Colors['NDC'], marker='o',edgecolor='k',linewidth=0.4, s=40))
@@ -642,7 +617,6 @@ for s_index, scenario in enumerate(Scenarios):
         Asia[Asia['region']=='Asia'].plot(ax=ax, color='whitesmoke', edgecolor='black',linewidth=0.5)
         Asia[Asia['region']=='Disputed'].plot(ax=ax, color='whitesmoke', edgecolor='black', linestyle='--',linewidth=0.5)
         
-
         ax.set_xticks([])
         ax.set_yticks([])
         ax.set_xlim([65,140])
@@ -654,6 +628,7 @@ for s_index, scenario in enumerate(Scenarios):
             ax.set_title(str(t))
 
 
+# Line graph of unemployment in China and India in all three scenarios
 axn = axs[1,2].inset_axes([1.3, -1, 3, 3])
 us = {}
 for s_i, scenario in enumerate(Scenarios):
@@ -675,6 +650,7 @@ for s_i, scenario in enumerate(Scenarios):
         axn.plot(T,u,label=country,color=Colors[scenario],linestyle=['-','--'][c_i])
 axn.set_ylabel('Unemployment rate [%]')
 axn.set_ylim([0,14])
+
 #%% 1.3) Sensitivity to retirement age
 # ===========================================================================================================================
 
@@ -713,8 +689,7 @@ for c_index in [0, 1]:
         Scenarios = Scenarioss[stype_index]
         Sc = Scenarios
         X = Xs[stype_index]
-        for s_index in range(len(Scenarios)):
-            Scenario = Scenarios[s_index]
+        for s_index, Scenario in enumerate(Scenarios):
             data_save, alines = destination_bar(Result_data, X, T, t0, t1, Scenario, ax, region, provinces, data_save, s_index)
             x += 1
 
@@ -738,7 +713,6 @@ for c_index in [0, 1]:
 
 fig.legend(handles=alines,
            labels=labs,
-
            loc='center left',
            ncol=1,
            bbox_to_anchor=(0.9, 0.5),
@@ -794,8 +768,7 @@ for ind_region, region in enumerate(Regions):
 
         labels = Variabless_names
 
-        for ind_var in range(len(Variables)):
-            variable = Variables[ind_var]
+        for ind_var, variable in enumerate(Variables):
 
             if variable == "Power Plants|Coal":
 
@@ -834,8 +807,7 @@ for ind_region, region in enumerate(Regions):
                        alpha=0.8,
                        label=labels[i])
             ])
-        for ind_var in range(len(Variable2)):
-            variable = Variable2[ind_var]
+        for ind_var, variable in enumerate(Variable2):
 
             y = [1,mtoe2ej][ind_var]*np.array(Imaclim_data[(Imaclim_data['Scenario']==scenario) & (Imaclim_data['Region']==region) & (Imaclim_data['Variables']==variable)].values[0][5:])
 
@@ -916,15 +888,18 @@ categories = ['C1','C3','C6']
 
 
 # %% Importing additional data
+# Trajectories van de Ven et al 2023. A multimodel analysis of post-Glasgow climate targets and feasibility challenges. Nat. Clim. Change 13, 570–578. https://doi.org/10.1038/s41558-023-01661-0
 VdV = pd.read_csv('data\\global_ite2_allmodels.csv')
 VdV.dropna(how = 'all',inplace=True, axis=0)
 VdV.dropna(how = 'all',inplace=True, axis=1)
 
+# Trajectories from Garg et al 2024. Synchronizing energy transitions toward possible Net Zero for India: Affordable and clean energy for all. Office of the Principle Scientific Advisor (PSA) to  Government of India and Nuclear Power Corporation of India Limited (NPCIL).
 Garg = pd.read_csv('data\\Garg_et_al_2024.csv')
+
 Q_WEB = pd.read_csv('data\\CoalProductionEJ_WEB.csv')
+
+# Trajectories from SEI 2023. The Production Gap: Phasing down or phasing up? Top fossil fuel producers plan even more extraction despite climate promises. Stockholm Environment Institute. https://doi.org/10.51414/sei2023.050
 SEI = pd.read_csv('data\\SEI.csv')
-
-
 
 
 #%% 3.1) Emissions
@@ -936,8 +911,9 @@ for i_r, reg in enumerate(regions_ar6):
     for i_c, cat in enumerate(categories):
         ax = axs[i_r, i_c]
         ax.axvline(2020, color='k', linestyle='--')
-        
         ax.axhline(0, color='k', linestyle='-',linewidth=0.75)
+
+        # Plotting AR6 database
         (
             df.filter(variable=var, region=reg, Category=cat).plot.line(
                 color="Category", ax=ax,
@@ -1037,6 +1013,8 @@ for i_r, reg in enumerate(regions_ar6):
         ax.axhline(y=0, color='k', linewidth=0.75)
         ax2 = cax[i_r][i_c]
         ax.axvline(2020, color='k', linestyle='--')
+
+        # Plotting AR6 database
         (
             df.filter(variable=var, region=reg, Category=cat).plot.line(
                 color="Category", ax=ax,
@@ -1149,7 +1127,6 @@ for i_r, reg in enumerate(regions_ar6):
             ax.set_ylabel('')
             ax.set_yticklabels([])
 
-        # ax2.axis('off')
 for i_r, reg in enumerate(regions_ar6):
     for i_c, cat in enumerate(categories):
         ax = axs[i_r, i_c]
@@ -1180,6 +1157,8 @@ for i_r, reg in enumerate(regions_ar6):
         ax.axhline(y=0, color='k', linewidth=0.75)
         ax2 = cax[i_r][i_c]
         ax.axvline(2020, color='k', linestyle='--')
+
+        # Plotting AR6 data
         (
             df.filter(variable=var, region=reg, Category=cat).plot.line(
                 color="Category", ax=ax,
@@ -1214,8 +1193,6 @@ for i_r, reg in enumerate(regions_ar6):
             medianprops=dict(color='k'),showfliers = False, showcaps = False, positions = [0.3], widths = [0.075]
         )
 
-
-
         #Thresholds
         for ind_box, q in enumerate([0.5,0.05]):
             t9_l = tq[(q25<=q*q25[tq==2020])&(tq>2020)]
@@ -1232,7 +1209,6 @@ for i_r, reg in enumerate(regions_ar6):
                 vert=False,patch_artist=True,boxprops=dict(facecolor=cols[cat], linewidth=0),
                 medianprops=dict(color='k'),showfliers = False, showcaps = False, positions = [[0.2,0.1][ind_box]], widths = [0.075]
             )
-
 
 
         ax.fill_between(tq, q25, q75, color=cols[cat], alpha=0.5)
