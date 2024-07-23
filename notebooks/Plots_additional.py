@@ -311,4 +311,161 @@ for ind_reg, region in enumerate(Regions):
     ax.set_ylim([-30,15])
 
 
-# %%
+# %% 5) Comparing power generation technology costs with AR6
+import pyam
+
+# Check available variables 
+conn = pyam.iiasa.Connection()
+conn.connect('ar6-public')
+available_variables = conn.variables()
+
+cost_type_ar6 = ['Capital Cost|Electricity|','OM Cost|Fixed|Electricity|']
+technologies_ar6 = ['Solar|PV','Nuclear','Gas|w/o CCS','Wind|Offshore','Wind|Onshore']
+
+variables_ar6 = [x+y for y in technologies_ar6 for x in cost_type_ar6]
+variables_ar6 += ["Price|Primary Energy|Coal","Price|Primary Energy|Gas"]
+
+
+chn_name ='Countries of centrally-planned Asia; primarily China'
+ind_name ='Countries of South Asia; primarily India'
+regions_ar6 = ['World',ind_name]
+
+df = pyam.read_iiasa( 'ar6-public', region=regions_ar6, variable=variables_ar6)
+
+Policies = ['P1a','P1b']
+
+fig, axs = plt.subplots(2,int(round(len(variables_ar6)/2)), figsize=(15, 10))
+axs = axs.flatten()
+for ind_var, var in enumerate(variables_ar6):
+    ax = axs[ind_var]
+
+    for i_p, pol in enumerate(Policies):
+        df.filter(variable=var, region='World', Policy_category=pol).plot.line(
+                color=sns.color_palette()[[4,2][i_p]], ax=ax,
+                alpha=0.5, linewidth=0.2, legend=False
+            )
+        
+    
+        q50 = df.filter(variable=var, region='World', Policy_category=pol).compute.quantiles([0.5]).timeseries()
+
+        ax.plot(q50.columns, q50.values[0], color = sns.color_palette()[[4,2][i_p]],linewidth=[1,1.5][i_p])
+
+        
+        y = Imaclim_data[(Imaclim_data['Scenario']==['WO-NPi-ElecIndus','WO-NDCLTT-ElecIndus'][i_p]) & (Imaclim_data['Region']=='World') & (Imaclim_data['Variables']==var)].values[0][5:]
+        ax.plot(T,y, color=['red','green'][i_p])
+
+    if "Wind" in var:
+        var= var.replace('|Onshore','')
+        var= var.replace('|Offshore','')
+    ax.set_title(var,fontsize=7)
+    ax.set_ylim([0,[6e3,200,2e4,5e2,25e2,1e2,1e5,200,5e4,1e2,25,25][ind_var]])
+ 
+
+fig.subplots_adjust(hspace=0.2, wspace=0.5)
+
+#%% 7) What replaces coal for electricity generation in China and India under the NDC scenario
+
+
+countries = ['CHN','IND']
+variables = [ 'Secondary Energy|Electricity|Biomass',
+ 'Secondary Energy|Electricity|Coal',
+ 'Secondary Energy|Electricity|Gas',
+ 'Secondary Energy|Electricity|Geothermal',
+ 'Secondary Energy|Electricity|Hydro',
+ 'Secondary Energy|Electricity|Nuclear',
+ 'Secondary Energy|Electricity|Ocean',
+ 'Secondary Energy|Electricity|Oil',
+ 'Secondary Energy|Electricity|Other',
+ 'Secondary Energy|Electricity|Solar',
+ 'Secondary Energy|Electricity|Wind',]
+
+colors = sns.color_palette()+sns.color_palette('pastel')
+
+fix, axs = plt.subplots(1,2,figsize=(10,15))
+
+for ind_country, country in enumerate(countries):
+    ax = axs[ind_country]
+    for ind_var, variable in enumerate(variables):
+        y = Imaclim_data[(Imaclim_data['Scenario']=='WO-NDCLTT-ElecIndus') & (Imaclim_data['Region']==country) & (Imaclim_data['Variables']==variable)].values[0][5:]
+        ax.plot(T,y,label=variable,color=colors[ind_var])
+    
+    ax.set_label("EJ/yr")
+
+ax.legend()
+
+#%% 8) Destination graph for Shanxi and Jharkhand only
+
+Provinces = [{'Shanxi':'a'}, {'Jharkhand':'b'}]
+
+nls = [6, 8]
+
+Scenarioss = [ ['NPI','NDC','NZ'],['NPI','NDC','NZ']]
+
+Scenarioss_name = [[ 'NPI', 'NDC\nLTT', '1.5°C'],[ 'NPI', 'NDC\nLTT', '1.5°C']]
+
+t0 = 2020
+t1 = 2050
+
+Xs = [
+    list(range(len(Scenarioss[0]))),list(range(len(Scenarioss[0])))
+]
+data_save = {}
+fig, axs = plt.subplots(2,
+                        2,
+                        figsize=(17.21 / 2.54, 13.09 / 2.54),
+                        )
+for c_index in [0, 1]:
+    x = 0
+    provinces = Provinces[c_index]
+    region = ['Shanxi', 'Jharkhand'][c_index]
+    
+    for stype_index in [0,1]:
+        ax = axs[c_index][stype_index]
+        t0 = 2020
+        t1 = [2030,2050][stype_index]
+        if stype_index == 0:
+            ax.set_ylabel(region+'\nMillion workers')
+        Scenarios = Scenarioss[stype_index]
+        Sc = Scenarios
+        X = Xs[stype_index]
+        for s_index, Scenario in enumerate(Scenarios):
+            
+            data_save, alines = destination_bar(Result_data, X, T, t0, t1, Scenario, ax, region, provinces, data_save, s_index)
+
+            x += 1
+
+
+            if (Scenario == 'NPI')&(stype_index == 1):
+                u = round(data_save[(region, Scenario,2050)][3]*1000)
+                print(f'In {region}, {u} thousand workers will not find new employment by 2050')
+
+        alines = [x[0] for x in alines]
+        labs = [l.get_label() for l in alines]
+        ax.axhline(y=0, color='k', linewidth=0.9)
+
+        
+        if c_index == 0:
+            ax.set_title(str(t0) + '-' + str(t1))
+            ax.set_xticks([])
+        else:
+            ax.set_xticks(X)
+            ax.set_xticklabels(
+            Scenarioss_name[stype_index],
+            rotation=90,
+            )
+
+        ax.set_ylim([-0.5, 1.1])
+
+fig.legend(handles=alines,
+           labels=labs,
+           loc='lower center',
+           ncol=3,
+           bbox_to_anchor=(0.5, -0.1),
+           frameon=False)
+
+fig.subplots_adjust(hspace=0.02, wspace=0.1)
+
+
+## Aditional informations ================
+ds = pd.DataFrame(data_save).T
+ds.columns = ['R', 'D', 'I', 'U', 'H']
