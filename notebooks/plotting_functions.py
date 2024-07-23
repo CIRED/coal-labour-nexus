@@ -2,7 +2,7 @@
 # import geopandas as gpd
 import pandas as pd
 import numpy as np
-from pyproj import CRS
+# from pyproj import CRS
 
 # Plotting parameters
 import matplotlib.pyplot as plt

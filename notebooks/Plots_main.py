@@ -210,7 +210,7 @@ alines.append(axs[0].scatter([], [],
 
 
 labels = [l.get_label() for l in alines]
-handles = [l for l in alines]
+handles = [label for label in alines]
 
 fig.legend(handles=alines,
            labels=labels,
@@ -737,8 +737,16 @@ Regions = ['CHN','IND']
 Scenarios =['WO-NPi-ElecIndus', 'WO-NDCLTT-ElecIndus', 'WO-15C-ElecIndus']
 Outputs_name = ['NPi','NDC LTT','1.5°C']
 
-Variabless = ['Import|Coal','Final Energy|Industry|Solids|Fossil','Secondary Energy|Electricity|Coal','Power Plants|Coal','Refineries|Coal',
-             'Final Energy|Commercial|Solids', 'Final Energy|Residential|Solids|Fossil','Export|Coal']
+Variabless = [
+    'Import|Coal',
+    'Final Energy|Industry|Solids|Fossil',
+    'Secondary Energy|Electricity|Coal',
+    'Power Plants|Coal',
+    'Refineries|Coal',
+    'Final Energy|Commercial|Solids', 
+    'Final Energy|Residential|Solids|Fossil',
+    'Export|Coal'
+    ]
 
 Variabless_names = ['Import','Industry','Electricity','Power plants losses','Refineries','Commercial','Residential','Export']
 
