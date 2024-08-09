@@ -469,3 +469,197 @@ fig.subplots_adjust(hspace=0.02, wspace=0.1)
 ## Aditional informations ================
 ds = pd.DataFrame(data_save).T
 ds.columns = ['R', 'D', 'I', 'U', 'H']
+
+
+#%% 9) Comparing coal and gas trajectories in India
+country = "IND"
+Scenarios = Imaclim_data.Scenario.unique()
+Variables = [
+    'Secondary Energy|Electricity|',
+    'Capacity|Electricity|',
+    'Price|Primary Energy|',
+    'Capital Cost|Electricity|',
+    'OM Cost|Fixed|Electricity|',
+    ]
+
+suffix = ['']*3+['|w/o CCS']*2
+Fuels = {'Gas':'grey','Coal':'black'}
+
+fig, axs = plt.subplots(len(Variables),len(Scenarios))
+
+for ind_scenario, scenario in enumerate(Scenarios):
+    for ind_variable, variable in enumerate(Variables):
+        ax = axs[ind_variable,ind_scenario]
+
+        for fuel, fuel_color in Fuels.items():
+            y = [
+                float(x) for x in Imaclim_data[
+                    (Imaclim_data.Variables == variable+fuel+suffix[ind_variable])&
+                    (Imaclim_data.Scenario== scenario)&
+                    (Imaclim_data.Region==country)].values[0][5:]
+            ]
+            ax.plot(T,y,color=fuel_color)
+
+        if ind_scenario == 0:
+            ax.set_ylabel(variable+'\n'+Imaclim_data[(Imaclim_data.Variables == variable+fuel+suffix[ind_variable])]['Unit'].values[0])
+        if ind_variable == 0:
+            ax.set_title(scenario)
+
+
+
+# %% 10) Influence of phase-out rate on unemployment
+'''
+Share of workers leaving into unemployment against phase out rate between 2025 and 2045. 
+The phase out rate is defined as the production difference in coal production between two subsequent years divided by the 2015 level. 
+Phase out rate is calculated based on the 10 year rolling average of production to account for long-term phase-down trajectories.
+'''
+Colors=defining_waysout_colour_scheme()
+    
+Countries = ['CHN','IND']
+exclude_downscaled_regions = ['China','India']
+destination_variables = [x for x in Result_data.Variable.unique() if 'Coal Worker Destination' in x]
+
+
+Scenarios = {
+    'NPI':'WO-NPi-ElecIndus',
+    'NDC':'WO-NDCLTT-ElecIndus',
+    'NZ':'WO-15C-ElecIndus',
+}
+
+t0 = 2025-2015
+t1 = 2045-2015
+
+def calc_phase_down_rate(Imaclim_data,rolling_window):
+    Phase_out_rate = Imaclim_data[
+        (Imaclim_data.Variables=="Output|Coal") 
+        &(Imaclim_data.Region==country)
+        ].set_index('Scenario').drop(['Model','Variables','Unit','Region'],axis=1)
+    #Calculating rolling average
+    Phase_out_rate = Phase_out_rate.apply(pd.to_numeric, errors='coerce').rolling(window=rolling_window, axis=1, min_periods=1, center=True).mean()
+    #Taking the year-on-year difference
+    Phase_out_rate = Phase_out_rate.diff(axis=1)
+    #Normalizing by reference year production
+    Phase_out_rate = Phase_out_rate/Imaclim_data[
+        (Imaclim_data.Variables=="Output|Coal") 
+        &(Imaclim_data.Region==country)
+        ]['2015'].values[0]
+    return Phase_out_rate
+    
+
+
+fix, axs = plt.subplots(1,len(Countries),figsize=(10,5.5))
+for ind_country, country in enumerate(Countries):
+    ax = axs[ind_country]
+    Phase_out_rate = calc_phase_down_rate(Imaclim_data,7)
+
+    Destination = Result_data[(Result_data.Variable.isin(destination_variables))&(Result_data.Region==country)&(~Result_data['Downscaled Region'].isin(exclude_downscaled_regions))]
+    Share_U = Destination[Destination.Variable=='Coal Worker Destination|Unemployment'].drop(['Model','Region','Downscaled Region','Variable','Unit'],axis=1).groupby('Scenario').sum()/Destination.drop(['Model','Region','Downscaled Region','Variable','Unit'],axis=1).groupby('Scenario').sum()
+
+    for down_scen, im_scen in Scenarios.items():
+        ax.scatter(Phase_out_rate.loc[im_scen,:].iloc[t0:t1],Share_U.loc[down_scen,:].iloc[t0:t1],color=Colors[down_scen])
+        ax.axhline(y=np.mean(Share_U.loc[down_scen,:].iloc[t0:t1]),linewidth=0.75,linestyle="--",color=Colors[down_scen])
+        ax.axvline(x=np.mean(Phase_out_rate.loc[im_scen,:].iloc[t0:t1]),linewidth=0.75,linestyle="--",color=Colors[down_scen])
+
+    ax.set_xlim([-0.1,0.1])
+    ax.set_ylim([-0.1,1])
+    ax.axhline(y=0,color='k',linewidth=0.75)
+    ax.axvline(x=0,color='k',linewidth=0.75)
+    ax.set_title(['China','India'][ind_country])
+    ax.set_xlabel('Phase down rate [-]')
+    ax.set_ylabel('Share of workers going into unemployment')
+
+# %% 11) Plotting energy mix
+
+
+Fuels =  ['Coal','Oil','Gas','Nuclear','Hydro','Biomass','Solar','Wind']
+
+Primary_energy_variables = ['Primary Energy|'+x for x in Fuels]
+Elec_variables = ['Secondary Energy|Electricity|'+x for x in Fuels]
+
+Countries = ["CHN",'IND']
+
+Scenarios = [
+            'WO-NPi-ElecIndus',
+            'WO-NDCLTT-ElecIndus',
+            'WO-15C-ElecIndus',
+            ]
+
+
+def Energy_colors():
+    Energy_colors = {
+        'Biomass':'green',
+        'Coal':'black',
+        'Gas':'lightgrey',
+        'Hydro':'navy',
+        'Nuclear':'purple',
+        'Solar':'gold',
+        'Wind':'blue',
+        'Geothermal':'pink',
+        'Non-Biomass Renewables':'pink',
+        'Oil':'dimgrey',
+        'Other':'pink',
+        'Ocean':'pink'
+    }
+    return Energy_colors
+
+def get_data_stack(data):
+    data = np.array(data)
+    data_shape = np.shape(data)
+    cumulated_data = get_cumulated_array(data, min=0)
+    cumulated_data_neg = get_cumulated_array(data, max=0)
+
+    # Re-merge negative and positive data.
+    row_mask = (data < 0)
+    cumulated_data[row_mask] = cumulated_data_neg[row_mask]
+    data_stack = cumulated_data
+    return data_shape, data_stack
+
+Variables = Primary_energy_variables
+def plot_energy_mix(Imaclim_data,Countries,Scenarios,Energy_colors,Variables):
+    
+
+    fig, axs = plt.subplots(len(Countries),len(Scenarios))
+    for ind_scenario, scenario in enumerate(Scenarios):
+        for ind_country, country in enumerate(Countries):
+            ax = axs[ind_country,ind_scenario]
+
+            data = []
+
+            for variable in Variables:
+                data.append(
+                    [float(x) for x in Imaclim_data[(Imaclim_data.Variables==variable)&
+                                (Imaclim_data.Scenario==scenario)&
+                                (Imaclim_data.Region==country)].values[0][5:]]
+                )   
+
+        
+            data_shape, data_stack = get_data_stack(data)
+            alines = []
+            
+            for i in np.arange(0, data_shape[0]):
+                alines.append([
+                    ax.bar(T,
+                            data[i],
+                            bottom=data_stack[i],
+                            width=1,
+                            alpha=0.6,
+                            label = Variables[i],
+                            color = Energy_colors[Variables[i].split('|')[-1]]
+                            )
+                ])
+
+    for ind_country,_ in enumerate(Countries):
+        y_max = max([ax.get_ylim()[1] for ax in axs[ind_country,:]])
+        [ax.set_ylim([0,y_max]) for ax in axs[ind_country,:]]
+
+    [axs[0,ind_scenario].set_title(scenario) for ind_scenario,scenario in enumerate(Scenarios)]
+    [axs[ind_country,0].set_ylabel(country+'\n'+Imaclim_data[Imaclim_data.Variables==Variables[0]]['Unit'].values[0]) for ind_country,country in enumerate(Countries)]
+
+    fig.legend([x[0] for x in alines],Variables,
+            loc='center right',
+            bbox_to_anchor=(1.4, 0.5),)
+    
+    return fig
+
+fig = plot_energy_mix(Imaclim_data,Countries,Scenarios,Energy_colors(),Primary_energy_variables)
+fig = plot_energy_mix(Imaclim_data,Countries,Scenarios,Energy_colors(),Elec_variables)

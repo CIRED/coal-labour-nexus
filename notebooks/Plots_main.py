@@ -669,8 +669,11 @@ Scenarioss_name = [['NPI','Retirement \n55'],
 t0 = 2020
 t1 = 2050
 
-Xs = [[x for x in range(len(Scenarioss[0]))],[x for x in range(len(Scenarioss[1]))],
-    [x for x in range(len(Scenarioss[2]))]]
+Xs = [
+    [x for x in range(len(Scenarioss[0]))],
+    [x for x in range(len(Scenarioss[1]))],
+    [x for x in range(len(Scenarioss[2]))]
+    ]
 
 data_save = {}
 fig, axs = plt.subplots(2,
@@ -694,7 +697,7 @@ for c_index in [0, 1]:
             x += 1
 
         alines = [x[0] for x in alines]
-        labs = [l.get_label() for l in alines]
+        labs = [lab.get_label() for lab in alines]
         ax.axhline(y=0, color='k', linewidth=0.9)
         if c_index == 1:
             ax.set_xticks(X)
@@ -861,7 +864,8 @@ regions_ar6 = ['World', chn_name, ind_name]
 variables_ar6 = ['Primary Energy|Coal','Trade|Primary Energy|Coal|Volume',
              'Final Energy|Industry|Solids|Coal','Emissions|CO2|Energy and Industrial Processes',
              'Carbon Sequestration|CCS|Biomass','Secondary Energy|Electricity|Coal',
-             'Primary Energy|Oil','Primary Energy|Gas','Unemployment|Rate','Employment|Industry|Mining']
+             'Primary Energy|Oil','Primary Energy|Gas','Unemployment|Rate','Employment|Industry|Mining',
+             "Investment|Energy Supply|Extraction|Coal"]
 df = pyam.read_iiasa( 'ar6-public', region=regions_ar6, variable=variables_ar6)
 
 df.add('Primary Energy|Coal','Trade|Primary Energy|Coal|Volume',"Output|Coal",
@@ -906,4 +910,10 @@ plotting_with_AR6_range(var,var,regions_ar6,categories,df,cols,Imaclim_data,T,Tr
 #%% 3.3) Electricity from coal
 var = 'Secondary Energy|Electricity|Coal'
 plotting_with_AR6_range(var,var,regions_ar6,categories,df,cols,Imaclim_data,T,True)
+
+
+#%% 3.4) Investment in coal supply
+var = "Investment|Energy Supply|Extraction|Coal"
+plotting_with_AR6_range(var,var,regions_ar6,categories,df,cols,Imaclim_data,T,True)
+
 
