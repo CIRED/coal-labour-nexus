@@ -627,7 +627,7 @@ for s_index, scenario in enumerate(Scenarios):
         if s_index == 0:
             ax.set_title(str(t))
 
-
+cax.set_ylabel('Unemployment rate [%]')
 # Line graph of unemployment in China and India in all three scenarios
 axn = axs[1,2].inset_axes([1.3, -1, 3, 3])
 us = {}

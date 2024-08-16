@@ -663,3 +663,75 @@ def plot_energy_mix(Imaclim_data,Countries,Scenarios,Energy_colors,Variables):
 
 fig = plot_energy_mix(Imaclim_data,Countries,Scenarios,Energy_colors(),Primary_energy_variables)
 fig = plot_energy_mix(Imaclim_data,Countries,Scenarios,Energy_colors(),Elec_variables)
+
+
+# %% 12) Histogram of share not finding per scenario
+destination_variables = [x for x in Result_data.Variable.unique() if 'Coal Worker Destination' in x if 'Retire' not in x and 'Hire' not in x]
+
+Countries = ["CHN",'IND']
+exclude_downscaled_regions = ['China','India']
+
+Scenarios = [
+            'NPI',
+            'NDC',
+            'NZ',
+            ]
+
+
+
+t0s = [2020,2020,2020, 2020]
+t1s = [2030,2040,2050, '80%']
+
+fig, axs = plt.subplots(len(t0s))
+
+for ind_t,(t0,t1) in enumerate(zip(t0s,t1s)):
+    ax = axs[ind_t]
+    x=0
+    
+    for ind_scenario, scenario in enumerate(Scenarios):
+        for ind_country, country in enumerate(Countries):
+
+            if type(t1) is str:
+                threshold = 0.8
+                Q = Result_data[(Result_data['Downscaled Region']==exclude_downscaled_regions[ind_country])&(Result_data.Scenario==scenario)&(Result_data.Variable=='Employment|Coal|Downscaled')].values[0][6:]
+                T1=T[Q<Q[5]*(1-threshold)][0]
+
+            else:
+                T1 = t1
+
+
+            Destination = Result_data[(Result_data.Variable.isin(destination_variables))&
+                                    (Result_data.Region==country)&
+                                    (~Result_data['Downscaled Region'].isin(exclude_downscaled_regions))&
+                                    (Result_data.Scenario==scenario)]
+            U = Destination[Destination.Variable=='Coal Worker Destination|Unemployment'].drop(['Model','Region','Scenario','Variable','Unit'],axis=1).groupby('Downscaled Region').sum().loc[:,[str(x) for x in range(2020,T1)]].sum(axis=1)
+            TotDestination = Destination.drop(['Model','Region','Scenario','Variable','Unit'],axis=1).groupby('Downscaled Region').sum().loc[:,[str(x) for x in range(t0,T1)]].sum(axis=1)
+            TotDestination[TotDestination==0]=np.nan
+            Share_U = U/TotDestination
+            Share_U=Share_U.dropna()
+
+            print(f'Under {scenario}, between {t0}-{t1} in {country}, the standard deviation of share of workers leaving into unemployment is {np.std(Share_U)}' )
+
+            bxplot=ax.boxplot(Share_U,
+                    positions=[x+[-0.2,0.2][ind_country]],
+                    vert=False,
+                    patch_artist=True)
+            bxplot['boxes'][0].set_facecolor(['red','orange'][ind_country])
+
+
+            # Data points
+            for ind in Share_U.index:
+                y = Share_U.loc[ind]
+                xs = np.random.normal(x+[-0.2,0.2][ind_country], 0.04, size=1)
+                ax.scatter(y,xs,s=0.8,color='k')
+                if ind=='Shanxi':
+                    ax.text(y,xs,'SX')
+
+        x+=1
+    ax.set_yticks([0,1,2])
+    ax.set_yticklabels(['NPI','NDC','NZ'])
+    ax.set_title(str(t0)+' - '+str(t1))
+    ax.set_xlim([0,1])
+    if ind_t != len(t1s):
+        ax.set_xticks([])
+fig.set_tight_layout('tight')
