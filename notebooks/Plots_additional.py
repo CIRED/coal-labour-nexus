@@ -665,7 +665,7 @@ fig = plot_energy_mix(Imaclim_data,Countries,Scenarios,Energy_colors(),Primary_e
 fig = plot_energy_mix(Imaclim_data,Countries,Scenarios,Energy_colors(),Elec_variables)
 
 
-# %% 12) Histogram of share not finding per scenario
+# %% 12) Boxplot of share not finding per scenario
 destination_variables = [x for x in Result_data.Variable.unique() if 'Coal Worker Destination' in x if 'Retire' not in x and 'Hire' not in x]
 
 Countries = ["CHN",'IND']

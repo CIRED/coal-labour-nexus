@@ -327,30 +327,33 @@ Provinces = [provincesChina, provincesIndia]
 Countries = ['China', 'India']
 nls = [6, 8]
 
-Scenarioss = [ ['NPI','NDC','NZ'],['NPI','NDC','NZ']]
+Scenarioss = [ ['NPI','NDC','NZ']]*3
+Scenarioss_name = [[ 'NPI', 'NDC\nLTT', '1.5°C']]*3
 
-Scenarioss_name = [[ 'NPI', 'NDC\nLTT', '1.5°C'],[ 'NPI', 'NDC\nLTT', '1.5°C']]
+# t0 = 2020
+# t1 = 2050
 
-t0 = 2020
-t1 = 2050
+T0s = [2020]*3
+T1s = [2030,2050,'80%']
 
 Xs = [
-    list(range(len(Scenarioss[0]))),list(range(len(Scenarioss[0])))
-]
+    list(range(len(Scenarioss[0])))#,list(range(len(Scenarioss[0])))
+]*3
 data_save = {}
 fig, axs = plt.subplots(2,
-                        2,
-                        figsize=(17.21 / 2.54, 13.09 / 2.54),
+                        len(T1s),
+                        figsize=(22 / 2.54, 13.09 / 2.54),
                         )
 for c_index in [0, 1]:
     x = 0
     provinces = Provinces[c_index]
     region = ['China', 'India'][c_index]
     
-    for stype_index in [0,1]:
+    # for stype_index in [0,1]:
+    for stype_index, (t0,T1) in enumerate(zip(T0s,T1s)):
         ax = axs[c_index][stype_index]
-        t0 = 2020
-        t1 = [2030,2050][stype_index]
+        # t0 = 2020
+        # t1 = [2030,2050][stype_index]
         if stype_index == 0:
             ax.set_ylabel(region+'\nMillion workers')
         Scenarios = Scenarioss[stype_index]
@@ -358,7 +361,18 @@ for c_index in [0, 1]:
         X = Xs[stype_index]
         for s_index, Scenario in enumerate(Scenarios):
             
+            if type(T1) is str:
+                threshold = 0.8
+                Q = Result_data[(Result_data['Downscaled Region']==region)&
+                                (Result_data.Scenario==Scenario)&
+                                (Result_data.Variable=='Employment|Coal|Downscaled')].values[0][6:]
+                t1=T[Q<=Q[5]*(1-threshold)][0]
+            else:
+                t1=T1
+
             data_save, alines = destination_bar(Result_data, X, T, t0, t1, Scenario, ax, region, provinces, data_save, s_index)
+            if stype_index == 2:
+                ax.text(x,data_save[(region,Scenario,t1)].sum(),t1)
 
             x += 1
 
@@ -367,13 +381,14 @@ for c_index in [0, 1]:
                 u = round(data_save[(region, Scenario,2050)][3]*1000)
                 print(f'In {region}, {u} thousand workers will not find new employment by 2050')
 
+
         alines = [x[0] for x in alines]
         labs = [l.get_label() for l in alines]
         ax.axhline(y=0, color='k', linewidth=0.9)
 
         
         if c_index == 0:
-            ax.set_title(str(t0) + '-' + str(t1))
+            ax.set_title(str(t0) + '-' + str(T1))
             ax.set_xticks([])
         else:
             ax.set_xticks(X)
