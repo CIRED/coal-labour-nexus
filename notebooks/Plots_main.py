@@ -605,7 +605,7 @@ Scenarios = ['NPI','NDC','NZ']
 Scenarios_names = ['NPI','NDC','NZ']
 fig, axs = plt.subplots(len(Scenarios),
                         len(Ts),
-                        figsize=pf.standard_figure_size())
+                        figsize=(20/2.54,15/2.54))
 
 
 Data_Chn = []
@@ -676,6 +676,8 @@ for s_index, scenario in enumerate(Scenarios):
             ax.set_title(str(t))
 
 cax.set_ylabel('Unemployment rate [%]')
+
+
 # Line graph of unemployment in China and India in all three scenarios
 axn = axs[1,2].inset_axes([1.3, -1, 3, 3])
 us = {}
@@ -696,8 +698,11 @@ for s_i, scenario in enumerate(Scenarios):
             print(f'In 2050 in scenario {scenario} the unemployment rate in {country} has increased by is {u2050:.1f} points')
 
         axn.plot(T,u,label=country,color=Colors[scenario],linestyle=['-','--'][c_i])
+
 axn.set_ylabel('Unemployment rate [%]')
 axn.set_ylim([0,14])
+
+[ax.text(0.02,0.96, label, transform=ax.transAxes, fontsize= 12, fontweight='bold', va='top', ha='left') for ax, label in zip([axs[0,0],axn],['a)','b)'])]
 
 #%% 1.3) Sensitivity to retirement age
 # ===========================================================================================================================

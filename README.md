@@ -60,6 +60,6 @@ For each run results are saved alongside log files in a folder in `coal.labour.n
 The `notebooks` folder contains code to plot useful figures. `Plots_main.py` contains the code for figures used for the paper *Regional employment vulnerability to rapid coal transition in China and India, an integrated and downscaled assessment* (unpublished).
 
 ## References
-[^1] United Nations, 2022. World Population Prospects 2022. 
-[^2] Kc, S., Lutz, W., 2017. The human core of the shared socioeconomic pathways: Population scenarios by age, sex and level of education for all countries to 2100. *Glob. Environ. Change* 42, 181–192. https://doi.org/10.1016/j.gloenvcha.2014.06.004 
-[^3] https://www.iamconsortium.org/scientific-working-groups/data-protocols-and-management/iamc-time-series-data-template/
+[^1]: United Nations, 2022. World Population Prospects 2022. 
+[^2]: Kc, S., Lutz, W., 2017. The human core of the shared socioeconomic pathways: Population scenarios by age, sex and level of education for all countries to 2100. *Glob. Environ. Change* 42, 181–192. https://doi.org/10.1016/j.gloenvcha.2014.06.004 
+[^3]: https://www.iamconsortium.org/scientific-working-groups/data-protocols-and-management/iamc-time-series-data-template/
