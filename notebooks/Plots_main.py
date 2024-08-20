@@ -493,7 +493,6 @@ for region in Regions:
 # ===========================================================================================================================
 #%% 1.1) Calibration source
 # ===========================================================================================================================
-Result_data[Result_data['Downscaled Region']=='Odisha']=='Odisha'
 
 Regions = np.unique(Result_data[~Result_data['Downscaled Region'].isin(
     ['China','India', 'Rest of Asia', 'Asia without Indonesia', 'Indonesia'])]
@@ -633,7 +632,6 @@ for s_index, scenario in enumerate(Scenarios):
                 Data_Chn.append(Unemployment[-1])
             else:
                 Data_Ind.append(Unemployment[-1])
-        Regions[Regions == 'Odisha'] = 'Odisha'
         Unemployment = pd.DataFrame(data=np.array([list(Regions), Unemployment]).transpose(),
                             columns=['Region_Nam', 'Unemployment'])
 
