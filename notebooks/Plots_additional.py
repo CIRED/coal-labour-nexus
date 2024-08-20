@@ -16,10 +16,8 @@ not necessarily meant to be published but still useful for scenario analysis.
 import geopandas as gpd
 import pandas as pd
 import numpy as np
-import os
 import matplotlib.pyplot as plt
 import matplotlib
-import xycmap
 from matplotlib import ticker
 import seaborn as sns
 import pyam

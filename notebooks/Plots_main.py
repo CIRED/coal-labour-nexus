@@ -10,12 +10,16 @@
 import geopandas as gpd
 import pandas as pd
 import numpy as np
-import os
 import matplotlib.pyplot as plt
 import matplotlib
 import xycmap
 from matplotlib import ticker
 import seaborn as sns
+import pyam
+# Plotting functions
+import plotting_functions as pf
+
+
 
 # Setting plotting parameters
 plt.rcParams['font.size'] = 9
@@ -28,9 +32,7 @@ formatter = ticker.ScalarFormatter(useMathText=True)
 formatter.set_scientific(True)
 formatter.set_powerlimits((-1, 1))
 
-# ===========================================================================================================================
-#%% Plotting functions
-from plotting_functions import *
+
 
 
 
@@ -76,7 +78,7 @@ Asia.loc[Asia.Region_Nam=="Orissa","Region_Nam"] = "Odisha"
 Historical_data = pd.read_csv('data/Historical_labour.csv')
 
 # Region positions for grid plots
-provincesChina, provincesIndia = defining_province_grid()
+provincesChina, provincesIndia = pf.defining_province_grid()
 
 # ===========================================================================================================================
 #Unit
@@ -85,7 +87,7 @@ tep2gj          =              41.855 # GJ/tep
 mtoe2gj         =        1e6 * tep2gj # GJ/Mtep
 mtoe2ej         =  mtoe2gj / exa2giga # EJ/Mtep
 
-Colors = defining_waysout_colour_scheme()
+Colors = pf.defining_waysout_colour_scheme()
 # ===========================================================================================================================
 
 
@@ -215,7 +217,7 @@ alines.append(axs[0].scatter([], [],
                         label='-95% from 2020'))
 
 
-labels = [l.get_label() for l in alines]
+labels = [la.get_label() for la in alines]
 handles = [label for label in alines]
 
 fig.legend(handles=alines,
@@ -253,7 +255,7 @@ key_data = {}
 for s_index in [0,2,1]:
     ax = axs[s_index]
     scenario = Scenarios[s_index] 
-    Asia_Data, key_data, cmap_zip = plot_vulnerability_bivariate(scenario, ax, Regions, Result_data, T, t0, t1, Asia, s_index, key_data, Scenarios_names)
+    Asia_Data, key_data, cmap_zip = pf.plot_vulnerability_bivariate(scenario, ax, Regions, Result_data, T, t0, t1, Asia, s_index, key_data, Scenarios_names)
     
 cmap, b_xlim, b_ylim, n = cmap_zip
 axs[-1].set_axis_off()
@@ -269,8 +271,8 @@ cax.set_ylabel('Decrease in relative coal jobs',fontsize=11)
 
 # If the number of color box is more than 5, not all ticks are shown
 if min(n)>5:    
-    cax.set_xticks([interpol(x,b_xlim,cax.get_xlim()) for x in [0.5,0.7,0.9]])
-    cax.set_yticks([interpol(np.log(x),b_ylim,cax.get_ylim()) for x in [1e-3,5e-3,0.01,0.05]])
+    cax.set_xticks([pf.interpol(x,b_xlim,cax.get_xlim()) for x in [0.5,0.7,0.9]])
+    cax.set_yticks([pf.interpol(np.log(x),b_ylim,cax.get_ylim()) for x in [1e-3,5e-3,0.01,0.05]])
     cax.set_xticklabels(["50%","70%","90%"],fontsize=11)
     cax.set_yticklabels(["0.1%","0.5%","1%","5%"],fontsize=11)
 
@@ -280,8 +282,8 @@ for region in ['China','India','Shanxi','Inner Mongolia','Jharkhand','Odisha','C
     xs = []
     ys = []
     for s_index in [0,1,2]:
-        xs.append(interpol(key_data[region+str(s_index)]['coordinates'][0],b_xlim,cax.get_xlim()))
-        ys.append(interpol(key_data[region+str(s_index)]['coordinates'][1],b_ylim,cax.get_ylim()))
+        xs.append(pf.interpol(key_data[region+str(s_index)]['coordinates'][0],b_xlim,cax.get_xlim()))
+        ys.append(pf.interpol(key_data[region+str(s_index)]['coordinates'][1],b_ylim,cax.get_ylim()))
     cax.plot(xs,ys,color='k',alpha=0.25,zorder=-0,linewidth=5)
 
 
@@ -291,8 +293,8 @@ for region in ['China','India','Shanxi','Inner Mongolia','Jharkhand','Odisha','C
     xs = []
     ys = []
     for s_index in [0,1,2]:
-        xs.append(interpol(key_data[region+str(s_index)]['coordinates'][0],b_xlim,cax.get_xlim()))
-        ys.append(interpol(key_data[region+str(s_index)]['coordinates'][1],b_ylim,cax.get_ylim()))
+        xs.append(pf.interpol(key_data[region+str(s_index)]['coordinates'][0],b_xlim,cax.get_xlim()))
+        ys.append(pf.interpol(key_data[region+str(s_index)]['coordinates'][1],b_ylim,cax.get_ylim()))
         cax.scatter(xs[-1],ys[-1],color=Colors[key_data[region+str(s_index)]['Scenario']],marker='o',s=key_data[region+str(s_index)]['destruction']/1200,edgecolor='k',linewidth=0.4,zorder=1)
     cax.annotate(region,(xs[0],ys[0]-0.1),ha='center',va='top',fontsize=8)
 
@@ -370,13 +372,13 @@ for c_index in [0, 1]:
             if type(T1) is str:
                 threshold = 0.8
                 
-                t1 =finding_emp_threshold_date(Result_data[(Result_data['Downscaled Region']==region)&
+                t1 =pf.finding_emp_threshold_date(Result_data[(Result_data['Downscaled Region']==region)&
                                 (Result_data.Scenario==Scenario)],threshold,T)
 
             else:
                 t1=T1
 
-            data_save, alines = destination_bar(Result_data, X, T, t0, t1, Scenario, ax, region, provinces, data_save, s_index)
+            data_save, alines = pf.destination_bar(Result_data, X, T, t0, t1, Scenario, ax, region, provinces, data_save, s_index)
             if stype_index == 2:
                 ax.text(X[s_index],data_save[(region,Scenario,t1)][:-1].sum(),t1,style='italic')
 
@@ -390,7 +392,7 @@ for c_index in [0, 1]:
 
 
         alines = [x[0] for x in alines]
-        labs = [l.get_label() for l in alines]
+        labs = [la.get_label() for la in alines]
         ax.axhline(y=0, color='k', linewidth=0.9)
 
         
@@ -519,7 +521,7 @@ for s_index in [0,3,1,4,2,5]:
     ax = axs[s0]
     s0+=1
     scenario = Scenarios[s_index]
-    Asia_Data, key_data, cmap_zip = plot_vulnerability_bivariate(scenario, ax, Regions, Result_data, T, t0, t1, Asia, s_index, key_data, Scenarios_names)
+    Asia_Data, key_data, cmap_zip = pf.plot_vulnerability_bivariate(scenario, ax, Regions, Result_data, T, t0, t1, Asia, s_index, key_data, Scenarios_names)
     
 
 cmap, b_xlim, b_ylim, n = cmap_zip
@@ -529,8 +531,8 @@ cax = xycmap.bivariate_legend(ax=cax, sx=Asia_Data.dropna(subset=['share_n_findi
 cax.set_xlabel('Share of workers not \n finding new employment',fontsize=11)
 cax.set_ylabel('Decrease in relative coal jobs',fontsize=11)
 if min(n)>5:    
-    cax.set_xticks([interpol(x,b_xlim,cax.get_xlim()) for x in [0.5,0.7,0.9]])
-    cax.set_yticks([interpol(np.log(x),b_ylim,cax.get_ylim()) for x in [1e-3,5e-3,0.01,0.05]])
+    cax.set_xticks([pf.interpol(x,b_xlim,cax.get_xlim()) for x in [0.5,0.7,0.9]])
+    cax.set_yticks([pf.interpol(np.log(x),b_ylim,cax.get_ylim()) for x in [1e-3,5e-3,0.01,0.05]])
     cax.set_xticklabels(["50%","70%","90%"],fontsize=11)
     cax.set_yticklabels(["0.1%","0.5%","1%","5%"],fontsize=11)
     
@@ -538,23 +540,23 @@ for region in ['China','India','Shanxi','Inner Mongolia','Jharkhand','Odisha','C
     xs = []
     ys = []
     for s_index in [0,1,2]:
-        xs.append(interpol(key_data[region+str(s_index)]['coordinates'][0],b_xlim,cax.get_xlim()))
-        ys.append(interpol(key_data[region+str(s_index)]['coordinates'][1],b_ylim,cax.get_ylim()))
+        xs.append(pf.interpol(key_data[region+str(s_index)]['coordinates'][0],b_xlim,cax.get_xlim()))
+        ys.append(pf.interpol(key_data[region+str(s_index)]['coordinates'][1],b_ylim,cax.get_ylim()))
     cax.plot(xs,ys,color='k',alpha=0.25,zorder=-0,linewidth=5)
 for region in ['China','India','Shanxi','Inner Mongolia','Jharkhand','Odisha','Chhattisgarh']:
     xs = []
     ys = []
     for s_index in [3,4,5]:
-        xs.append(interpol(key_data[region+str(s_index)]['coordinates'][0],b_xlim,cax.get_xlim()))
-        ys.append(interpol(key_data[region+str(s_index)]['coordinates'][1],b_ylim,cax.get_ylim()))
+        xs.append(pf.interpol(key_data[region+str(s_index)]['coordinates'][0],b_xlim,cax.get_xlim()))
+        ys.append(pf.interpol(key_data[region+str(s_index)]['coordinates'][1],b_ylim,cax.get_ylim()))
     cax.plot(xs,ys,color='k',alpha=0.25,zorder=-0,linewidth=5)
 
 for region in ['China','India','Shanxi','Inner Mongolia','Jharkhand','Odisha','Chhattisgarh']:
     xs = []
     ys = []
     for s_index in [0,1,2,3,4,5]:
-        xs.append(interpol(key_data[region+str(s_index)]['coordinates'][0],b_xlim,cax.get_xlim()))
-        ys.append(interpol(key_data[region+str(s_index)]['coordinates'][1],b_ylim,cax.get_ylim()))
+        xs.append(pf.interpol(key_data[region+str(s_index)]['coordinates'][0],b_xlim,cax.get_xlim()))
+        ys.append(pf.interpol(key_data[region+str(s_index)]['coordinates'][1],b_ylim,cax.get_ylim()))
         cax.scatter(xs[-1],ys[-1],color=Colors[key_data[region+str(s_index)]['Scenario']],marker='o',s=key_data[region+str(s_index)]['destruction']/1200,edgecolor='k',linewidth=0.4,zorder=1)
     cax.annotate(region,(xs[0],ys[0]-0.1),ha='center',va='top',fontsize=8)
 
@@ -739,7 +741,7 @@ for c_index in [0, 1]:
         Sc = Scenarios
         X = Xs[stype_index]
         for s_index, Scenario in enumerate(Scenarios):
-            data_save, alines = destination_bar(Result_data, X, T, t0, t1, Scenario, ax, region, provinces, data_save, s_index)
+            data_save, alines = pf.destination_bar(Result_data, X, T, t0, t1, Scenario, ax, region, provinces, data_save, s_index)
             x += 1
 
         alines = [x[0] for x in alines]
@@ -845,8 +847,8 @@ for ind_region, region in enumerate(Regions):
         
 
         data_shape = np.shape(data)
-        cumulated_data = get_cumulated_array(data, min=0)
-        cumulated_data_neg = get_cumulated_array(data, max=0)
+        cumulated_data = pf.get_cumulated_array(data, min=0)
+        cumulated_data_neg = pf.get_cumulated_array(data, max=0)
 
         # Re-merge negative and positive data.
         row_mask = (data < 0)
@@ -902,7 +904,7 @@ This requires pulling scenarios from the IIASA database using pyam
 
 """
 #%%  Importing AR6 database
-import pyam
+
 chn_name = 'Countries of centrally-planned Asia; primarily China'
 ind_name = 'Countries of South Asia; primarily India'
 regions_ar6 = ['World', chn_name, ind_name]
@@ -947,19 +949,19 @@ categories = ['C1','C3','C6']
 
 #%% 3.1) Emissions
 var = 'Emissions|CO2|Energy and Industrial Processes'
-plotting_with_AR6_range(var,var,regions_ar6,categories,df,cols,Imaclim_data,T,False)
+pf.plotting_with_AR6_range(var,var,regions_ar6,categories,df,cols,Imaclim_data,T,False)
 
 #%% 3.2) Coal production
 var = 'Output|Coal'
-plotting_with_AR6_range(var,var,regions_ar6,categories,df,cols,Imaclim_data,T,True)
+pf.plotting_with_AR6_range(var,var,regions_ar6,categories,df,cols,Imaclim_data,T,True)
 
 #%% 3.3) Electricity from coal
 var = 'Secondary Energy|Electricity|Coal'
-plotting_with_AR6_range(var,var,regions_ar6,categories,df,cols,Imaclim_data,T,True)
+pf.plotting_with_AR6_range(var,var,regions_ar6,categories,df,cols,Imaclim_data,T,True)
 
 
 #%% 3.4) Investment in coal supply
 var = "Investment|Energy Supply|Extraction|Coal"
-plotting_with_AR6_range(var,var,regions_ar6,categories,df,cols,Imaclim_data,T,True)
+pf.plotting_with_AR6_range(var,var,regions_ar6,categories,df,cols,Imaclim_data,T,True)
 
 
