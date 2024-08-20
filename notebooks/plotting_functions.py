@@ -25,8 +25,58 @@ def defining_waysout_colour_scheme():
     return Colors
 
 
+def defining_regions_colors():
+    """
+    Adapting color palette used in IPCC AR6 for R10 regions to R12 Imaclim regions 
+    """
+    Colors = {
+        "USA":'#C77B10',
+        "CAN":"#A54133",
+        "EUR":"#003C6C",
+        "JAN":"#5290C8",
+        "CIS":"#FCCB76",
+        "CHN":"#DD4B15",
+        "IND":"#F6AA00",
+        "BRA":"#7299A4",
+        "MDE":"#7E7E7D",
+        "AFR":"#08A7CD",
+        "RAS":"#EC9867",
+        "RAL":"#797A9C"
+    }
+    return Colors
+
+def Energy_colors():
+    Energy_colors = {
+        'Biomass':'green',
+        'Coal':'black',
+        'Gas':'lightgrey',
+        'Hydro':'navy',
+        'Nuclear':'purple',
+        'Solar':'gold',
+        'Wind':'blue',
+        'Geothermal':'pink',
+        'Non-Biomass Renewables':'pink',
+        'Oil':'dimgrey',
+        'Other':'pink',
+        'Ocean':'pink'
+    }
+    return Energy_colors
+
 #=========================================================================================================
 #    Stacked bars function
+def get_data_stack(data):
+    data = np.array(data)
+    data_shape = np.shape(data)
+    cumulated_data = get_cumulated_array(data, min=0)
+    cumulated_data_neg = get_cumulated_array(data, max=0)
+
+    # Re-merge negative and positive data.
+    row_mask = (data < 0)
+    cumulated_data[row_mask] = cumulated_data_neg[row_mask]
+    data_stack = cumulated_data
+    return data_shape, data_stack
+
+
 def get_cumulated_array(data, **kwargs):
     cum = data.clip(**kwargs)
     cum = np.cumsum(cum, axis=0)
@@ -59,7 +109,7 @@ def append_real_results(share_n_finding,D,U,In):
 
 
 #=========================================================================================================
-def plot_vulnerability_bivariate(scenario, ax, Regions, Result_data, T, t0, t1, Asia, s_index, key_data, Scenarios_names):
+def plot_vulnerability_bivariate(scenario, ax, Regions, Result_data, T, t0, T1, Asia, s_index, key_data, Scenarios_names):
     """
     This function maps the exposure (ratio of coal job destruction to labour force)
     and vulnerability (share of laid off workers going to unemployment) 
@@ -68,6 +118,7 @@ def plot_vulnerability_bivariate(scenario, ax, Regions, Result_data, T, t0, t1, 
     # Defining the colormap
     b_xlim = [0.3,0.85]
     b_ylim = [np.log(3e-4),np.log(0.065)]
+    b_ylim = [np.log(9e-4),np.log(0.08)]
 
 
     n = (10, 10)  # x, y
@@ -89,6 +140,16 @@ def plot_vulnerability_bivariate(scenario, ax, Regions, Result_data, T, t0, t1, 
     # Iterating over regions
     for region in list(Regions):
 
+        if type(T1) is str:
+            threshold = 0.8
+            print(region)
+            t1 =finding_emp_threshold_date(Result_data[(Result_data['Downscaled Region']==region)&
+                            (Result_data.Scenario==scenario)],threshold,T)
+
+        else:
+            t1=T1
+
+
         L = Result_data[(Result_data['Downscaled Region'] == region)
                         & (Result_data['Variable'] == 'Employment|Coal|Downscaled') 
                         & (Result_data['Scenario'] == scenario)].values[0][6:]
@@ -98,11 +159,11 @@ def plot_vulnerability_bivariate(scenario, ax, Regions, Result_data, T, t0, t1, 
                         & (Result_data['Scenario'] == scenario)].values[0][6])
         Ls.append(L[0])
 
-        y = float((L[T == 2020] - L[T == 2035]) / LF0)
+        y = float((L[T == 2020] - L[T == t1]) / LF0)
         y = np.nan if y == 0 else np.log(y)
         
         share_destruction.append(y)
-        destruction.append(float((L[T == 2020] - L[T == 2035]) ))
+        destruction.append(float((L[T == 2020] - L[T == t1]) ))
 
 
         
@@ -195,6 +256,7 @@ def plot_vulnerability_bivariate(scenario, ax, Regions, Result_data, T, t0, t1, 
 
 
     return Asia_Data,key_data,cmap_zip
+
 
 
 
@@ -618,3 +680,63 @@ def plotting_with_AR6_range(var,var_imaclim,regions_ar6,categories,df,cols,Imacl
         add_emissions_comparisons(axs,regions_ar6,categories) 
 
     fig.suptitle(var)
+
+
+
+def plot_energy_mix(Imaclim_data,Countries,Scenarios,Energy_colors,Variables,T):
+    
+
+    fig, axs = plt.subplots(len(Countries),len(Scenarios))
+    for ind_scenario, scenario in enumerate(Scenarios):
+        for ind_country, country in enumerate(Countries):
+            ax = axs[ind_country,ind_scenario]
+
+            data = []
+
+            for variable in Variables:
+                data.append(
+                    [float(x) for x in Imaclim_data[(Imaclim_data.Variables==variable)&
+                                (Imaclim_data.Scenario==scenario)&
+                                (Imaclim_data.Region==country)].values[0][5:]]
+                )   
+
+        
+            data_shape, data_stack = get_data_stack(data)
+            alines = []
+            
+            for i in np.arange(0, data_shape[0]):
+                alines.append([
+                    ax.bar(T,
+                            data[i],
+                            bottom=data_stack[i],
+                            width=1,
+                            alpha=0.6,
+                            label = Variables[i],
+                            color = Energy_colors[Variables[i].split('|')[-1]]
+                            )
+                ])
+
+    for ind_country,_ in enumerate(Countries):
+        y_max = max([ax.get_ylim()[1] for ax in axs[ind_country,:]])
+        [ax.set_ylim([0,y_max]) for ax in axs[ind_country,:]]
+
+    [axs[0,ind_scenario].set_title(scenario) for ind_scenario,scenario in enumerate(Scenarios)]
+    [axs[ind_country,0].set_ylabel(country+'\n'+Imaclim_data[Imaclim_data.Variables==Variables[0]]['Unit'].values[0]) for ind_country,country in enumerate(Countries)]
+
+    fig.legend([x[0] for x in alines],Variables,
+            loc='center right',
+            bbox_to_anchor=(1.4, 0.5),)
+    
+    return fig
+
+
+
+def finding_emp_threshold_date(data,threshold,T):
+    Q = data[(data.Variable=='Employment|Coal|Downscaled')].values[0][6:]
+    T1=T[Q<Q[5]*(1-threshold)]
+
+    if len(T1)>0:
+        T1 = T1[0]
+    else:
+        T1 = 2100
+    return T1

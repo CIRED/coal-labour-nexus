@@ -164,6 +164,12 @@ for c_index in [0, 1]:
                     
                 if scenario == 'NZ':
                     print(f'In {country}, coal employment must be halved by {T[COAL_emp.values[0][6:] < COAL_emp.values[0][6:][5] /2][0]} to be 1.5°C-aligned')
+                if (country == 'China')&(scenario=='NZ'):
+                    print(f'In {country}, coal employment must be reduced by 95% by {T[COAL_emp.values[0][6:] < COAL_emp.values[0][6:][5] *0.05][0]} to be consistent with 1.5°C')
+                if (country == 'China')&(scenario=='NDC'):
+                    print(f'In {country}, coal employment must be reduced by 95% by {T[COAL_emp.values[0][6:] < COAL_emp.values[0][6:][5] *0.05][0]} to be consistent with NDC-LTT')
+                if scenario == 'NPI':
+                    print(f'In {country}, under NPI coal employment must be phased out by {T[COAL_emp.values[0][6:] < COAL_emp.values[0][6:][5] *0.05][0]}')
 
     Scen_y = pd.DataFrame(Scen_y, index=Scenarios)
 
@@ -342,7 +348,7 @@ Xs = [
 data_save = {}
 fig, axs = plt.subplots(2,
                         len(T1s),
-                        figsize=(22 / 2.54, 13.09 / 2.54),
+                        figsize=(20 / 2.54, 9 / 2.54),
                         )
 for c_index in [0, 1]:
     x = 0
@@ -363,16 +369,17 @@ for c_index in [0, 1]:
             
             if type(T1) is str:
                 threshold = 0.8
-                Q = Result_data[(Result_data['Downscaled Region']==region)&
-                                (Result_data.Scenario==Scenario)&
-                                (Result_data.Variable=='Employment|Coal|Downscaled')].values[0][6:]
-                t1=T[Q<=Q[5]*(1-threshold)][0]
+                
+                t1 =finding_emp_threshold_date(Result_data[(Result_data['Downscaled Region']==region)&
+                                (Result_data.Scenario==Scenario)],threshold,T)
+
             else:
                 t1=T1
 
             data_save, alines = destination_bar(Result_data, X, T, t0, t1, Scenario, ax, region, provinces, data_save, s_index)
             if stype_index == 2:
-                ax.text(x,data_save[(region,Scenario,t1)].sum(),t1)
+                ax.text(X[s_index],data_save[(region,Scenario,t1)][:-1].sum(),t1,style='italic')
+
 
             x += 1
 
@@ -403,7 +410,7 @@ fig.legend(handles=alines,
            labels=labs,
            loc='lower center',
            ncol=3,
-           bbox_to_anchor=(0.5, -0.1),
+           bbox_to_anchor=(0.5, -0.2),
            frameon=False)
 
 fig.subplots_adjust(hspace=0.02, wspace=0.1)
@@ -418,6 +425,21 @@ t1 = 2050
 chn = ds.loc[('China',scenario,t1),'R']/sum(ds.loc[('China',scenario,t1),ds.columns!='H'])*100
 ind = ds.loc[('India',scenario,t1),'R']/sum(ds.loc[('India',scenario,t1),ds.columns!='H'])*100
 print(f'- In all cases, we find that a significant share of workers is able to leave into retirement rather than be laid off.\n By {t1} that is the case of around {chn:.1f}% of workers in China and {ind:.1f}% of workers in India the NDC-LTT.')
+
+df_rrate = ds.loc[[(x,y,z) for x in ['China','India'] for y in ['NPI','NDC','NZ'] for z in [2030,2050]],:]
+df_rrate['Rrate'] = df_rrate.R/(df_rrate.R+df_rrate.D+df_rrate.I+df_rrate.U)
+
+t1 = 2030
+df_rrate = ds.loc[[(x,y,z) for x in ['China','India'] for y in ['NPI','NDC','NZ'] for z in [2030,2050]],:]
+df_rrate['Rrate'] = df_rrate.R/(df_rrate.R+df_rrate.D+df_rrate.I+df_rrate.U)
+df_rrate2030NPINDC = df_rrate.loc[[(x,y,2030) for x in ['China','India'] for y in ['NPI','NDC']],'Rrate']
+
+print(f'-In the NPI and NDC-LTT scenarios, we find that {100*min(df_rrate2030NPINDC):.1f}-{100*max(df_rrate2030NPINDC):.1f}% of redudant workers can leave into retirement rather than be laid off.')
+
+df_rrate2030NZ = df_rrate.loc[[(x,'NZ',2030) for x in ['China','India']],'Rrate']
+
+print(f'-In the NZ scenarios this goes down to {100*min(df_rrate2030NZ):.1f}-{100*max(df_rrate2030NZ):.1f}%')
+
 
 # Laid-off before 2030
 scenario = 'NZ'
@@ -438,6 +460,10 @@ ind1 = ds.loc[('India',scenario,t1),'U']/sum(ds.loc[('India',scenario,t1),ds.col
 print(f'- In the long run, the 1.5°C scenario leads to a significant share of workers being unemployed by 2050, \n with {chn1:.1f}% of Chinese workers and {ind1:.1f}% of Indian workers not finding new employment \n against {chn0:.1f}% and {ind0:.1f}% respectively in the NPI scenario.')
 
 
+reduction = 100*(1-ds.loc[('China','NPI',2045),'U']/ds.loc[('China','NZ',2035),'U'])
+print(f'-{reduction:.1f}% less Chinese worker go into unemployment by the time 80% coal jobs have been destroyed in NPI compared to 1.5°C')
+
+
 # Share of lay-offs not finding new employment
 scenario = 'NPI'
 t1 = 2050
@@ -448,6 +474,11 @@ chn1 = 100-(ds.loc[('China',scenario,t1),'D'])/sum(ds.loc[('China',scenario,t1),
 ind1 = 100-(ds.loc[('India',scenario,t1),'D'])/sum(ds.loc[('India',scenario,t1),['D','I','U']])*100
 
 print(f'- In the long run, the 1.5°C scenario leads to a significant share of laid-off workers not finding employment by 2050, \n with {chn1:.1f}% of Chinese workers and {ind1:.1f}% of Indian workers not finding new employment \n against {chn0:.1f}% and {ind0:.1f}% respectively in the NPI scenario.')
+
+
+
+
+
 
 
 #%%
