@@ -145,6 +145,7 @@ def plot_vulnerability_bivariate(scenario, ax, Regions, Result_data, T, t0, T1, 
     cmap = xycmap.custom_xycmap(corner_colors=corner_colors, n=n)
     cmap_zip = [cmap, b_xlim, b_ylim, n]
     
+    color_not_plotted = '#EAEAEA' #Applying the same colour to all regions with no coal employment or outside the scope of analysis
     
     # Initializing the lists
     share_n_finding = []
@@ -160,7 +161,6 @@ def plot_vulnerability_bivariate(scenario, ax, Regions, Result_data, T, t0, T1, 
 
         if type(T1) is str:
             threshold = 0.8
-            print(region)
             t1 =finding_emp_threshold_date(Result_data[(Result_data['Downscaled Region']==region)&
                             (Result_data.Scenario==scenario)],threshold,T)
 
@@ -234,7 +234,8 @@ def plot_vulnerability_bivariate(scenario, ax, Regions, Result_data, T, t0, T1, 
     cmapi = pd.DataFrame(data=np.array([cmapi,Asia_Data.dropna(subset=['share_n_finding','share_destruction'])['Region_Nam'].values]).transpose(),
                            columns=['colors', 'Region_Nam'])
     
-    Asia_Data_with_colors = Asia_Data.merge(cmapi, on='Region_Nam', how='left').fillna('lightgrey')
+    
+    Asia_Data_with_colors = Asia_Data.merge(cmapi, on='Region_Nam', how='left').fillna(color_not_plotted)
     Asia_Data_with_colors.plot(
         ax=ax, 
         color=Asia_Data_with_colors['colors'],
@@ -243,8 +244,9 @@ def plot_vulnerability_bivariate(scenario, ax, Regions, Result_data, T, t0, T1, 
         rasterized=True,
         alpha=1)
 
-    Asia[Asia['region']=='Asia'].plot(ax=ax, color='whitesmoke', edgecolor='black',linewidth=0.5)
-    Asia[Asia['region']=='Disputed'].plot(ax=ax, color="whitesmoke", edgecolor='black', linestyle='--',linewidth=0.5)
+
+    Asia[Asia['region']=='Asia'].plot(ax=ax, color=color_not_plotted, edgecolor='black',linewidth=0.5)
+    Asia[Asia['region']=='Disputed'].plot(ax=ax, color=color_not_plotted, edgecolor='black', linestyle='--',linewidth=0.5)
     
     for region in ['Shanxi','Inner Mongolia','Jharkhand','Odisha','Chhattisgarh']:
         key_data[region+str(s_index)] = {'Downscaled Region':region,
