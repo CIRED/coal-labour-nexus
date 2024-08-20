@@ -381,6 +381,13 @@ print(f'- In the long run, the 1.5°C scenario leads to a significant share of l
 
 # %% 3) Exposure and vulnerability of regions to coal transition betweeen 2020 and 2050
 # ===========================================================================================================================
+t = 2015
+CHN_share_LF=100*float(Result_data[(Result_data.Scenario=='NPI')&(Result_data['Downscaled Region']=='China')&(Result_data.Variable=='Employment|Coal|Downscaled')][str(t)].values[0])/float(Result_data[(Result_data.Scenario=='NPI')&(Result_data['Downscaled Region']=='China')&(Result_data.Variable=='Labour Force|Downscaled')][str(t)].values[0])
+IND_share_LF=100*float(Result_data[(Result_data.Scenario=='NPI')&(Result_data['Downscaled Region']=='India')&(Result_data.Variable=='Employment|Coal|Downscaled')][str(t)].values[0])/float(Result_data[(Result_data.Scenario=='NPI')&(Result_data['Downscaled Region']=='India')&(Result_data.Variable=='Labour Force|Downscaled')][str(t)].values[0])
+
+print(f"Indian regions are on average less exposed to the transition as {IND_share_LF:.1f}%  of labour force works in coal against {CHN_share_LF:.1f}% in China).")
+
+
 Regions = np.unique(Result_data[~Result_data['Downscaled Region'].isin(
     ['China','India', 'Rest of Asia', 'Asia without Indonesia', 'Indonesia'])]
                     ['Downscaled Region'].values)
