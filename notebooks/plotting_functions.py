@@ -8,6 +8,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 import xycmap
 import seaborn as sns
+
+
+#=========================================================================================================
+# Standard figure size
+def standard_figure_size():
+    width = 20
+    height= 9
+    cm2in = 1/2.54
+    return (width*cm2in,height*cm2in)
+
+
 #=========================================================================================================
 # Defining the colors for the different scenarios centrally
 
@@ -62,6 +73,31 @@ def Energy_colors():
     }
     return Energy_colors
 
+
+#=========================================================================================================
+#    Misc
+def interpol(x, xlim, ylim):
+    y = ylim[0] + (ylim[1]-ylim[0])/(xlim[1]-xlim[0])*(x-xlim[0])
+    return y
+
+
+# Functions used for bivariate plot 
+def weighted_average(df, value, weight, country):
+    """
+    The weighted average function is used to when mapping the vulnerability of regions to the coal transition
+    It allows to calculate the average of a variable in a country, using a weight such as the workforce
+    """
+    return (df[df['Region'] == country][value] * df[df['Region'] == country][weight]).sum() / df[df['Region'] == country][weight].sum()
+
+
+def append_real_results(share_n_finding,D,U,In):
+    if sum((U + D + In)) != 0:
+        share_n_finding.append(1-sum(D+In) / sum((U + D + In)))
+    else:
+        share_n_finding.append(np.nan)
+    return share_n_finding
+
+
 #=========================================================================================================
 #    Stacked bars function
 def get_data_stack(data):
@@ -85,30 +121,12 @@ def get_cumulated_array(data, **kwargs):
     return d
 
     
-# Functions used for bivariate plot 
-def weighted_average(df, value, weight, country):
-    """
-    The weighted average function is used to when mapping the vulnerability of regions to the coal transition
-    It allows to calculate the average of a variable in a country, using a weight such as the workforce
-    """
-    return (df[df['Region'] == country][value] * df[df['Region'] == country][weight]).sum() / df[df['Region'] == country][weight].sum()
+#==================================================================================================================================================================================================================
+#==================================================================================================================================================================================================================
+#                                                              Core Plots
+#==================================================================================================================================================================================================================
+#==================================================================================================================================================================================================================
 
-
-def interpol(x, xlim, ylim):
-    y = ylim[0] + (ylim[1]-ylim[0])/(xlim[1]-xlim[0])*(x-xlim[0])
-    return y
-
-
-
-def append_real_results(share_n_finding,D,U,In):
-    if sum((U + D + In)) != 0:
-        share_n_finding.append(1-sum(D+In) / sum((U + D + In)))
-    else:
-        share_n_finding.append(np.nan)
-    return share_n_finding
-
-
-#=========================================================================================================
 def plot_vulnerability_bivariate(scenario, ax, Regions, Result_data, T, t0, T1, Asia, s_index, key_data, Scenarios_names):
     """
     This function maps the exposure (ratio of coal job destruction to labour force)
@@ -740,3 +758,14 @@ def finding_emp_threshold_date(data,threshold,T):
     else:
         T1 = 2100
     return T1
+
+
+
+
+
+
+#==================================================================================================================================================================================================================
+#==================================================================================================================================================================================================================
+#                                                              Additional
+#==================================================================================================================================================================================================================
+#==================================================================================================================================================================================================================

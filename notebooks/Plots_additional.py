@@ -22,6 +22,10 @@ import matplotlib
 import xycmap
 from matplotlib import ticker
 import seaborn as sns
+import pyam
+
+# Plotting functions
+import plotting_functions as pf
 
 # Setting plotting parameters
 plt.rcParams['font.size'] = 9
@@ -33,11 +37,6 @@ matplotlib.rcParams['axes.unicode_minus'] = False
 formatter = ticker.ScalarFormatter(useMathText=True)
 formatter.set_scientific(True)
 formatter.set_powerlimits((-1, 1))
-
-# ===========================================================================================================================
-#%% Plotting functions
-from plotting_functions import *
-
 
 
 # ===========================================================================================================================
@@ -82,7 +81,7 @@ Asia.loc[Asia.Region_Nam=="Orissa","Region_Nam"] = "Odisha"
 Historical_data = pd.read_csv('data/Historical_labour.csv')
 
 # Region positions for grid plots
-provincesChina, provincesIndia = defining_province_grid()
+provincesChina, provincesIndia = pf.defining_province_grid()
 
 # ===========================================================================================================================
 #Unit
@@ -91,7 +90,7 @@ tep2gj          =              41.855 # GJ/tep
 mtoe2gj         =        1e6 * tep2gj # GJ/Mtep
 mtoe2ej         =  mtoe2gj / exa2giga # EJ/Mtep
 
-Colors = defining_waysout_colour_scheme()
+Colors = pf.defining_waysout_colour_scheme()
 # ===========================================================================================================================
 #%% 1) Different ways to look at unemployment
 
@@ -127,8 +126,8 @@ for ind_scenario, scenario in enumerate(Scenarios):
             
             data = np.array(data)
             data_shape = np.shape(data)
-            cumulated_data = get_cumulated_array(data, min=0)
-            cumulated_data_neg = get_cumulated_array(data, max=0)
+            cumulated_data = pf.get_cumulated_array(data, min=0)
+            cumulated_data_neg = pf.get_cumulated_array(data, max=0)
 
             # Re-merge negative and positive data.
             row_mask = (data < 0)
@@ -156,8 +155,8 @@ for ind_scenario, scenario in enumerate(Scenarios):
             data.append(Result_data[(Result_data['Scenario']==['NPI','NDC','NZ'][ind_scenario]) & (Result_data['Downscaled Region']==region) & (Result_data['Variable']==variable)].values[0][6:])
         data = np.array(data)*1e-6
         data_shape = np.shape(data)
-        cumulated_data = get_cumulated_array(data, min=0)
-        cumulated_data_neg = get_cumulated_array(data, max=0)
+        cumulated_data = pf.get_cumulated_array(data, min=0)
+        cumulated_data_neg = pf.get_cumulated_array(data, max=0)
 
         # Re-merge negative and positive data.
         row_mask = (data < 0)
@@ -312,7 +311,6 @@ for ind_reg, region in enumerate(Regions):
 
 
 # %% 5) Comparing power generation technology costs with AR6
-import pyam
 
 # Check available variables 
 conn = pyam.iiasa.Connection()
@@ -433,12 +431,12 @@ for c_index in [0, 1]:
             if type(T1) is str:
                 threshold = 0.8
                 
-                t1 =finding_emp_threshold_date(Result_data[(Result_data['Downscaled Region']==region)&
+                t1 =pf.finding_emp_threshold_date(Result_data[(Result_data['Downscaled Region']==region)&
                                 (Result_data.Scenario==Scenario)],threshold,T)
 
             else:
                 t1=T1
-            data_save, alines = destination_bar(Result_data, X, T, t0, t1, Scenario, ax, region, provinces, data_save, s_index)
+            data_save, alines = pf.destination_bar(Result_data, X, T, t0, t1, Scenario, ax, region, provinces, data_save, s_index)
             if stype_index == 2:
                 ax.text(X[s_index],data_save[(region,Scenario,t1)][:-1].sum(),t1,style='italic')
             x += 1
@@ -450,7 +448,7 @@ for c_index in [0, 1]:
 
             
         alines = [x[0] for x in alines]
-        labs = [l.get_label() for l in alines]
+        labs = [la.get_label() for la in alines]
         ax.axhline(y=0, color='k', linewidth=0.9)
 
 
@@ -528,7 +526,7 @@ Share of workers leaving into unemployment against phase out rate between 2025 a
 The phase out rate is defined as the production difference in coal production between two subsequent years divided by the 2015 level. 
 Phase out rate is calculated based on the 10 year rolling average of production to account for long-term phase-down trajectories.
 '''
-Colors=defining_waysout_colour_scheme()
+Colors=pf.defining_waysout_colour_scheme()
     
 Countries = ['CHN','IND']
 exclude_downscaled_regions = ['China','India']
@@ -602,8 +600,8 @@ Scenarios = [
 
 
 
-fig = plot_energy_mix(Imaclim_data,Countries,Scenarios,Energy_colors(),Primary_energy_variables,T)
-fig = plot_energy_mix(Imaclim_data,Countries,Scenarios,Energy_colors(),Elec_variables,T)
+fig = pf.plot_energy_mix(Imaclim_data,Countries,Scenarios,pf.Energy_colors(),Primary_energy_variables,T)
+fig = pf.plot_energy_mix(Imaclim_data,Countries,Scenarios,pf.Energy_colors(),Elec_variables,T)
 
 
 # %% 12) Boxplot of share not finding per scenario
@@ -635,7 +633,7 @@ for ind_t,(t0,t1) in enumerate(zip(t0s,t1s)):
 
             if type(t1) is str:
                 threshold = 0.8
-                T1 = finding_emp_threshold_date(Result_data[(Result_data['Downscaled Region']==exclude_downscaled_regions[ind_country])&(Result_data.Scenario==scenario)],threshold,T)
+                T1 = pf.finding_emp_threshold_date(Result_data[(Result_data['Downscaled Region']==exclude_downscaled_regions[ind_country])&(Result_data.Scenario==scenario)],threshold,T)
 
             else:
                 T1 = t1
@@ -665,7 +663,7 @@ for ind_t,(t0,t1) in enumerate(zip(t0s,t1s)):
             
             # Customizing the appearance
             for box in bxplot['boxes']:
-                box.set_facecolor(defining_waysout_colour_scheme()[scenario])
+                box.set_facecolor(pf.defining_waysout_colour_scheme()[scenario])
                 box.set_alpha(0.5)  # Reduce the alpha of the face color
 
             # Set the median line color to black
@@ -680,7 +678,7 @@ for ind_t,(t0,t1) in enumerate(zip(t0s,t1s)):
             for ind in Share_U.index:
                 y = Share_U.loc[ind]
                 xs = np.random.normal(pos, 0.07, size=1)
-                ax.scatter(y,xs,s=5e-5*TotDestination[ind],color=defining_waysout_colour_scheme()[scenario])
+                ax.scatter(y,xs,s=5e-5*TotDestination[ind],color=pf.defining_waysout_colour_scheme()[scenario])
                 if ind in ['Shanxi','Odisha','Jharkhand']:
                     ax.text(y+1e-2,xs,ind,fontsize=5.5,verticalalignment='center_baseline')
 
@@ -705,9 +703,9 @@ Scenarios = [
             'WO-NDCLTT-ElecIndus',
             'WO-15C-ElecIndus',
             ]
-fig, axs = plt.subplots(2,1)
+fig, axs = plt.subplots(2,2)
 
-ax = axs[0]
+ax = axs[0,0]
 
 data = []
 for ind_region, region in enumerate(Regions):
@@ -716,29 +714,105 @@ for ind_region, region in enumerate(Regions):
         data[-1].append(
             Imaclim_data[(Imaclim_data.Region==region)&(Imaclim_data.Scenario==scenario)&(Imaclim_data.Variables=='Emissions|CO2|Energy and Industrial Processes')].loc[:,[str(x) for x in range(2020,2101)]].sum(axis=1).values[0]
         )
-data_shape, data_stack = get_data_stack(data)
-alines = []
 
-for i in np.arange(0, data_shape[0]):
-    alines.append([
-        ax.bar([1,2,3],
-                data[i],
-                bottom=data_stack[i],
-                width=1,
-                alpha=0.6,
-                label = Regions[i],
-                color = defining_regions_colors()[Regions[i]]
-                )
-    ])
+for norm in [0,1]:
+    ax = axs[norm,0]
+    if norm == 1: 
+            data=np.array(data)/np.array(data).sum(axis=0)
+    data_shape, data_stack = pf.get_data_stack(data)
+    alines = []
 
-ax = axs[1]
+    for i in np.arange(0, data_shape[0]):
+        alines.append([
+            ax.bar([1,2,3],
+                    data[i],
+                    bottom=data_stack[i],
+                    width=0.8,
+                    color = pf.defining_regions_colors()[Regions[i]]
+                    )
+        ])
+
+
+
 data = []
-fuels = ['Coal','Gas','Oil']
-for ind_region, region in enumerate(Regions):
-    for ind_fuel, fuel in enumerate(fuels):
+df = pd.DataFrame(columns=Scenarios)
+fuels = ['Coal','Oil','Gas']
+Colors = []
+Alphas = []
+for ind_fuel, fuel in enumerate(fuels):
+    for ind_region, region in enumerate(Regions):
         data.append([])
-        variable  = 'Output|'+fuel
+        variable  = 'Resource|Extraction|'+fuel
+
+        coef = Emi_coef[Emi_coef.Variable=='Coef|Emissions|CO2|'+fuel]['Value'].values[0]
+
+        for ind_scenario, scenario in enumerate(Scenarios):
+            data[-1].append(
+                coef*Imaclim_data[(Imaclim_data.Region==region)&(Imaclim_data.Scenario==scenario)&(Imaclim_data.Variables==variable)].loc[:,[str(x) for x in range(2020,2101)]].sum(axis=1).values[0]/mtoe2ej/1e6
+            )
+            # df.loc[(region,fuel),scenario] = data[-1][-1]
+
+        Colors.append(pf.defining_regions_colors()[region])
+        Alphas.append([1,0.75,0.3][ind_fuel])
+
+for ind_region, region in enumerate(Regions):
+        data.append([])
+        variable  = 'Carbon Capture'
+
+        for ind_scenario, scenario in enumerate(Scenarios):
+            data[-1].append(
+                -Imaclim_data[(Imaclim_data.Region==region)&(Imaclim_data.Scenario==scenario)&(Imaclim_data.Variables==variable)].loc[:,[str(x) for x in range(2020,2101)]].sum(axis=1).values[0]
+            )
+
+        Colors.append(pf.defining_regions_colors()[region])
+        Alphas.append(0.6)
+
+# df = pd.DataFrame(data,columns=Scenarios,index=list(np.array([[x,y] for y in fuels+['Carbon Capture'] for x in Regions]).T))
+for norm in [0,1]:
+    ax = axs[norm,1]
+    df = pd.DataFrame(data,columns=Scenarios,index=list(np.array([[x,y] for y in fuels+['Carbon Capture'] for x in Regions]).T))
+    cum_data = [[df.loc[(slice(None),fuel),scenario].sum() for scenario in Scenarios] for fuel in fuels+['Carbon Capture']]
+    if norm == 1:
+        data  = (df.loc[(slice(None),fuels),:]/df.loc[(slice(None),fuels),:].sum(axis=0)).values 
+        cum_data = np.array(cum_data[:-1])/df.loc[(slice(None),fuels),:].sum(axis=0).values
+        # data=np.array(data)/np.array(data).sum(axis=0)
+    data_shape, data_stack = pf.get_data_stack(data)
+    alines = []
+
+    for i in np.arange(0, data_shape[0]):
+        alines.append([
+            ax.bar([1,2,3],
+                    data[i],
+                    bottom=data_stack[i],
+                    width=0.8,
+                    alpha=1,
+                    color = Colors[i]
+                    )
+        ])
+
+    data_shape, data_stack = pf.get_data_stack(cum_data)
+    alines = []
+    for i in np.arange(0, data_shape[0]):
+        alines.append([
+            ax.bar(np.array([1,2,3])-0.25,
+                    cum_data[i],
+                    bottom=data_stack[i],
+                    width=0.3,
+                    color = ['k','dimgrey','silver','green'][i]
+                    )
+        ])
+
+[ax.set_ylim([-.7e6,3.1e6]) for ax in axs[0,:]]
+[ax.axhline(y=0,color='k',linewidth=0.75) for ax in axs.flatten()]
+[ax.set_ylim([0,1]) for ax in axs[1,:]]
+[ax.set_xticks([1,2,3]) for ax in axs.flatten()]
+[ax.set_xticklabels([]) for ax in axs[0,:]]
+[ax.set_xticklabels(['NPI','NDC-LTT','1.5°C']) for ax in axs[1,:]]
+[ax.set_yticks([]) for ax in axs[:,1]]
+axs[0,0].set_ylabel('MtC02')
+axs[1,0].set_ylabel('-')
+axs[0,0].set_title('Carbon consumption budget')
+axs[0,1].set_title('Carbon extraction budget')
 
 
-
-
+fig.set_tight_layout('tight')
