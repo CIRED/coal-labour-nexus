@@ -101,7 +101,7 @@ Scenarios_name = ['NPI','WO-NDCLTT','WO-15C']
 
 Regions = ['China','India']
 
-fig, axss = plt.subplots(6,3, figsize=(10, 15))
+fig, axss = plt.subplots(6,3, figsize=(20/2.54,15/2.54))
 
 for ind_scenario, scenario in enumerate(Scenarios):
     for ind_region, region in enumerate(Regions):
@@ -186,7 +186,7 @@ Regions = ['World','CHN','IND']
 variable = 'Price|Carbon'
 Scenarios = ['WO-NPi-ElecIndus','WO-NDCLTT-ElecIndus','WO-15C-ElecIndus']
 
-fig, axs = plt.subplots(1,3, figsize=(10, 10))
+fig, axs = plt.subplots(1,3, figsize=pf.standard_figure_size())
 
 for ind_region, region in enumerate(Regions):
     ax = axs[ind_region]
@@ -194,6 +194,7 @@ for ind_region, region in enumerate(Regions):
         y = Imaclim_data[(Imaclim_data['Scenario']==scenario) & (Imaclim_data['Region']==region) & (Imaclim_data['Variables']==variable)].values[0][5:]
         ax.plot(T, y, label=Scenarios[ind_scenario], color = Colors[scenario])
 
+[ax.text(0.02,0.92, label, transform=ax.transAxes, fontsize= 11, fontweight='bold', va='top', ha='left') for ax, label in zip(axs.flatten(),['a)','b)','c)'])]
 #%% 3) Mapping productivity
 Regions = np.unique(Result_data[~Result_data['Downscaled Region'].isin(
     ['China', 'India', 'Rest of Asia', 'Asia without Indonesia', 'Indonesia'])]
@@ -206,7 +207,7 @@ Ts = [2020, 2035, 2050]
 Scenarios = ['NPI','NPI_gem']
 Scenarios_names = ['NPI','NPI GEM']
 fig, axs = plt.subplots(1,len(Scenarios),
-                        figsize=(6.7, 5))
+                        figsize=pf.standard_figure_size())
 
 
 t = 2015
@@ -289,7 +290,7 @@ Scenarios = ['WO-NDCLTT-ElecIndus','WO-15C-ElecIndus']
 var = 'GDP|PPP'
 Regions = ['CHN','IND']
 
-fig, axs = plt.subplots(1,2, figsize=(20 / 2.54, 9 / 2.54))
+fig, axs = plt.subplots(1,2, figsize=pf.standard_figure_size())
 for ind_reg, region in enumerate(Regions):
     ax = axs[ind_reg]
     base = Imaclim_data[(Imaclim_data['Scenario']=='WO-NPi-ElecIndus') & (Imaclim_data['Region']==region) & (Imaclim_data['Variables']==var)].values[0][5:]
@@ -307,6 +308,7 @@ for ind_reg, region in enumerate(Regions):
     ax.set_ylabel('GDP loss [%]')
     ax.set_ylim([-30,15])
 
+[ax.text(0.02,0.92, label, transform=ax.transAxes, fontsize= 11, fontweight='bold', va='top', ha='left') for ax, label in zip(axs.flatten(),['a)','b)'])]
 
 # %% 5) Comparing power generation technology costs with AR6
 
@@ -330,7 +332,7 @@ df = pyam.read_iiasa( 'ar6-public', region=regions_ar6, variable=variables_ar6)
 
 Policies = ['P1a','P1b']
 
-fig, axs = plt.subplots(2,int(round(len(variables_ar6)/2)), figsize=(15, 10))
+fig, axs = plt.subplots(2,int(round(len(variables_ar6)/2)), figsize=pf.standard_figure_size())
 axs = axs.flatten()
 for ind_var, var in enumerate(variables_ar6):
     ax = axs[ind_var]
@@ -377,7 +379,7 @@ variables = [ 'Secondary Energy|Electricity|Biomass',
 
 colors = sns.color_palette()+sns.color_palette('pastel')
 
-fix, axs = plt.subplots(1,2,figsize=(10,15))
+fix, axs = plt.subplots(1,2,figsize=pf.standard_figure_size())
 
 for ind_country, country in enumerate(countries):
     ax = axs[ind_country]
@@ -402,12 +404,12 @@ T0s = [2020]*3
 T1s = [2030,2050,'80%']
 
 Xs = [
-    list(range(len(Scenarioss[0])))#,list(range(len(Scenarioss[0])))
+    list(range(len(Scenarioss[0])))
 ]*3
 data_save = {}
 fig, axs = plt.subplots(2,
                         len(T1s),
-                        figsize=(20 / 2.54, 9 / 2.54),
+                        figsize=pf.standard_figure_size(),
                         )
 for c_index in [0, 1]:
     x = 0
@@ -558,7 +560,7 @@ def calc_phase_down_rate(Imaclim_data,rolling_window):
     
 
 
-fix, axs = plt.subplots(1,len(Countries),figsize=(10,5.5))
+fix, axs = plt.subplots(1,len(Countries),figsize=pf.standard_figure_size())
 for ind_country, country in enumerate(Countries):
     ax = axs[ind_country]
     Phase_out_rate = calc_phase_down_rate(Imaclim_data,7)
@@ -578,6 +580,8 @@ for ind_country, country in enumerate(Countries):
     ax.set_title(['China','India'][ind_country])
     ax.set_xlabel('Phase down rate [-]')
     ax.set_ylabel('Share of workers going into unemployment')
+
+[ax.text(0.02,0.92, label, transform=ax.transAxes, fontsize= 11, fontweight='bold', va='top', ha='left') for ax, label in zip(axs.flatten(),['a)','b)'])]
 
 # %% 11) Plotting energy mix
 
@@ -619,7 +623,7 @@ Scenarios = [
 t0s = [2020,2020,2020, 2020]
 t1s = [2030,2040,2050, '80%']
 
-fig, axs = plt.subplots(2,2,figsize=(17/2.54,8.5/2.54))#len(t0s))
+fig, axs = plt.subplots(2,2,figsize=pf.standard_figure_size())
 
 for ind_t,(t0,t1) in enumerate(zip(t0s,t1s)):
     ax = axs.flatten()[ind_t]
@@ -690,10 +694,12 @@ for ind_t,(t0,t1) in enumerate(zip(t0s,t1s)):
         ax.set_xticklabels([])
     else:
         ax.set_xlabel('Share layoffs not finding employment')
+[ax.text(0.02,0.92, label, transform=ax.transAxes, fontsize= 11, fontweight='bold', va='top', ha='left') for ax, label in zip(axs.flatten(),['a)','b)','c)','d)'])]
+
 fig.set_tight_layout('tight')
-#%%
-Emi_coef = pd.read_csv("data/Emissions_coefficients.csv")
 #%% 13) Consumption and extraction budget
+Emi_coef = pd.read_csv("data/Emissions_coefficients.csv")
+
 
 Regions = [x for x in Imaclim_data.Region.unique() if x!='World']
 Scenarios = [
@@ -701,7 +707,7 @@ Scenarios = [
             'WO-NDCLTT-ElecIndus',
             'WO-15C-ElecIndus',
             ]
-fig, axs = plt.subplots(2,2)
+fig, axs = plt.subplots(2,2,figsize=pf.standard_figure_size())
 
 ax = axs[0,0]
 
@@ -812,5 +818,7 @@ axs[1,0].set_ylabel('-')
 axs[0,0].set_title('Carbon consumption budget')
 axs[0,1].set_title('Carbon extraction budget')
 
+[ax.text(0.02,0.92, label, transform=ax.transAxes, fontsize= 11, fontweight='bold', va='top', ha='left') for ax, label in zip(axs.flatten(),['a)','b)','c)','d)'])]
 
 fig.set_tight_layout('tight')
+# %%

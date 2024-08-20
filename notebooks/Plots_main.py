@@ -117,7 +117,7 @@ Rlinestyle = ['-','--']*3
 Rlinewidth = [1, 0.75]* 3
 Rmarker = ['', '', '', '', ''] * 3
 
-fig, axs = plt.subplots(1, 2, figsize=(27 / 3, 13 / 3))
+fig, axs = plt.subplots(1, 2, figsize=pf.standard_figure_size())
 for c_index in [0, 1]:
     country = Countries[c_index]
 
@@ -350,7 +350,7 @@ Xs = [
 data_save = {}
 fig, axs = plt.subplots(2,
                         len(T1s),
-                        figsize=(20 / 2.54, 9 / 2.54),
+                        figsize=pf.standard_figure_size(),
                         )
 for c_index in [0, 1]:
     x = 0
@@ -605,7 +605,7 @@ Scenarios = ['NPI','NDC','NZ']
 Scenarios_names = ['NPI','NDC','NZ']
 fig, axs = plt.subplots(len(Scenarios),
                         len(Ts),
-                        figsize=(6.7, 5))
+                        figsize=pf.standard_figure_size())
 
 
 Data_Chn = []
@@ -726,7 +726,7 @@ Xs = [
 data_save = {}
 fig, axs = plt.subplots(2,
                         3,
-                        figsize=(29.21 / 2.54, 13.09 / 2.54),
+                        figsize=pf.standard_figure_size(),
       )
 
 for c_index in [0, 1]:
@@ -810,7 +810,7 @@ Colorss = [sns.color_palette()[x] for x in [0,7,1]]+[sns.color_palette("pastel")
 
 Regions = ['World', 'CHN', 'IND','USA','AFR','EUR']
 
-fig, axs = plt.subplots(len(Regions), len(Scenarios), figsize=(20, 12))
+fig, axs = plt.subplots(len(Regions), len(Scenarios), figsize=pf.standard_figure_size())
 
 for ind_region, region in enumerate(Regions):
     for ind_output, scenario in enumerate(Scenarios):
