@@ -754,7 +754,7 @@ for ind_fuel, fuel in enumerate(fuels):
             data[-1].append(
                 coef*Imaclim_data[(Imaclim_data.Region==region)&(Imaclim_data.Scenario==scenario)&(Imaclim_data.Variables==variable)].loc[:,[str(x) for x in range(2020,2101)]].sum(axis=1).values[0]/mtoe2ej/1e6
             )
-            # df.loc[(region,fuel),scenario] = data[-1][-1]
+            
 
         Colors.append(pf.defining_regions_colors()[region])
         Alphas.append([1,0.75,0.3][ind_fuel])
@@ -771,7 +771,6 @@ for ind_region, region in enumerate(Regions):
         Colors.append(pf.defining_regions_colors()[region])
         Alphas.append(0.6)
 
-# df = pd.DataFrame(data,columns=Scenarios,index=list(np.array([[x,y] for y in fuels+['Carbon Capture'] for x in Regions]).T))
 for norm in [0,1]:
     ax = axs[norm,1]
     df = pd.DataFrame(data,columns=Scenarios,index=list(np.array([[x,y] for y in fuels+['Carbon Capture'] for x in Regions]).T))
@@ -779,7 +778,7 @@ for norm in [0,1]:
     if norm == 1:
         data  = (df.loc[(slice(None),fuels),:]/df.loc[(slice(None),fuels),:].sum(axis=0)).values 
         cum_data = np.array(cum_data[:-1])/df.loc[(slice(None),fuels),:].sum(axis=0).values
-        # data=np.array(data)/np.array(data).sum(axis=0)
+        
     data_shape, data_stack = pf.get_data_stack(data)
     alines = []
 
@@ -806,6 +805,16 @@ for norm in [0,1]:
                     )
         ])
 
+
+share_data = 100*pd.DataFrame(data,columns=Scenarios,index=list(np.array([[x,y] for y in fuels for x in Regions]).T))
+share_data=share_data.reset_index().set_axis(labels=['Region','Fuel']+Scenarios,axis=1)
+share_data=share_data.groupby("Region").sum()
+ch_0 = share_data.loc['CHN',Scenarios[0]]
+ch_2 = share_data.loc['CHN',Scenarios[2]]
+in_0 = share_data.loc['IND',Scenarios[0]]
+in_2 = share_data.loc['IND',Scenarios[2]]
+print(f'The share of the extraction budget goes from {ch_0:0.1f}% to {ch_2:0.1f}% in China and {in_0:0.1f}% to {in_2:0.1f}% in India')
+
 [ax.set_ylim([-.7e6,3.1e6]) for ax in axs[0,:]]
 [ax.axhline(y=0,color='k',linewidth=0.75) for ax in axs.flatten()]
 [ax.set_ylim([0,1]) for ax in axs[1,:]]
@@ -821,4 +830,21 @@ axs[0,1].set_title('Carbon extraction budget')
 [ax.text(0.02,0.92, label, transform=ax.transAxes, fontsize= 11, fontweight='bold', va='top', ha='left') for ax, label in zip(axs.flatten(),['a)','b)','c)','d)'])]
 
 fig.set_tight_layout('tight')
-# %%
+# %% Meant to be temporary, but checking evolution of key parameters in Madhya Pradesh
+
+Scenarios = ['NPI','NDC','NZ']
+
+region = 'Madhya Pradesh'
+
+variables = ['Employment|Coal|Downscaled','Unemployment|Downscaled','Employment|Agriculture|Downscaled','Employment|Services|Downscaled','Employment|Industry|Downscaled']
+
+fig, axs = plt.subplots(1,len(variables))
+for ind_var, variable in enumerate(variables):
+    ax = axs[ind_var]
+    for ind_scenario, scenario in enumerate(Scenarios):
+        y = [
+            float(x) for x in Result_data[(Result_data['Downscaled Region']==region)&
+                                        (Result_data.Scenario==scenario)&
+                                        (Result_data.Variable==variable)].values[0][6:]
+        ]
+        ax.plot(T,y,color=pf.defining_waysout_colour_scheme()[scenario])

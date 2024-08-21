@@ -18,7 +18,8 @@ import seaborn as sns
 import pyam
 # Plotting functions
 import plotting_functions as pf
-
+# import importlib
+# importlib.reload(pf)
 
 
 # Setting plotting parameters
@@ -381,8 +382,7 @@ print(f'- In the long run, the 1.5°C scenario leads to a significant share of l
 
 # %% 3) Exposure and vulnerability of regions to coal transition betweeen 2020 and 2050
 # ===========================================================================================================================
-import importlib
-importlib.reload(pf)
+
 
 t = 2015
 CHN_share_LF=100*float(Result_data[(Result_data.Scenario=='NPI')&(Result_data['Downscaled Region']=='China')&(Result_data.Variable=='Employment|Coal|Downscaled')][str(t)].values[0])/float(Result_data[(Result_data.Scenario=='NPI')&(Result_data['Downscaled Region']=='China')&(Result_data.Variable=='Labour Force|Downscaled')][str(t)].values[0])
@@ -414,11 +414,19 @@ Data_Chn=[]
 Data_Ind=[]
 key_data = {}
     
-for s_index, scenario in enumerate(Scenarios):
-    for ind_t, t1 in enumerate(['80%',2040]):
+
+for ind_t, t1 in enumerate(['80%',2040]):
+    for s_index, scenario in enumerate(Scenarios):
         ax = axs1[ind_t][s_index]
         Asia_Data, key_data, cmap_zip = pf.plot_vulnerability_bivariate(scenario, ax, Regions, Result_data, T, t0, t1, Asia, s_index, key_data, Scenarios_names)
-    
+
+        if (t1 == '80%')&(s_index==2):
+            region='China'
+            print(f"Where the national average vulnerability score moves from {(100*key_data[region+'0']['coordinates'][0]):0f}% to {(100*key_data[region+'1']['coordinates'][0]):0f}% in China")
+            region='India'
+            print(f"it only moves from {(100*key_data[region+'0']['coordinates'][0]):0f}% to {(100*key_data[region+'1']['coordinates'][0]):0f}% in India")
+        
+
 cmap, b_xlim, b_ylim, n = cmap_zip
 
 # ====================================
@@ -431,7 +439,6 @@ cax.set_xlabel('Share of laid-off workers \n going into unemployment',fontsize=1
 cax.set_ylabel('Decrease in relative coal jobs',fontsize=11)
 
 
-print(cax.get_xlim())
 
 # If the number of color box is more than 5, not all ticks are shown
 if min(n)>5:    
@@ -440,7 +447,6 @@ if min(n)>5:
     cax.set_xticklabels(["50%","70%"],fontsize=11)
     cax.set_yticklabels(["0.1%","0.5%","1%","5%"],fontsize=11)
 
-print(cax.get_xlim())
 # Plotting evolution of results across main scenarios for the main regions
 for region in ['China','India','Shanxi','Inner Mongolia','Jharkhand','Odisha','Chhattisgarh']:
     xs = []
@@ -449,14 +455,10 @@ for region in ['China','India','Shanxi','Inner Mongolia','Jharkhand','Odisha','C
         xs.append(pf.interpol(key_data[region+str(s_index)]['coordinates'][0],b_xlim,cax.get_xlim()))
         ys.append(pf.interpol(key_data[region+str(s_index)]['coordinates'][1],b_ylim,cax.get_ylim()))
     
-    if region=='China':
-        print(xs)
-        print(ys)
-    
+
     cax.plot(xs,ys,color='k',alpha=0.25,zorder=-0,linewidth=5)
 
 
-print(cax.get_xlim())
 # Scattering the results for the main regions
 for region in ['China','India','Shanxi','Inner Mongolia','Jharkhand','Odisha','Chhattisgarh']:
     xs = []
@@ -464,10 +466,8 @@ for region in ['China','India','Shanxi','Inner Mongolia','Jharkhand','Odisha','C
     for s_index in [0,1,2]:
         xs.append(pf.interpol(key_data[region+str(s_index)]['coordinates'][0],b_xlim,cax.get_xlim()))
         ys.append(pf.interpol(key_data[region+str(s_index)]['coordinates'][1],b_ylim,cax.get_ylim()))
-        cax.scatter(xs[-1],ys[-1],color=Colors[key_data[region+str(s_index)]['Scenario']],marker='o',s=0.3*key_data[region+str(s_index)]['destruction']/1200,edgecolor='k',linewidth=0.4,zorder=1)
-    if region=='China':
-        print(xs)
-        print(ys)
+        cax.scatter(xs[-1],ys[-1],color=Colors[key_data[region+str(s_index)]['Scenario']],marker='o',s=0.4*key_data[region+str(s_index)]['destruction']/1200,edgecolor='k',linewidth=0.4,zorder=1)
+
     cax.annotate(region,(xs[0],ys[0]-0.1),ha='center',va='top',fontsize=8)
 
 
