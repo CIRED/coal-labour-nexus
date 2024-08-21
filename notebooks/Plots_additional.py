@@ -821,7 +821,7 @@ print(f'The share of the extraction budget goes from {ch_0:0.1f}% to {ch_2:0.1f}
 [ax.set_xticks([1,2,3]) for ax in axs.flatten()]
 [ax.set_xticklabels([]) for ax in axs[0,:]]
 [ax.set_xticklabels(['NPI','NDC-LTT','1.5°C']) for ax in axs[1,:]]
-[ax.set_yticks([]) for ax in axs[:,1]]
+[ax.set_yticklabels([]) for ax in axs[:,1]]
 axs[0,0].set_ylabel('MtC02')
 axs[1,0].set_ylabel('-')
 axs[0,0].set_title('Carbon consumption budget')
@@ -830,21 +830,91 @@ axs[0,1].set_title('Carbon extraction budget')
 [ax.text(0.02,0.92, label, transform=ax.transAxes, fontsize= 11, fontweight='bold', va='top', ha='left') for ax, label in zip(axs.flatten(),['a)','b)','c)','d)'])]
 
 fig.set_tight_layout('tight')
-# %% Meant to be temporary, but checking evolution of key parameters in Madhya Pradesh
+# %% Plotting job lost to productivity growth since 2020
 
-Scenarios = ['NPI','NDC','NZ']
 
-region = 'Madhya Pradesh'
+Colors = pf.defining_waysout_colour_scheme()
+Countries = ['India', 'China']
+Regions = [
+    Result_data[(Result_data['Region'] == ['IND', 'CHN'][x])&(~Result_data['Downscaled Region'].isin(['China', 'India']))]['Downscaled Region'].unique()
+    for x in [0, 1]
+]
+Scen_type = ['NPI','NDC','NZ']
+Alt_type = [
+    '','_PG0']
+Scenarios = [x + y for x in Scen_type for y in Alt_type]
 
-variables = ['Employment|Coal|Downscaled','Unemployment|Downscaled','Employment|Agriculture|Downscaled','Employment|Services|Downscaled','Employment|Industry|Downscaled']
+Ralpha = [1, 0.75] * 3
+Rlinestyle = ['-']*3
+Rlinewidth = [1, 0.75]* 3
 
-fig, axs = plt.subplots(1,len(variables))
-for ind_var, variable in enumerate(variables):
-    ax = axs[ind_var]
-    for ind_scenario, scenario in enumerate(Scenarios):
-        y = [
-            float(x) for x in Result_data[(Result_data['Downscaled Region']==region)&
-                                        (Result_data.Scenario==scenario)&
-                                        (Result_data.Variable==variable)].values[0][6:]
-        ]
-        ax.plot(T,y,color=pf.defining_waysout_colour_scheme()[scenario])
+fig, axs = plt.subplots(1, 2, figsize=pf.standard_figure_size())
+for c_index in [0, 1]:
+    country = Countries[c_index]
+
+    Variable = "Employment|Coal|Downscaled"
+
+    ax = axs[c_index]
+
+    ax.axhline(y=0, color='k', linewidth=0.8)
+
+    Scen_y = []
+    for j,scenario in enumerate(Scenarios):
+        COAL_emp = Result_data[(Result_data['Downscaled Region'] == country)
+                               & (Result_data['Variable'] == Variable) &
+                               (Result_data['Scenario'] == Scenarios[j])]
+
+        y = np.zeros(86)
+        for region in Regions[c_index]:
+            y = y + np.array(Result_data[
+                (Result_data['Downscaled Region'] == region)
+                & (Result_data['Variable'] == Variable)
+                &
+                (Result_data['Scenario'] == Scenarios[j])].values[0][6:]) / 1e6
+
+        Scen_y.append(y)
+
+
+    Scen_y = pd.DataFrame(Scen_y, index=Scenarios)
+
+    for Scen_type_ind,scenario in enumerate(Scen_type):
+        y = (Scen_y.loc[scenario+'_PG0',:]-Scen_y.loc[scenario,:]).values[T<2070]
+        
+        ax.plot(T[T < 2070],
+                y,
+                color=Colors[scenario],
+                linestyle=Rlinestyle[Scen_type_ind],
+                linewidth=Rlinewidth[Scen_type_ind],
+                alpha=Ralpha[Scen_type_ind],)
+        
+        ax.scatter(T[T < 2070][y==max(y)],max(y),s=10,color=Colors[scenario])
+        ax.text(T[T < 2070][y==max(y)],max(y),f'({T[T < 2070][y==max(y)][0]},{max(y):0.2f})',fontsize=6)
+
+    # Formatting axes
+    ax.set_title(country)
+    ax.set_ylabel('Million workers')
+    ax.set_ylim([-0.25, 3])
+    ax.axvline(x=2020, color='k', linestyle='--', linewidth=0.8)
+
+alines = []
+
+for Scen_type_ind, scenario in enumerate(Scen_type):
+    # scenario = Scenarios[Scen_type_ind]
+    alines.append(axs[0].plot([], [],
+                              color=Colors[scenario.split('_')[0]],
+                              label=['NPi','NPi no growth','NDC','NDC no growth','1.5°C no growth','1.5°C'][Scen_type_ind],
+                              linestyle=Rlinestyle[Scen_type_ind],
+                linewidth=Rlinewidth[Scen_type_ind],
+                alpha=Ralpha[Scen_type_ind] )[0])
+
+
+
+labels = [la.get_label() for la in alines]
+handles = [label for label in alines]
+
+fig.legend(handles=alines,
+           labels=labels,
+           loc='lower center',
+           ncol=3,
+           bbox_to_anchor=(0.5, -0.1),
+           frameon=False)
