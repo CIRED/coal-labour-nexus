@@ -134,7 +134,7 @@ def plot_vulnerability_bivariate(scenario, ax, Regions, Result_data, T, t0, T1, 
     of regions of China and India to the coal transition
     """
     # Defining the colormap
-    b_xlim = [0.3,0.85]
+    b_xlim = [0.3,0.81]
     b_ylim = [np.log(3e-4),np.log(0.065)]
     b_ylim = [np.log(9e-4),np.log(0.08)]
 

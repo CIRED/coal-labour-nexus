@@ -381,6 +381,9 @@ print(f'- In the long run, the 1.5°C scenario leads to a significant share of l
 
 # %% 3) Exposure and vulnerability of regions to coal transition betweeen 2020 and 2050
 # ===========================================================================================================================
+import importlib
+importlib.reload(pf)
+
 t = 2015
 CHN_share_LF=100*float(Result_data[(Result_data.Scenario=='NPI')&(Result_data['Downscaled Region']=='China')&(Result_data.Variable=='Employment|Coal|Downscaled')][str(t)].values[0])/float(Result_data[(Result_data.Scenario=='NPI')&(Result_data['Downscaled Region']=='China')&(Result_data.Variable=='Labour Force|Downscaled')][str(t)].values[0])
 IND_share_LF=100*float(Result_data[(Result_data.Scenario=='NPI')&(Result_data['Downscaled Region']=='India')&(Result_data.Variable=='Employment|Coal|Downscaled')][str(t)].values[0])/float(Result_data[(Result_data.Scenario=='NPI')&(Result_data['Downscaled Region']=='India')&(Result_data.Variable=='Labour Force|Downscaled')][str(t)].values[0])
@@ -401,7 +404,7 @@ t0 = 2019
 t1 = 2050
 
 # Creating the figure
-fig1, axs1 = plt.subplots(2,3, figsize=(20/2.54,13/2.54))#figsize=(18/1.6, 15.3/1.6))
+fig1, axs1 = plt.subplots(2,3, figsize=(20/2.54,13/2.54))
 axs = [axs1]
 axs = np.array(axs).flatten()
 
@@ -427,14 +430,17 @@ cax = xycmap.bivariate_legend(ax=cax, sx=Asia_Data.dropna(subset=['share_n_findi
 cax.set_xlabel('Share of laid-off workers \n going into unemployment',fontsize=11)
 cax.set_ylabel('Decrease in relative coal jobs',fontsize=11)
 
+
+print(cax.get_xlim())
+
 # If the number of color box is more than 5, not all ticks are shown
 if min(n)>5:    
-    cax.set_xticks([pf.interpol(x,b_xlim,cax.get_xlim()) for x in [0.5,0.7,0.9]])
+    cax.set_xticks([pf.interpol(x,b_xlim,cax.get_xlim()) for x in [0.5,0.7]])
     cax.set_yticks([pf.interpol(np.log(x),b_ylim,cax.get_ylim()) for x in [1e-3,5e-3,0.01,0.05]])
-    cax.set_xticklabels(["50%","70%","90%"],fontsize=11)
+    cax.set_xticklabels(["50%","70%"],fontsize=11)
     cax.set_yticklabels(["0.1%","0.5%","1%","5%"],fontsize=11)
 
-
+print(cax.get_xlim())
 # Plotting evolution of results across main scenarios for the main regions
 for region in ['China','India','Shanxi','Inner Mongolia','Jharkhand','Odisha','Chhattisgarh']:
     xs = []
@@ -442,10 +448,15 @@ for region in ['China','India','Shanxi','Inner Mongolia','Jharkhand','Odisha','C
     for s_index in [0,1,2]:
         xs.append(pf.interpol(key_data[region+str(s_index)]['coordinates'][0],b_xlim,cax.get_xlim()))
         ys.append(pf.interpol(key_data[region+str(s_index)]['coordinates'][1],b_ylim,cax.get_ylim()))
+    
+    if region=='China':
+        print(xs)
+        print(ys)
+    
     cax.plot(xs,ys,color='k',alpha=0.25,zorder=-0,linewidth=5)
 
 
-
+print(cax.get_xlim())
 # Scattering the results for the main regions
 for region in ['China','India','Shanxi','Inner Mongolia','Jharkhand','Odisha','Chhattisgarh']:
     xs = []
@@ -453,7 +464,10 @@ for region in ['China','India','Shanxi','Inner Mongolia','Jharkhand','Odisha','C
     for s_index in [0,1,2]:
         xs.append(pf.interpol(key_data[region+str(s_index)]['coordinates'][0],b_xlim,cax.get_xlim()))
         ys.append(pf.interpol(key_data[region+str(s_index)]['coordinates'][1],b_ylim,cax.get_ylim()))
-        cax.scatter(xs[-1],ys[-1],color=Colors[key_data[region+str(s_index)]['Scenario']],marker='o',s=key_data[region+str(s_index)]['destruction']/1200,edgecolor='k',linewidth=0.4,zorder=1)
+        cax.scatter(xs[-1],ys[-1],color=Colors[key_data[region+str(s_index)]['Scenario']],marker='o',s=0.3*key_data[region+str(s_index)]['destruction']/1200,edgecolor='k',linewidth=0.4,zorder=1)
+    if region=='China':
+        print(xs)
+        print(ys)
     cax.annotate(region,(xs[0],ys[0]-0.1),ha='center',va='top',fontsize=8)
 
 
