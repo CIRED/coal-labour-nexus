@@ -771,3 +771,69 @@ def finding_emp_threshold_date(data,threshold,T):
 #                                                              Additional
 #==================================================================================================================================================================================================================
 #==================================================================================================================================================================================================================
+
+def halve_axes(fig,ax):
+    pos = ax.get_position()
+
+    # Calculate the new height (half of the original axis height)
+    new_height = pos.height / 2
+
+    # Create the two new axes, one on top of the other
+    ax1 = fig.add_axes([pos.x0, pos.y0 + new_height, pos.width, new_height])  # Top half
+    ax2 = fig.add_axes([pos.x0, pos.y0, pos.width, new_height])  # Bottom half
+
+    # Optionally, remove the original axis if you no longer need it
+    ax.remove()
+
+    return ax1,ax2
+
+def Grid_Unemployment_Destruction(fig,axs,T,Result_data,ind_country):
+    [ax.axis('off') for ax in axs.flatten()]
+    regions = defining_province_grid()[ind_country]
+
+    Scenarios = ['NPI','NDC','NZ']
+
+    t0 = 2020
+    t1 = 2050
+
+    for region, position in regions.items():
+        ax = axs[position]
+        ax1, ax2 = halve_axes(fig,ax)
+        
+        variable = 'Unemployment|Downscaled'
+
+        for ind_scenario, scenario in enumerate(Scenarios):
+            ax1.plot(
+                T[(t0<=T)&(T<=t1)],
+                Result_data[
+                    (Result_data['Downscaled Region']==region)&
+                    (Result_data.Scenario==scenario)&
+                    (Result_data.Variable==variable)
+                ].values[0][6:][(t0<=T)&(T<=t1)],
+                color=defining_waysout_colour_scheme()[scenario]
+            )
+
+        
+        
+        variable = 'Employment|Coal|Downscaled'
+        for ind_scenario, scenario in enumerate(Scenarios):
+            
+            y = Result_data[
+                    (Result_data['Downscaled Region']==region)&
+                    (Result_data.Scenario==scenario)&
+                    (Result_data.Variable==variable)
+                ].apply(pd.to_numeric,errors='coerce')
+            
+            
+            if y.sum(axis=1).values[0]==0:
+                ax2.set_facecolor('lightgrey')
+            else:
+                ax2.plot(
+                    T[(t0<=T)&(T<=t1)],
+                    -y.diff(axis=1).rolling(axis=1,window=4,center=True).mean().values[0][6:][(t0<=T)&(T<=t1)],
+                    color=defining_waysout_colour_scheme()[scenario]
+                )
+        
+        ax1.set_xticks([])
+        ax2.text(0.05,0.05,region,transform=ax.transAxes, fontsize= 11, fontweight='bold')
+    return fig

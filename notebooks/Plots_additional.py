@@ -830,7 +830,7 @@ axs[0,1].set_title('Carbon extraction budget')
 [ax.text(0.02,0.92, label, transform=ax.transAxes, fontsize= 11, fontweight='bold', va='top', ha='left') for ax, label in zip(axs.flatten(),['a)','b)','c)','d)'])]
 
 fig.set_tight_layout('tight')
-# %% Plotting job lost to productivity growth since 2020
+# %% 14 ) Plotting job lost to productivity growth since 2020
 
 
 Colors = pf.defining_waysout_colour_scheme()
@@ -918,3 +918,18 @@ fig.legend(handles=alines,
            ncol=3,
            bbox_to_anchor=(0.5, -0.1),
            frameon=False)
+
+
+#%% 15) Comparing Unemployment and destruction by region 
+
+
+
+
+
+
+
+for ind_country, country in enumerate(['CHN','IND']):
+    fig, axs = plt.subplots(8,[6,8][ind_country],figsize=(20,20))
+    
+    pf.Grid_Unemployment_Destruction(fig,axs,T,Result_data,ind_country)
+
