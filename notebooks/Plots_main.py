@@ -103,9 +103,9 @@ Colors = pf.defining_waysout_colour_scheme()
 #%% 1) Employment trajectories
 # ===========================================================================================================================
 
-Countries = ['India', 'China']
+Countries = ['China','India']
 Regions = [
-    Result_data[(Result_data['Region'] == ['IND', 'CHN'][x])&(~Result_data['Downscaled Region'].isin(['China', 'India']))]['Downscaled Region'].unique()
+    Result_data[(Result_data['Region'] == ['CHN','IND'][x])&(~Result_data['Downscaled Region'].isin(['China', 'India']))]['Downscaled Region'].unique()
     for x in [0, 1]
 ]
 Scen_type = ['NPI','NDC','NZ']
@@ -216,6 +216,9 @@ alines.append(axs[0].scatter([], [],
                         s=20,
                         alpha = 0.5,
                         label='-95% from 2020'))
+
+
+[ax.text(0.02,0.92, label, transform=ax.transAxes, fontsize= 11, fontweight='bold', va='top', ha='left') for ax, label in zip(axs.flatten(),['a)','b)'])]
 
 
 labels = [la.get_label() for la in alines]
