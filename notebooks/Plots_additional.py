@@ -834,9 +834,9 @@ fig.set_tight_layout('tight')
 
 
 Colors = pf.defining_waysout_colour_scheme()
-Countries = ['India', 'China']
+Countries = ['China','India']
 Regions = [
-    Result_data[(Result_data['Region'] == ['IND', 'CHN'][x])&(~Result_data['Downscaled Region'].isin(['China', 'India']))]['Downscaled Region'].unique()
+    Result_data[(Result_data['Region'] == ['CHN','IND'][x])&(~Result_data['Downscaled Region'].isin(['China', 'India']))]['Downscaled Region'].unique()
     for x in [0, 1]
 ]
 Scen_type = ['NPI','NDC','NZ']
@@ -848,15 +848,14 @@ Ralpha = [1, 0.75] * 3
 Rlinestyle = ['-']*3
 Rlinewidth = [1, 0.75]* 3
 
-fig, axs = plt.subplots(1, 2, figsize=pf.standard_figure_size())
+fig, axs = plt.subplots(2, 2, figsize=pf.standard_figure_size())
 for c_index in [0, 1]:
     country = Countries[c_index]
 
     Variable = "Employment|Coal|Downscaled"
 
-    ax = axs[c_index]
+    ax = axs[0][c_index]
 
-    ax.axhline(y=0, color='k', linewidth=0.8)
 
     Scen_y = []
     for j,scenario in enumerate(Scenarios):
@@ -892,23 +891,45 @@ for c_index in [0, 1]:
 
     # Formatting axes
     ax.set_title(country)
-    ax.set_ylabel('Million workers')
+    
     ax.set_ylim([-0.25, 3])
-    ax.axvline(x=2020, color='k', linestyle='--', linewidth=0.8)
 
-alines = []
+    ax = axs[1][c_index]
+    for Scen_type_ind,scenario in enumerate(Scen_type):
+        y = -Scen_y.loc[scenario,:].diff().values[T<2070]
+        ax.plot(T[T < 2070],
+                y,
+                color=Colors[scenario],
+                linewidth=0.6)
+        y = -Scen_y.loc[scenario,:].diff().rolling(window=5,center=True).mean()[T<2070]    
+        ax.plot(T[T < 2070],
+                y,
+                color=Colors[scenario],
+                linewidth=1)
+        
+        average_destruction_rate = -Scen_y.loc[scenario,:].diff()[(T>=2020)&(T<2030)].mean()
+        print(f'In {country}, between 2020 and 2030 under {scenario}: {(100*average_destruction_rate):0.1f} thousand jobs are destroyed per annum')
 
+    ax.set_ylim([-0.02,0.3])
+
+alines=[]
 for Scen_type_ind, scenario in enumerate(Scen_type):
     # scenario = Scenarios[Scen_type_ind]
-    alines.append(axs[0].plot([], [],
+    alines.append(axs[0][0].plot([], [],
                               color=Colors[scenario.split('_')[0]],
-                              label=['NPi','NPi no growth','NDC','NDC no growth','1.5°C no growth','1.5°C'][Scen_type_ind],
+                              label=['NPi','NDC','1.5°C'][Scen_type_ind],
                               linestyle=Rlinestyle[Scen_type_ind],
                 linewidth=Rlinewidth[Scen_type_ind],
                 alpha=Ralpha[Scen_type_ind] )[0])
 
+[ax.axvline(x=2020, color='k', linestyle='--', linewidth=0.8) for ax in axs.flatten()]
+[ax.axhline(y=0, color='k', linewidth=0.8) for ax in axs.flatten()]
 
+axs[0,0].set_ylabel('Million workers')
+axs[1,0].set_ylabel('Million workers per year')
 
+[ax.set_yticklabels([]) for ax in axs[:,1]]
+[ax.text(0.02,0.92, label, transform=ax.transAxes, fontsize= 11, fontweight='bold', va='top', ha='left') for ax, label in zip(axs.flatten(),['a)','b)','c)','d)'])]
 labels = [la.get_label() for la in alines]
 handles = [label for label in alines]
 
