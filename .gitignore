@@ -11,3 +11,5 @@
 
 
 **/.svn/
+**/__pycache__
+**/figures
