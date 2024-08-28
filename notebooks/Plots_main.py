@@ -36,7 +36,6 @@ formatter.set_powerlimits((-1, 1))
 
 
 
-
 # ===========================================================================================================================
 #%% Importing module results
 T = range(2015, 2101)
@@ -230,6 +229,10 @@ fig.legend(handles=alines,
            ncol=3,
            bbox_to_anchor=(0.5, -0.15),
            frameon=False)
+
+
+
+pf.save_figure(fig,'1_Employment','svg')
 
 # %% 2) Mobility of laid-off coal workers between 2020-2030 and 2020-2050.
 # ===========================================================================================================================

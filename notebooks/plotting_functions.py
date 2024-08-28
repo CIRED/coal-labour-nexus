@@ -8,6 +8,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import xycmap
 import seaborn as sns
+import os
+
+
+
 
 
 #=========================================================================================================
@@ -17,6 +21,17 @@ def standard_figure_size():
     height= 9
     cm2in = 1/2.54
     return (width*cm2in,height*cm2in)
+
+
+#=========================================================================================================
+# Save figure
+def save_figure(fig,name,format):
+    figure_path = os.path.join('figures')
+
+    if not os.path.exists(figure_path):
+        os.makedirs(figure_path)
+
+    fig.savefig(os.path.join(figure_path,name+'.'+format))
 
 
 #=========================================================================================================

@@ -1,6 +1,10 @@
 /node_modules
 *.ipynb
 *.csv
+*.svg
+*.jpeg
+*.jpg
+*.png
 
 /notebooks/shapefiles
 /notebooks/__pycache__
@@ -13,3 +17,4 @@
 **/.svn/
 **/__pycache__
 **/figures
+
