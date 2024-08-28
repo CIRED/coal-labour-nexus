@@ -196,7 +196,7 @@ for Scen_type_ind in [0,2,4,1,3,5]:
     scenario = Scenarios[Scen_type_ind]
     alines.append(axs[0].plot([], [],
                               color=Colors[scenario.split('_')[0]],
-                              label=['NPi','NPi no growth','NDC','NDC no growth','1.5°C no growth','1.5°C'][Scen_type_ind],
+                              label=['NPi','NPi no growth','NDC-LTT','NDC-LTT no growth','1.5°C no growth','1.5°C'][Scen_type_ind],
                               linestyle=Rlinestyle[Scen_type_ind],
                 linewidth=Rlinewidth[Scen_type_ind],
                 alpha=Ralpha[Scen_type_ind] )[0])
@@ -218,7 +218,7 @@ alines.append(axs[0].scatter([], [],
                         label='-95% from 2020'))
 
 
-[ax.text(0.02,0.92, label, transform=ax.transAxes, fontsize= 11, fontweight='bold', va='top', ha='left') for ax, label in zip(axs.flatten(),['a)','b)'])]
+[ax.text(0.02,0.96, label, transform=ax.transAxes, fontsize= 11, fontweight='bold', va='top', ha='left') for ax, label in zip(axs.flatten(),['a)','b)'])]
 
 
 labels = [la.get_label() for la in alines]
@@ -228,7 +228,7 @@ fig.legend(handles=alines,
            labels=labels,
            loc='lower center',
            ncol=3,
-           bbox_to_anchor=(0.5, -0.1),
+           bbox_to_anchor=(0.5, -0.15),
            frameon=False)
 
 # %% 2) Mobility of laid-off coal workers between 2020-2030 and 2020-2050.
@@ -239,16 +239,13 @@ Countries = ['China', 'India']
 nls = [6, 8]
 
 Scenarioss = [ ['NPI','NDC','NZ']]*3
-Scenarioss_name = [[ 'NPI', 'NDC\nLTT', '1.5°C']]*3
-
-# t0 = 2020
-# t1 = 2050
+Scenarioss_name = [[ 'NPi', 'NDC\nLTT', '1.5°C']]*3
 
 T0s = [2020]*3
 T1s = [2030,2050,'80%']
 
 Xs = [
-    list(range(len(Scenarioss[0])))#,list(range(len(Scenarioss[0])))
+    list(range(len(Scenarioss[0])))
 ]*3
 data_save = {}
 fig, axs = plt.subplots(2,
@@ -260,11 +257,10 @@ for c_index in [0, 1]:
     provinces = Provinces[c_index]
     region = ['China', 'India'][c_index]
     
-    # for stype_index in [0,1]:
     for stype_index, (t0,T1) in enumerate(zip(T0s,T1s)):
         ax = axs[c_index][stype_index]
-        # t0 = 2020
-        # t1 = [2030,2050][stype_index]
+
+
         if stype_index == 0:
             ax.set_ylabel(region+'\nMillion workers')
         Scenarios = Scenarioss[stype_index]
@@ -290,8 +286,8 @@ for c_index in [0, 1]:
 
 
             if (Scenario == 'NPI')&(stype_index == 1):
-                u = round(data_save[(region, Scenario,2050)][3]*1000)
-                print(f'In {region}, {u} thousand workers will not find new employment by 2050')
+                u = round(data_save[(region, Scenario,2030)][3]*1000)
+                print(f'Under {Scenario}, in {region}, {u} thousand workers will not find new employment by 2030')
 
 
         alines = [x[0] for x in alines]
@@ -310,6 +306,9 @@ for c_index in [0, 1]:
             )
 
         ax.set_ylim([-0.5, 3.8])
+
+[ax.set_yticklabels([]) for ax in axs[:,[1,2]].flatten()]
+[ax.text(0.02,0.96, label, transform=ax.transAxes, fontsize= 11, fontweight='bold', va='top', ha='left') for ax, label in zip(axs.flatten(),['a)','b)','c)','d)','e)','f)'])]
 
 fig.legend(handles=alines,
            labels=labs,
@@ -483,7 +482,7 @@ alines.append(cax.scatter([], [], color='white', marker='o',s=0))
 alines.append(cax.scatter([], [], color='Grey', marker='o',edgecolor='k',linewidth=0.4, s=2e5/1200))
 alines.append(cax.scatter([], [], color='Grey', marker='o',edgecolor='k',linewidth=0.4, s=4e5/1200))
 alines.append(cax.scatter([], [], color='Grey', marker='o',edgecolor='k',linewidth=0.4, s=6e5/1200))
-labels = ['NPi','NDC LTS', '1.5°C','Job losses \n [people]','200k','400k','600k']
+labels = ['NPi','NDC-LTT', '1.5°C','Job losses \n [people]','200k','400k','600k']
 cax.legend(handles=alines,
            labels=labels,
            loc='center right',
@@ -595,7 +594,7 @@ alines.append(cax.scatter([], [], color='white', marker='o',s=0))
 alines.append(cax.scatter([], [], color='Grey', marker='o',edgecolor='k',linewidth=0.4, s=2e5/1200))
 alines.append(cax.scatter([], [], color='Grey', marker='o',edgecolor='k',linewidth=0.4, s=4e5/1200))
 alines.append(cax.scatter([], [], color='Grey', marker='o',edgecolor='k',linewidth=0.4, s=6e5/1200))
-labels = ['NPi','NDC LTS', '1.5°C','NPi GEM','NDC GEM','1.5°C GEM','Job losses \n [people]','200k','400k','600k']
+labels = ['NPi','NDC-LTT', '1.5°C','NPi GEM','NDC GEM','1.5°C GEM','Job losses \n [people]','200k','400k','600k']
 cax.legend(handles=alines,
            labels=labels,
            loc='center right',
@@ -717,7 +716,7 @@ for s_i, scenario in enumerate(Scenarios):
             u2050 = us[(country,scenario)][2050-2015]-us[(country,'NPI')][2050-2015]
             print(f'In 2050 in scenario {scenario} the unemployment rate in {country} has increased by is {u2050:.1f} points')
 
-        axn.plot(T,u,label=country,color=Colors[scenario],linestyle=['-','--'][c_i])
+        axn.plot(T[T < 2070],u[T < 2070],label=country,color=Colors[scenario],linestyle=['-','--'][c_i])
 
 axn.set_ylabel('Unemployment rate [%]')
 axn.set_ylim([0,14])
@@ -787,6 +786,10 @@ for c_index in [0, 1]:
         ax.set_ylim([-0.6, 2.38])
         ax.set_ylim([-0.6, 3.8])
 
+[ax.set_yticklabels([]) for ax in axs[:,[1,2]].flatten()]
+[ax.text(0.02,0.96, label, transform=ax.transAxes, fontsize= 11, fontweight='bold', va='top', ha='left') for ax, label in zip(axs.flatten(),['a)','b)','c)','d)','e)','f)'])]
+
+
 fig.legend(handles=alines,
            labels=labs,
            loc='center left',
@@ -811,7 +814,7 @@ time_gap = 10
 Ts = range(2015,2095,time_gap)
 Regions = ['CHN','IND']
 Scenarios =['WO-NPi-ElecIndus', 'WO-NDCLTT-ElecIndus', 'WO-15C-ElecIndus']
-Outputs_name = ['NPi','NDC LTT','1.5°C']
+Outputs_name = ['NPi','NDC-LTT','1.5°C']
 
 Variabless = [
     'Import|Coal',

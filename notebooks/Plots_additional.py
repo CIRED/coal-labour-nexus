@@ -177,7 +177,7 @@ for ind_scenario, scenario in enumerate(Scenarios):
         if (ind_scenario == 0) & (ind_region == 0):
             [axs[x].set_title(['Imaclim','ILO','Module'][x]) for x, ax in enumerate(axs)]
         
-        axs[0].set_ylabel(['NPI','NDC','NZ'][ind_scenario]+' '+['China','India'][ind_region])
+        axs[0].set_ylabel(['NPi','NDC-LTT','NZ'][ind_scenario]+' '+['China','India'][ind_region])
         [ax.set_ylim([0,[1100,1200][ind_region]]) for ax in axs]
 
 
@@ -284,7 +284,7 @@ for s_index, scenario in enumerate(Scenarios):
 
     ax.set_title(Scenarios_names[s_index])
     
-# %% 4) Macroeconomic cost
+# %% 4) "Macroeconomic cost"
 
 Scenarios = ['WO-NDCLTT-ElecIndus','WO-15C-ElecIndus']
 var = 'GDP|PPP'
@@ -293,22 +293,52 @@ Regions = ['CHN','IND']
 fig, axs = plt.subplots(1,2, figsize=pf.standard_figure_size())
 for ind_reg, region in enumerate(Regions):
     ax = axs[ind_reg]
+    ax.axhline(y=0,color='k',linewidth=0.75,linestyle='--')
     base = Imaclim_data[(Imaclim_data['Scenario']=='WO-NPi-ElecIndus') & (Imaclim_data['Region']==region) & (Imaclim_data['Variables']==var)].values[0][5:]
+    
+    df_base = Imaclim_data[(Imaclim_data['Scenario']=='WO-NPi-ElecIndus') & (Imaclim_data['Region']==region) & (Imaclim_data['Variables']==var)].apply(pd.to_numeric,errors='coerce').reset_index(drop=True)
+    
     for ind_scenario, scenario in enumerate(Scenarios):
         y = (Imaclim_data[(Imaclim_data['Scenario']==scenario) & (Imaclim_data['Region']==region) & (Imaclim_data['Variables']==var)].values[0][5:]-base)/base*100
 
-        y2 = [np.mean(y[i-4:i+4]) for i in range(4,len(y)-4)]
-        ax.plot(T, y, label=Scenarios[ind_scenario], color = Colors[scenario], linewidth= 0.5)
-        ax.plot(T[4:-4], y2, label=Scenarios[ind_scenario], color = Colors[scenario])
+        df = Imaclim_data[(Imaclim_data['Scenario']==scenario) & (Imaclim_data['Region']==region) & (Imaclim_data['Variables']==var)].apply(pd.to_numeric,errors='coerce').reset_index(drop=True)
+
+        result = (df-df_base)/df_base*100
+        smoothed_result = result.rolling(axis=1,window=8,center=True).mean()
+        ax.plot(T[T<2070], [result.loc[0,str(x)] for x in T[T<2070]], label=Scenarios[ind_scenario], color = Colors[scenario], linewidth= 0.5)
+        ax.plot(T[T<2070], [smoothed_result.loc[0,str(x)] for x in T[T<2070]], label=Scenarios[ind_scenario], color = Colors[scenario])
 
 
-
-        print(f'In 2050 the GDP loss in {region} is {y2[2050-2015-4]:.0f}% for {Scenarios[ind_scenario]}')
+        value = smoothed_result['2050'].values[0]
+        print(f'In 2050 the GDP loss in {region} is {value:.0f}% for {Scenarios[ind_scenario]}')
     ax.set_title(['China','India'][ind_reg])
     ax.set_ylabel('GDP loss [%]')
     ax.set_ylim([-30,15])
 
-[ax.text(0.02,0.92, label, transform=ax.transAxes, fontsize= 11, fontweight='bold', va='top', ha='left') for ax, label in zip(axs.flatten(),['a)','b)'])]
+[ax.text(0.02,0.96, label, transform=ax.transAxes, fontsize= 11, fontweight='bold', va='top', ha='left') for ax, label in zip(axs.flatten(),['a)','b)'])]
+
+alines = []
+for Scen_type_ind, scenario in enumerate(Scenarios):
+    alines.append(axs[0].plot([],[],
+                              color=Colors[scenario],
+                              label=['NDC-LTT','1.5°C'][Scen_type_ind],
+                              linewidth = 0.5
+                             ))
+    alines.append(axs[0].plot([],[],
+                              color=Colors[scenario],
+                              label=['NDC-LTT 8 year rolling average','1.5°C 8 year rolling average'][Scen_type_ind],
+                             ))
+
+labels = [la[0].get_label() for la in alines]
+handles = [label[0] for label in alines]
+
+fig.legend(handles=handles,
+           labels=labels,
+           loc='lower center',
+           ncol=2,
+           bbox_to_anchor=(0.5, -0.15),
+           frameon=False)
+
 
 # %% 5) Comparing power generation technology costs with AR6
 
@@ -398,7 +428,7 @@ Provinces = [{'Shanxi':'a'}, {'Jharkhand':'b'}]
 nls = [6, 8]
 
 Scenarioss = [ ['NPI','NDC','NZ']]*3
-Scenarioss_name = [[ 'NPI', 'NDC\nLTT', '1.5°C']]*3
+Scenarioss_name = [[ 'NPi', 'NDC\nLTT', '1.5°C']]*3
 
 T0s = [2020]*3
 T1s = [2030,2050,'80%']
@@ -464,6 +494,9 @@ for c_index in [0, 1]:
             )
 
         ax.set_ylim([-0.15, 1.1])
+[ax.set_yticklabels([]) for ax in axs[:,[1,2]].flatten()]
+[ax.text(0.02,0.96, label, transform=ax.transAxes, fontsize= 11, fontweight='bold', va='top', ha='left') for ax, label in zip(axs.flatten(),['a)','b)','c)','d)','e)','f)'])]
+
 
 fig.legend(handles=alines,
            labels=labs,
@@ -700,6 +733,8 @@ fig.set_tight_layout('tight')
 #%% 13) Consumption and extraction budget
 Emi_coef = pd.read_csv("data/Emissions_coefficients.csv")
 
+t0 = 2020
+t1 = 2101
 
 Regions = [x for x in Imaclim_data.Region.unique() if x!='World']
 Scenarios = [
@@ -707,6 +742,22 @@ Scenarios = [
             'WO-NDCLTT-ElecIndus',
             'WO-15C-ElecIndus',
             ]
+
+
+# We must first compute a emission coefficient for oil as this is not calculated direclty in Imaclim
+# In Imaclim emissions from oil depend on the burning of refined fuel as part of the ET sector
+
+scenario = Scenarios[0]
+Emi_2015 = Imaclim_data[(Imaclim_data.Region=='World')&(Imaclim_data.Scenario==scenario)&(Imaclim_data.Variables=='Emissions|CO2|Energy and Industrial Processes')].loc[:,[str(x) for x in range(t0,t1)]].sum(axis=1).values[0]
+fuels = ['Coal','Gas']
+for fuel in fuels:
+    variable  = 'Resource|Extraction|'+fuel
+    coef = Emi_coef[Emi_coef.Variable=='Coef|Emissions|CO2|'+fuel]['Value'].values[0]
+    Emi_2015-= coef*Imaclim_data[(Imaclim_data.Region=='World')&(Imaclim_data.Scenario==scenario)&(Imaclim_data.Variables==variable)].loc[:,[str(x) for x in range(t0,t1)]].sum(axis=1).values[0]/mtoe2ej/1e6
+    print(Emi_2015)
+variable = 'Resource|Extraction|Oil'
+Emi_coef.loc[Emi_coef.Variable=='Coef|Emissions|CO2|Oil','Value'] = Emi_2015/(Imaclim_data[(Imaclim_data.Region=='World')&(Imaclim_data.Scenario==scenario)&(Imaclim_data.Variables==variable)].loc[:,[str(x) for x in range(t0,t1)]].sum(axis=1).values[0]/mtoe2ej/1e6)
+
 fig, axs = plt.subplots(2,2,figsize=pf.standard_figure_size())
 
 ax = axs[0,0]
@@ -716,7 +767,7 @@ for ind_region, region in enumerate(Regions):
     data.append([])
     for ind_scenario, scenario in enumerate(Scenarios):
         data[-1].append(
-            Imaclim_data[(Imaclim_data.Region==region)&(Imaclim_data.Scenario==scenario)&(Imaclim_data.Variables=='Emissions|CO2|Energy and Industrial Processes')].loc[:,[str(x) for x in range(2020,2101)]].sum(axis=1).values[0]
+            Imaclim_data[(Imaclim_data.Region==region)&(Imaclim_data.Scenario==scenario)&(Imaclim_data.Variables=='Emissions|CO2|Energy and Industrial Processes')].loc[:,[str(x) for x in range(t0,t1)]].sum(axis=1).values[0]
         )
 
 for norm in [0,1]:
@@ -752,7 +803,7 @@ for ind_fuel, fuel in enumerate(fuels):
 
         for ind_scenario, scenario in enumerate(Scenarios):
             data[-1].append(
-                coef*Imaclim_data[(Imaclim_data.Region==region)&(Imaclim_data.Scenario==scenario)&(Imaclim_data.Variables==variable)].loc[:,[str(x) for x in range(2020,2101)]].sum(axis=1).values[0]/mtoe2ej/1e6
+                coef*Imaclim_data[(Imaclim_data.Region==region)&(Imaclim_data.Scenario==scenario)&(Imaclim_data.Variables==variable)].loc[:,[str(x) for x in range(t0,t1)]].sum(axis=1).values[0]/mtoe2ej/1e6
             )
             
 
@@ -765,7 +816,7 @@ for ind_region, region in enumerate(Regions):
 
         for ind_scenario, scenario in enumerate(Scenarios):
             data[-1].append(
-                -Imaclim_data[(Imaclim_data.Region==region)&(Imaclim_data.Scenario==scenario)&(Imaclim_data.Variables==variable)].loc[:,[str(x) for x in range(2020,2101)]].sum(axis=1).values[0]
+                -Imaclim_data[(Imaclim_data.Region==region)&(Imaclim_data.Scenario==scenario)&(Imaclim_data.Variables==variable)].loc[:,[str(x) for x in range(t0,t1)]].sum(axis=1).values[0]
             )
 
         Colors.append(pf.defining_regions_colors()[region])
@@ -789,21 +840,27 @@ for norm in [0,1]:
                     bottom=data_stack[i],
                     width=0.8,
                     alpha=1,
-                    color = Colors[i]
+                    color = Colors[i],
+                    label = (Regions*4)[i],
                     )
         ])
 
+    alines = alines[:len(Regions)]
+
     data_shape, data_stack = pf.get_data_stack(cum_data)
-    alines = []
     for i in np.arange(0, data_shape[0]):
         alines.append([
             ax.bar(np.array([1,2,3])-0.25,
                     cum_data[i],
                     bottom=data_stack[i],
                     width=0.3,
-                    color = ['k','dimgrey','silver','green'][i]
+                    color = ['k','dimgrey','silver','green'][i],
+                    label = ['Coal','Oil','Gas','Sequestration'][i]
                     )
         ])
+    
+    if norm==0:
+        salines = alines
 
 
 share_data = 100*pd.DataFrame(data,columns=Scenarios,index=list(np.array([[x,y] for y in fuels for x in Regions]).T))
@@ -820,12 +877,27 @@ print(f'The share of the extraction budget goes from {ch_0:0.1f}% to {ch_2:0.1f}
 [ax.set_ylim([0,1]) for ax in axs[1,:]]
 [ax.set_xticks([1,2,3]) for ax in axs.flatten()]
 [ax.set_xticklabels([]) for ax in axs[0,:]]
-[ax.set_xticklabels(['NPI','NDC-LTT','1.5°C']) for ax in axs[1,:]]
+[ax.set_xticklabels(['NPi','NDC-LTT','1.5°C']) for ax in axs[1,:]]
 [ax.set_yticklabels([]) for ax in axs[:,1]]
 axs[0,0].set_ylabel('MtC02')
 axs[1,0].set_ylabel('-')
-axs[0,0].set_title('Carbon consumption budget')
+axs[0,0].set_title('Net carbon consumption budget')
 axs[0,1].set_title('Carbon extraction budget')
+
+alines = [x[0] for x in salines]
+labs = [la[0].get_label() for la in salines]
+fig.legend(handles=alines,
+           labels=labs,
+           loc='lower center',
+           ncol=6,
+           bbox_to_anchor=(0.5, -0.2),
+           frameon=False)
+
+
+
+
+
+
 
 [ax.text(0.02,0.92, label, transform=ax.transAxes, fontsize= 11, fontweight='bold', va='top', ha='left') for ax, label in zip(axs.flatten(),['a)','b)','c)','d)'])]
 
@@ -917,7 +989,7 @@ for Scen_type_ind, scenario in enumerate(Scen_type):
     # scenario = Scenarios[Scen_type_ind]
     alines.append(axs[0][0].plot([], [],
                               color=Colors[scenario.split('_')[0]],
-                              label=['NPi','NDC','1.5°C'][Scen_type_ind],
+                              label=['NPi','NDC-LTT','1.5°C'][Scen_type_ind],
                               linestyle=Rlinestyle[Scen_type_ind],
                 linewidth=Rlinewidth[Scen_type_ind],
                 alpha=Ralpha[Scen_type_ind] )[0])
