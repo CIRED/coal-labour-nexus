@@ -13,8 +13,6 @@ data1 <- read.csv(file)
 
 
 
-
-
 file_paths <- c(
     "coal.labour.nexus\\input\\IMACLIM_waysout_outputs_WO-NPi-ElecIndus.csv",
     "coal.labour.nexus\\input\\IMACLIM_waysout_outputs_WO-NDCLTT-ElecIndus.csv",
@@ -25,7 +23,7 @@ file_paths <- c(
 process_file <- function(file_path) {
   # Read the CSV file
   df <- read.csv(file_path)
-  variables = c("Value Added|Agriculture","Value Added|Services","Value Added|Industry","GDP|MER","GDP|PPP","Population")
+  variables = c("Value Added|Agriculture","Value Added|Services","Value Added|Industry and Construction","GDP|MER","GDP|PPP","Population")
   regions = c("CHN","IND")
   filtered_df <- df %>% filter(Variables %in% variables,
                                  Region %in% regions)
@@ -55,26 +53,18 @@ data2 <- data2 %>% pivot_wider(
 # data2['Value Added|Service'] = data2['GDP|MER'] - data2['Value Added|Agriculture'] - data2['Value Added|Industry']
 
 # Necessary to consider energy sectors as part of industry
-data2['Value Added|Industry'] = data2['GDP|MER'] - data2['Value Added|Agriculture'] - data2['Value Added|Services']
+# data2['Value Added|Industry'] = data2['GDP|MER'] - data2['Value Added|Agriculture'] - data2['Value Added|Services']
 
-data2['Share.AddedValue.Agri'] = data2['Value Added|Agriculture']/data2['GDP|MER']
-data2['Share.AddedValue.Indus'] = data2['Value Added|Industry']/data2['GDP|MER']
-data2['Share.AddedValue.Services'] = data2['Value Added|Services']/data2['GDP|MER']
+# data2['Share.AddedValue.Agri'] = data2['Value Added|Agriculture']/data2['GDP|MER']
+# data2['Share.AddedValue.Indus'] = data2['Value Added|Industry']/data2['GDP|MER']
+# data2['Share.AddedValue.Services'] = data2['Value Added|Services']/data2['GDP|MER']
 
 # # Depreciated calculations:
-# data2['Share.AddedValue.Agri'] = data2['Value Added|Agriculture']/(data2['Value Added|Agriculture']+data2['Value Added|Industry']+data2['Value Added|Services'])
-# data2['Share.AddedValue.Indus'] = data2['Value Added|Industry']/(data2['Value Added|Agriculture']+data2['Value Added|Industry']+data2['Value Added|Services'])
-# data2['Share.AddedValue.Services'] = data2['Value Added|Services']/(data2['Value Added|Agriculture']+data2['Value Added|Industry']+data2['Value Added|Services'])
+data2['Share.AddedValue.Agri'] = data2['Value Added|Agriculture']/(data2['Value Added|Agriculture']+data2['Value Added|Industry and Construction']+data2['Value Added|Services'])
+data2['Share.AddedValue.Indus'] = data2['Value Added|Industry and Construction']/(data2['Value Added|Agriculture']+data2['Value Added|Industry and Construction']+data2['Value Added|Services'])
+data2['Share.AddedValue.Services'] = data2['Value Added|Services']/(data2['Value Added|Agriculture']+data2['Value Added|Industry and Construction']+data2['Value Added|Services'])
 
 data2['ln_gdp_pc'] = log(data2["GDP|MER"]/data2['Population'])
-
-
-
-
-
-
-
-
 
 
 
@@ -143,7 +133,8 @@ df <- df %>%
     mutate(grp_growth = grp_pc_usd_2015 / lag(grp_pc_usd_2015) - 1) %>%
     ungroup()
 
-
+# ======================================================================================================================================
+# ======================================================================================================================================
 # Initial models
 
 data_china <- subset(data1, country == "China")
@@ -299,7 +290,7 @@ print(plot)
 
 
 
-output_path <- "structural.change/results/model_results.tex"
+output_path <- "structural.change/results/Multi_regional_model_results.tex"
 # Extract the directory path
 output_dir <- dirname(output_path)
 
@@ -313,6 +304,8 @@ if (!dir.exists(output_dir)) {
 stargazer(modelag.chn, modelserv.chn, modelag.ind, modelserv.ind, type = "latex",out =output_path)
 
 
+# ======================================================================================================================================
+# ======================================================================================================================================
 # Simplified model
 
 # Import Imaclim data
@@ -380,6 +373,11 @@ write.csv(coefficients_df, "structural.change/results/model_coefficients.csv", r
 stargazer(model_ag_c, model_serv_c, model_ag_i, model_serv_i, type = "text")
 
 
+output_path <- "structural.change/results/National_extended_model_results.tex"
+stargazer(model_ag_c, model_serv_c, model_ag_i, model_serv_i, type = "latex",out =output_path)
+
+
+
 	
 # Estimating the models
 
@@ -402,6 +400,11 @@ xa_i <- exp(za) * xm_i
 xs_i <- exp(zs) * xm_i
 
 
+
+
+# ====================================================================================================================================================================================
+# ====================================================================================================================================================================================
+# ====================================================================================================================================================================================
 # Plotting the results
 Cols <- c("#D62728", "#2CA02C", "#1F77B4")
 Sc <- c("WO-NPi-ElecIndus", "WO-NDCLTT-ElecIndus", "WO-15C-ElecIndus")
@@ -474,3 +477,8 @@ print(plot)
 
 ggsave('structural.change/figures/Scatter_structural_change_models.png',
         plot=plot)
+
+
+# ====================================================================================================================================================================================
+# ====================================================================================================================================================================================
+# ====================================================================================================================================================================================

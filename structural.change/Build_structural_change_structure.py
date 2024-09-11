@@ -98,9 +98,6 @@ for ind_country, country in enumerate(['CHN','IND']):
 
 #%%
 # Calculating regional structure and absolute production values
-coef_a_ss = [[-12.755,1.371,-0.049],[-2.788,0.199,-0.004]]
-coef_s_ss = [[4.996,-0.543,0.020],[2.514,-0.366,0.018]]
-
 coef_directory = 'results/'
 Model_coefs = pd.read_csv(coef_directory+'model_coefficients.csv',index_col=0)
 Model_coefs.loc['Model_AG_China',:].iloc[1:].values
@@ -124,8 +121,8 @@ ysave={}
 
 for ind_country, country in enumerate(['China','India']):
     cntry = ['CHN','IND'][ind_country]
-    coef_a_s = coef_a_ss[1-ind_country]
-    coef_s_s = coef_s_ss[1-ind_country]
+    coef_a_s = coef_a_ss[ind_country]
+    coef_s_s = coef_s_ss[ind_country]
     for ind_region, region in enumerate(DOSE[(DOSE.country==country) & (DOSE.year == year_base)]['region'].unique()):
         for ind_scenario, scenario in enumerate(['WO-NPi-ElecIndus', 'WO-NDCLTT-ElecIndus', 'WO-15C-ElecIndus']):
             # print(region)
@@ -164,9 +161,31 @@ for ind_var, variable in enumerate(['agriculture','industry','services']):
         for ind_country, country in enumerate(['China','India']):
             regions = DOSE[(DOSE.country==country) & (DOSE.year == year_base)]['region'].unique()
             for ind_region, region in enumerate(regions):
-                ax.plot(T,output[region,ind_scenario],color=['red','orange'][ind_country])
+                if region in ['Jharkhand', 'Bihar']:
+                    ax.plot(T,output[region,ind_scenario],color='k')
+                    ax.text(T[-1],output[region,ind_scenario][-1],region,horizontalalignment='right')
+                else:
+                    ax.plot(T,output[region,ind_scenario],color=['red','orange'][ind_country])
         ax.set_title(variable)
-        
+
+
+#%%
+# Plotting regional structural change
+fig, axs = plt.subplots(1,3,figsize=(10,6))
+scenario = 'WO-NPi-ElecIndus'
+for ind_var, variable in enumerate(['agriculture','industry','services']):
+    output = [xa,xm,xs][ind_var]
+    ax = axs[ind_var]#,ind_scenario]
+    for ind_country, country in enumerate(['China','India']):
+        regions = DOSE[(DOSE.country==country) & (DOSE.year == year_base)]['region'].unique()
+        for ind_region, region in enumerate(regions):
+            if region in ['Jharkhand', 'Bihar']:
+                ax.plot(ysave[region,ind_scenario],output[region,ind_scenario],color='k',linewidth=0.5)
+                # ax.text(T[-1],output[region,ind_scenario][-1],region,horizontalalignment='right')
+            else:
+                ax.plot(ysave[region,ind_scenario],output[region,ind_scenario],color=['red','orange'][ind_country],linewidth=0.25)
+    ax.set_title(variable)
+    
 
 
 #%%
@@ -199,7 +218,7 @@ for ind_var, variable in enumerate(['agriculture','industry','services']):
             regions = DOSE[(DOSE.country==country) & (DOSE.year == year_base)]['region'].unique()
 
             for ind_region, region in enumerate([x for x in regions[((regions!='Shanxi')|(regions!='Jharkhand')).any()][0]]+['Shanxi','Jharkhand']):
-                if region in ['Shanxi','Jharkhand']:
+                if region in ['Shanxi','Jharkhand','Bihar']:
                     linewidth = 1.5
                     ax.text(T[-1],output[region,ind_scenario][-1]/output[region,ind_scenario][0],region,horizontalalignment='right')
                     ax.plot(T,output[region,ind_scenario]/output[region,ind_scenario][0],color='k',linewidth=1.25)
@@ -279,7 +298,7 @@ fig.suptitle('Contribution China')
 # Importing original downscaling matrix to copy structures
 Econ_structure0 = pd.read_csv(os.path.join('..','coal.labour.nexus','data','Coal_labour','Downscaling','Econ_structure.csv'))
 
-output_path = os.path.join('output_data')
+output_path = os.path.join('..','coal.labour.nexus','data','Coal_labour','Downscaling')
 
 if not os.path.exists(output_path):
     os.makedirs(output_path) 
@@ -322,8 +341,9 @@ for ind_scenario, scenario in enumerate(['NPI','NDC','NZ']):
     Econ_structure1.to_csv(os.path.join(output_path,'Econ_structural_change_'+scenario+'.csv'))
 
     if scenario == "NPI":
-        Econ_structure1.to_csv('output_data\\Econ_structural_change.csv')
+        Econ_structure1.to_csv(os.path.join(output_path,'Econ_structural_change.csv'))
 
 # Saving headers
 econ_struct_indices = pd.DataFrame([''] + list(Econ_structure1.columns)).transpose()
 econ_struct_indices.to_csv(os.path.join(output_path, "Econ_structural_change_index.csv"),index=False,header=False)
+# %%

@@ -41,6 +41,8 @@ matplotlib.rcParams['font.family'] = 'Arial'
 #%%
 # Importing Imaclim results
 
+Colors = pf.defining_waysout_colour_scheme()
+
 T = range(2015, 2101)
 T = np.array(T)
 
@@ -104,6 +106,92 @@ DOSE['ln_gdp'] = np.log(DOSE.grp_pc_usd_2015)
 #%%
 #Libraries and functions necessary for ternary map
 
+
+def define_ternary_color_space(fig,subdivisions):
+    ax = fig.add_axes([0.1, 0.4, 0.2, 0.2], projection="ternary", ternary_sum=1.0)
+
+    ax.set_tlabel("Agriculture (%)")
+    ax.set_llabel("Industry (%)")
+    ax.set_rlabel("Services (%)")
+
+    ag_lim=[0, 0.6]
+    ind_lim=[0, 0.7]
+    ser_lim=[0.2, 1]
+
+    ag_lim=[0.0, 1]
+    ind_lim=[0, 1]
+    ser_lim=[0.0, 1]
+
+    # Define the color space
+    cs = [[0,209,208],[207,176,0],[255,128,247]]
+    col_bin = pd.DataFrame(columns=['color','ag','ind','serv'])
+    for i in range(0,subdivisions):
+        for j in range(0,subdivisions+1-i):
+            for k in range(max(0,subdivisions -2- i - j),min(subdivisions - i - j,subdivisions+1)):
+                new_row = {}
+                if sum([i,j,k]) == subdivisions-1:
+                    a = [(i+1)/subdivisions, i/subdivisions, i/subdivisions]
+                    b = [j/subdivisions, j/subdivisions, (j+1)/subdivisions]
+                    c = [k/subdivisions, (k+1)/subdivisions, k/subdivisions]
+                else:
+                    a = [(i+1)/subdivisions, i/subdivisions, (i+1)/subdivisions]
+                    b = [j/subdivisions, (j+1)/subdivisions, (j+1)/subdivisions]
+                    c = [(k+1)/subdivisions, (k+1)/subdivisions, k/subdivisions]
+                ct = [np.mean(a),np.mean(b),np.mean(c)]
+                # Define the transformed coordinates of the corners
+                corner1 = np.array([1+(1-ag_lim[1]), 0, -(1-ag_lim[1])])
+                corner2 = np.array([0, 1+(1-ind_lim[1]), -(1-ind_lim[1])])
+                corner3 = np.array([0, 0, 1])
+                # Calculate the transformed coordinates of ct
+                transformed_ct = ct[0] * corner1 + ct[1] * corner2 + ct[2] * corner3
+                # Calculate the color based on the transformed coordinates
+                color = tuple([min(max(x,0),1) for x in (transformed_ct[0] * np.array(cs[0]) +
+                            transformed_ct[1] * np.array(cs[1]) +
+                            transformed_ct[2] * np.array(cs[2])) / 255])
+                new_row['color'] = [color]
+                new_row['ag'] = max(a)
+                new_row['ind'] = max(b)
+                new_row['serv'] = max(c)
+                col_bin = pd.concat([col_bin,pd.DataFrame(new_row)], ignore_index=True)
+                ax.fill(a,b,c,
+                        color=color, alpha=1)
+    ax.set_tlim(ag_lim[0], ag_lim[1])
+    ax.set_llim(ind_lim[0], ind_lim[1])
+    ax.set_rlim(ser_lim[0], ser_lim[1])
+
+    return ax, col_bin
+
+
+def ternary_map(ax,df,t,scenario,variables,Regions,Asia,col_bin):
+
+    colors = []
+
+    for region in Regions:
+
+        filtered_df = df[(df.Scenario==scenario)&(df['Downscaled Region']==region)]
+        agri = float(filtered_df.loc[filtered_df.Variable==variables['agri'],str(t)].values[0])
+        indus = float(filtered_df.loc[filtered_df.Variable==variables['indus'],str(t)].values[0])
+        serv = float(filtered_df.loc[filtered_df.Variable==variables['serv'],str(t)].values[0])
+
+
+        color = col_bin_f(agri,indus,serv,col_bin, subdivisions)
+        colors.append(color)
+
+
+
+    Colors = pd.DataFrame(data=np.array([list(Regions), colors],dtype=object).transpose(),
+                        columns=['Region_Nam', 'colors'])
+
+    Asia_Data_with_colors = Asia[Asia['CNTRY_Name'].isin(['China','India'])].merge(Colors, on='Region_Nam', how='left').fillna('lightgrey')
+    Asia_Data_with_colors.plot(ax=ax, color=Asia_Data_with_colors['colors'],
+        edgecolor='black',linewidth=0.5,rasterized=True,alpha=1)
+    
+    Asia[Asia['region']=='Asia'].plot(ax=ax, color='whitesmoke', edgecolor='black',linewidth=0.5)
+    Asia[Asia['region']=='Disputed'].plot(ax=ax, color='whitesmoke', edgecolor='black', linestyle='--',linewidth=0.5)
+
+    return ax
+
+
 def col_bin_f(agri,indus,serv,col_bin, subdivisions):
     agri = np.ceil(agri*subdivisions)/subdivisions
     indus = np.ceil(indus*subdivisions)/subdivisions
@@ -119,60 +207,9 @@ fig = plt.figure(figsize=(25, 20))
 
 ts = [2015,2040,2060]
 
+subdivisions = 20
+ax, col_bin = define_ternary_color_space(fig,subdivisions)
 
-# Legend
-
-subdivisions = 20  # Number of subdivisions per axis
-ax = fig.add_axes([0.1, 0.4, 0.2, 0.2], projection="ternary", ternary_sum=1.0)
-
-ax.set_tlabel("Agriculture (%)")
-ax.set_llabel("Industry (%)")
-ax.set_rlabel("Services (%)")
-
-ag_lim=[0, 0.6]
-ind_lim=[0, 0.7]
-ser_lim=[0.2, 1]
-
-ag_lim=[0.0, 1]
-ind_lim=[0, 1]
-ser_lim=[0.0, 1]
-
-# Define the color space
-cs = [[0,209,208],[207,176,0],[255,128,247]]
-col_bin = pd.DataFrame(columns=['color','ag','ind','serv'])
-for i in range(0,subdivisions):
-     for j in range(0,subdivisions+1-i):
-        for k in range(max(0,subdivisions -2- i - j),min(subdivisions - i - j,subdivisions+1)):
-            new_row = {}
-            if sum([i,j,k]) == subdivisions-1:
-                a = [(i+1)/subdivisions, i/subdivisions, i/subdivisions]
-                b = [j/subdivisions, j/subdivisions, (j+1)/subdivisions]
-                c = [k/subdivisions, (k+1)/subdivisions, k/subdivisions]
-            else:
-                a = [(i+1)/subdivisions, i/subdivisions, (i+1)/subdivisions]
-                b = [j/subdivisions, (j+1)/subdivisions, (j+1)/subdivisions]
-                c = [(k+1)/subdivisions, (k+1)/subdivisions, k/subdivisions]
-            ct = [np.mean(a),np.mean(b),np.mean(c)]
-            # Define the transformed coordinates of the corners
-            corner1 = np.array([1+(1-ag_lim[1]), 0, -(1-ag_lim[1])])
-            corner2 = np.array([0, 1+(1-ind_lim[1]), -(1-ind_lim[1])])
-            corner3 = np.array([0, 0, 1])
-            # Calculate the transformed coordinates of ct
-            transformed_ct = ct[0] * corner1 + ct[1] * corner2 + ct[2] * corner3
-            # Calculate the color based on the transformed coordinates
-            color = tuple([min(max(x,0),1) for x in (transformed_ct[0] * np.array(cs[0]) +
-                        transformed_ct[1] * np.array(cs[1]) +
-                        transformed_ct[2] * np.array(cs[2])) / 255])
-            new_row['color'] = [color]
-            new_row['ag'] = max(a)
-            new_row['ind'] = max(b)
-            new_row['serv'] = max(c)
-            col_bin = pd.concat([col_bin,pd.DataFrame(new_row)], ignore_index=True)
-            ax.fill(a,b,c,
-                    color=color, alpha=1)
-ax.set_tlim(ag_lim[0], ag_lim[1])
-ax.set_llim(ind_lim[0], ind_lim[1])
-ax.set_rlim(ser_lim[0], ser_lim[1])
 
 # Plot evolution of key regions on the ternary plot
 for region in ['Shanxi','Jharkhand']:
@@ -200,40 +237,17 @@ ax.legend(handles, labels, loc='lower center', fontsize=12,
            frameon=False,
            )
 
-
+Va_Variables = {
+    "agri" :"Employment|Agriculture|Share|Downscaled",
+    'indus' : "Employment|Industry|Share|Downscaled",
+    "serv" : "Employment|Services|Share|Downscaled"
+}
 
 # Plot data    
 t = 2015
-# data = output
 ax = fig.add_axes([0.1,1-0.3, 0.25, 0.25])
+ax = ternary_map(ax, Result_data, t, scenario, Va_Variables, Regions, Asia,col_bin)
 
-Lperpop = []
-cntry = []
-cols = []
-
-for region in list(Regions):
-    c_index = 0 if region in Cregion else 1
-
-    agri = float(Result_data[(Result_data['Downscaled Region']==region)&(Result_data.Variable=="Employment|Agriculture|Share|Downscaled")&(Result_data.Scenario=='NPI')][str(t)].values[0])
-    indus = float(Result_data[(Result_data['Downscaled Region']==region)&(Result_data.Variable=="Employment|Industry|Share|Downscaled")&(Result_data.Scenario=='NPI')][str(t)].values[0])
-    serv = float(Result_data[(Result_data['Downscaled Region']==region)&(Result_data.Variable=="Employment|Services|Share|Downscaled")&(Result_data.Scenario=='NPI')][str(t)].values[0])
-
-    if ('nan' in [agri,indus,serv]) or pd.isnull(agri) or pd.isnull(indus) or pd.isnull(serv) :
-   
-        color = 'lightgrey'
-    else:
-        color = col_bin_f(agri,indus,serv,col_bin, subdivisions)
-    cols.append(color)
-
-Lperpop = pd.DataFrame(data=np.array([list(Regions), cols],dtype=object).transpose(),
-                    columns=['Region_Nam', 'colors'])
-
-Asia_Data_with_colors = Asia[Asia['CNTRY_Name'].isin(['China','India'])].merge(Lperpop, on='Region_Nam', how='left').fillna('lightgrey')
-Asia_Data_with_colors.plot(ax=ax, color=Asia_Data_with_colors['colors'],
-    edgecolor='black',linewidth=0.5,rasterized=True,alpha=1)
-
-Asia[Asia['region']=='Asia'].plot(ax=ax, color='whitesmoke', edgecolor='black',linewidth=0.5)
-Asia[Asia['region']=='Disputed'].plot(ax=ax, color='whitesmoke', edgecolor='black', linestyle='--',linewidth=0.5)
 
 ax.set_title(t)
 ax.set_xticks([])
@@ -245,34 +259,9 @@ ax.set_ylim([7,55])
 
 for ind_scenario, scenario in enumerate(['NPI','NPI_Pop','NPI_Dose','NPI_sc','NPI_dpop']):
     for t_index in range(len(ts)):
-        # ax = fig.add_axes([0.4+[0,0.25,0.5,0.75][ind_scenario],1-0.3*(t_index+1), 0.25, 0.25])
         ax = fig.add_axes([0.4+0.255*t_index, 0.7-0.25*ind_scenario, 0.25, 0.25])
         t = ts[t_index]
-        Lperpop = []
-        cntry = []
-        cols = []
-        
-        for region in list(Regions):
-            c_index = 0 if region in Cregion else 1
-            
-            agri =float(Result_data[(Result_data['Downscaled Region']==region)&(Result_data.Variable=="Employment|Agriculture|Share|Downscaled")&(Result_data.Scenario==scenario)][str(t)].values[0])
-            indus = float(Result_data[(Result_data['Downscaled Region']==region)&(Result_data.Variable=="Employment|Industry|Share|Downscaled")&(Result_data.Scenario==scenario)][str(t)].values[0])
-            serv = float(Result_data[(Result_data['Downscaled Region']==region)&(Result_data.Variable=="Employment|Services|Share|Downscaled")&(Result_data.Scenario==scenario)][str(t)].values[0])
-
-            color = col_bin_f(agri,indus,serv,col_bin, subdivisions)
-            cols.append(color)
-
-
-        
-        Lperpop = pd.DataFrame(data=np.array([list(Regions), cols],dtype=object).transpose(),
-                            columns=['Region_Nam', 'colors'])
-
-        Asia_Data_with_colors = Asia[Asia['CNTRY_Name'].isin(['China','India'])].merge(Lperpop, on='Region_Nam', how='left').fillna('lightgrey')
-        Asia_Data_with_colors.plot(ax=ax, color=Asia_Data_with_colors['colors'],
-            edgecolor='black',linewidth=0.5,rasterized=True,alpha=1)
-        
-        Asia[Asia['region']=='Asia'].plot(ax=ax, color='whitesmoke', edgecolor='black',linewidth=0.5)
-        Asia[Asia['region']=='Disputed'].plot(ax=ax, color='whitesmoke', edgecolor='black', linestyle='--',linewidth=0.5)
+        ax = ternary_map(ax, Result_data, t, scenario, Va_Variables, Regions, Asia,col_bin)
 
         if ind_scenario == 0:
             ax.set_title(t, fontsize=14)
@@ -570,12 +559,12 @@ for s_index in [0,1,2,3,4,5,6,7,8]:
                                     float(Lperpop[Lperpop['Region_Nam']==region]['ortho'].values[0])],
                                     'destruction':float(Lperpop[Lperpop['Region_Nam']==region]['destruction'].values[0])}
 
-    for region in ['China','India']:  
-        key_data[region+str(s_index)] = {'Region':'Average \n'+region,
-                                         'Scenario':s_index,
-                                        'coordinates':[pf.weighted_average(Lperpop, 'Lperpop','Workforce', ['IND' if region =='India' else 'CHN'][0]),
-                                                       pf.weighted_average(Lperpop, 'ortho','Workforce', ['IND' if region =='India' else 'CHN'][0])],
-                                    'destruction':pf.weighted_average(Lperpop, 'destruction','Workforce', ['IND' if region =='India' else 'CHN'][0])}
+    # for region in ['China','India']:  
+    #     key_data[region+str(s_index)] = {'Region':'Average \n'+region,
+    #                                      'Scenario':s_index,
+    #                                     'coordinates':[pf.weighted_average(Lperpop, 'Lperpop','Workforce', ['IND' if region =='India' else 'CHN'][0]),
+    #                                                    pf.weighted_average(Lperpop, 'ortho','Workforce', ['IND' if region =='India' else 'CHN'][0])],
+    #                                 'destruction':pf.weighted_average(Lperpop, 'destruction','Workforce', ['IND' if region =='India' else 'CHN'][0])}
         
 
     if s_index <3:
@@ -601,7 +590,7 @@ if min(n)>5:
     cax.set_xticklabels(["50%","70%","90%"],fontsize=11)
     cax.set_yticklabels(["0%","2.5%","5%"],fontsize=11)
 
-for region in ['China','India','Shanxi','Inner Mongolia','Jharkhand','Odisha','Chhattisgarh']:
+for region in ['Shanxi','Inner Mongolia','Jharkhand','Odisha','Chhattisgarh']:
     xs = []
     ys = []
     for s_index in [6,7,8]:
@@ -609,7 +598,7 @@ for region in ['China','India','Shanxi','Inner Mongolia','Jharkhand','Odisha','C
         ys.append(pf.interpol(key_data[region+str(s_index)]['coordinates'][1],b_ylim,cax.get_ylim()))
     cax.plot(xs,ys,color='k',alpha=0.25,zorder=-0,linewidth=5)
 
-for region in ['China','India','Shanxi','Inner Mongolia','Jharkhand','Odisha','Chhattisgarh']:
+for region in ['Shanxi','Inner Mongolia','Jharkhand','Odisha','Chhattisgarh']:
     xs = []
     ys = []
     for col_index in [0,1,2]:
@@ -638,3 +627,317 @@ cax.legend(handles=alines,
 
 
 #%% Plot unemployment
+
+
+
+#  Mapping Unemployment
+Regions = np.unique(Result_data[~Result_data['Downscaled Region'].isin(
+    ['China', 'India', 'Rest of Asia', 'Asia without Indonesia', 'Indonesia'])]
+                    ['Downscaled Region'].values)
+
+zlim = [0, 35]
+tickz = np.array([5]+list(np.arange(25,176,50)))
+
+Ts = [2020, 2035, 2050]
+Scenarios = ['NPI','NDC','NZ']
+Scenarios_names = ['NPI','NDC','NZ']
+
+Scenarios = ['NPI','NPI_Dose','NPI_sc','NDC','NDC_Dose','NDC_sc','NZ','NZ_Dose','NZ_sc']
+
+Scenarios = ['NPI','NDC','NZ',
+             'NPI_Dose','NDC_Dose','NZ_Dose',
+             'NPI_sc','NDC_sc','NZ_sc',
+             'NPI_Pop','NDC_Pop','NZ_Pop',
+             'NPI_dpop','NDC_dpop','NZ_dpop']
+
+Scenarios_names = Scenarios
+ind_t = 0
+t = 2040
+
+fig, axs = plt.subplots(5,
+                        3,
+                        figsize=(20/2.54,30/2.54))
+
+
+Data_Chn = []
+Data_Ind = []
+for s_index, scenario in enumerate(Scenarios):
+    ax = axs.flatten()[s_index]#[ind_t]
+    Unemployment = []
+    
+    for region in Regions:
+
+        U = Result_data[(Result_data['Downscaled Region'] == region)
+                        & (Result_data['Variable'] == 'Unemployment|Downscaled') &
+                        (Result_data['Scenario'] == scenario)].values[0][4+t-2015]
+        LF = Result_data[(Result_data['Downscaled Region'] == region)
+                        & (Result_data['Variable'] == 'Labour Force|Downscaled') &
+                        (Result_data['Scenario'] == scenario)].values[0][4+t-2015]
+        u = 100*U / LF
+
+        if u > 0:
+            Unemployment.append(float(u))
+        else:
+            Unemployment.append(np.nan)
+
+        if Result_data[(Result_data['Downscaled Region'] == region
+                        )]['Region'].values[0] == 'CHN':
+            Data_Chn.append(Unemployment[-1])
+        else:
+            Data_Ind.append(Unemployment[-1])
+    Unemployment = pd.DataFrame(data=np.array([list(Regions), Unemployment]).transpose(),
+                        columns=['Region_Nam', 'Unemployment'])
+
+    Asia_Data = Asia.merge(Unemployment, on='Region_Nam')
+
+    Asia_Data['Unemployment'] = pd.to_numeric(Asia_Data['Unemployment'], errors='coerce')
+
+    if s_index == 6:
+        cax = ax.inset_axes([-0.5, -2.5, 0.09, 3.5])
+        cax.set_ylabel('Unemployment rate [%]')
+
+    cbar = Asia_Data.plot(column='Unemployment',
+                        cmap='OrRd',
+                        legend=True,
+                        ax=ax,
+                        edgecolor='black',
+                        missing_kwds={
+                            "color": "lightgrey",
+                            "label": "Missing values",
+                        },
+                        vmin=zlim[0],
+                        vmax=zlim[1],
+                        linewidth=0.75,
+                        cax=cax,
+                        rasterized=True)
+
+    Asia[Asia['region']=='Asia'].plot(ax=ax, color='whitesmoke', edgecolor='black',linewidth=0.5)
+    Asia[Asia['region']=='Disputed'].plot(ax=ax, color='whitesmoke', edgecolor='black', linestyle='--',linewidth=0.5)
+    
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_xlim([65,140])
+    ax.set_ylim([7,55])
+
+    if ind_t == 0:
+        ax.set_ylabel(scenario)
+    if s_index == 0:
+        ax.set_title(str(t))
+
+cax.set_ylabel('Unemployment rate [%]')
+
+
+# Line graph of unemployment in China and India in all three scenarios
+axn = axs[3,2].inset_axes([1.3, -1, 3, 3])
+us = {}
+for s_i, scenario in enumerate(Scenarios[:3]):
+    
+    for c_i, country in enumerate(['China','India']):
+        U = np.array(Result_data[(Result_data['Downscaled Region'] == country)
+                            & (Result_data['Variable'] == 'Unemployment|Downscaled') &
+                            (Result_data['Scenario'] == scenario)].values[0][6:])
+        LF = np.array(Result_data[(Result_data['Downscaled Region'] == country)
+                            & (Result_data['Variable'] == 'Labour Force|Downscaled') &
+                            (Result_data['Scenario'] == scenario)].values[0][6:])
+        u = 100*U / LF
+        us[(country,scenario)] = u
+
+        if s_i !=0:
+            u2050 = us[(country,scenario)][2050-2015]-us[(country,'NPI')][2050-2015]
+            print(f'In 2050 in scenario {scenario} the unemployment rate in {country} has increased by is {u2050:.1f} points')
+
+        axn.plot(T[T < 2070],u[T < 2070],label=country,color=Colors[scenario.split('_')[0]],linestyle=['-','--'][c_i])
+
+axn.set_ylabel('Unemployment rate [%]')
+axn.set_ylim([0,14])
+
+[ax.text(0.02,0.96, label, transform=ax.transAxes, fontsize= 12, fontweight='bold', va='top', ha='left') for ax, label in zip([axs[0,0],axn],['a)','b)'])]
+# %% Plotting the map
+import importlib
+importlib.reload(pf)
+
+
+Regions = np.unique(Result_data[~Result_data['Downscaled Region'].isin(
+    ['China','India', 'Rest of Asia', 'Asia without Indonesia', 'Indonesia'])]
+                    ['Downscaled Region'].values)
+
+
+# Defining the scenarios
+Scenarios =  ['NPI','NDC','NZ',
+              'NPI_sc','NDC_sc','NZ_sc',
+              'NPI_Pop','NDC_Pop','NZ_Pop',]
+Scenarios_names = Scenarios
+
+t0 = 2019
+t1 = 2040
+
+# Creating the figure
+fig1, axs1 = plt.subplots(3,3, figsize=(20/2.54,13/2.54))
+axs = [axs1]
+axs = np.array(axs).flatten()
+
+
+# Initiating the data lists
+Data_Chn=[]
+Data_Ind=[]
+key_data = {}
+    
+for s_index, scenario in enumerate(Scenarios):
+    ax = axs[s_index]
+    Asia_Data, key_data, cmap_zip = pf.plot_vulnerability_bivariate(scenario, ax, Regions, Result_data, T, t0, t1, Asia, s_index, key_data, Scenarios_names)
+
+
+
+cmap, b_xlim, b_ylim, n = cmap_zip
+
+# ====================================
+# Legend
+
+
+Cscenario = [sns.color_palette()[x] for x in [0,1,4]]
+
+
+# Creating legend axis
+cax = fig1.add_axes([0.92, 0.3, 0.4, 0.4])
+cax = xycmap.bivariate_legend(ax=cax, sx=Asia_Data.dropna(subset=['share_n_finding','share_destruction'])['share_n_finding'].values, sy=Asia_Data.dropna(subset=['share_n_finding','share_destruction'])['share_destruction'].values, cmap=cmap, xlims=b_xlim,ylims=b_ylim) #xlims=(0,0.5),ylims=(0,0.06)
+cax.set_xlabel('Share of laid-off workers \n going into unemployment',fontsize=11)
+cax.set_ylabel('Decrease in relative coal jobs',fontsize=11)
+
+
+
+# If the number of color box is more than 5, not all ticks are shown
+if min(n)>5:    
+    cax.set_xticks([pf.interpol(x,b_xlim,cax.get_xlim()) for x in [0.5,0.7]])
+    cax.set_yticks([pf.interpol(np.log(x),b_ylim,cax.get_ylim()) for x in [1e-3,5e-3,0.01,0.05]])
+    cax.set_xticklabels(["50%","70%"],fontsize=11)
+    cax.set_yticklabels(["0.1%","0.5%","1%","5%"],fontsize=11)
+
+for region in ['Shanxi','Inner Mongolia','Jharkhand','Odisha','Chhattisgarh']:
+    xs = []
+    ys = []
+    for s_index in [2,5,8]:
+        xs.append(pf.interpol(key_data[region+str(s_index)]['coordinates'][0],b_xlim,cax.get_xlim()))
+        ys.append(pf.interpol(key_data[region+str(s_index)]['coordinates'][1],b_ylim,cax.get_ylim()))
+    cax.plot(xs,ys,color='k',alpha=0.25,zorder=-0,linewidth=5)
+
+for region in ['Shanxi','Inner Mongolia','Jharkhand','Odisha','Chhattisgarh']:
+    xs = []
+    ys = []
+    for col_index in [0,1,2]:
+        s_index = [2,5,8][col_index]
+        xs.append(pf.interpol(key_data[region+str(s_index)]['coordinates'][0],b_xlim,cax.get_xlim()))
+        ys.append(pf.interpol(key_data[region+str(s_index)]['coordinates'][1],b_ylim,cax.get_ylim()))
+        cax.scatter(xs[-1],ys[-1],color=Cscenario[col_index],marker='o',s=key_data[region+str(s_index)]['destruction']/1200,edgecolor='k',linewidth=0.4,zorder=1)
+    cax.annotate(region,(xs[0],ys[0]-0.1),ha='center',va='top',fontsize=8)
+
+
+[ax.set_title('') for ax in axs.flatten()]
+[ax.set_title(x) for ax, x in zip(axs.flatten()[:3],['NPi','NDC-LTT','1.5°C'])]
+[axs[y].set_ylabel(x) for y, x in zip([0,3,6],['Default','Structural Change','Population'])]
+
+
+
+alines = []
+alines.append(cax.scatter([], [], color='white', marker='o',s=0))
+alines.append(cax.scatter([], [], color=Cscenario[0], marker='o',edgecolor='k',linewidth=0.4, s=40))
+alines.append(cax.scatter([], [], color=Cscenario[1], marker='o',edgecolor='k',linewidth=0.4, s=40))
+alines.append(cax.scatter([], [], color=Cscenario[2], marker='o',edgecolor='k',linewidth=0.4, s=40))
+alines.append(cax.scatter([], [], color='white', marker='o',s=0))
+alines.append(cax.scatter([], [], color='Grey', marker='o',edgecolor='k',linewidth=0.4, s=2e5/1200))
+alines.append(cax.scatter([], [], color='Grey', marker='o',edgecolor='k',linewidth=0.4, s=4e5/1200))
+alines.append(cax.scatter([], [], color='Grey', marker='o',edgecolor='k',linewidth=0.4, s=6e5/1200))
+labels = ['1.5°C \nscenario:','Default', 'Structural Change', 'Population','Job losses \n [people]','200k','400k','600k']
+cax.legend(handles=alines,
+           labels=labels,
+           loc='center right',
+           bbox_to_anchor=(1.7, 0.5),
+           frameon=False,
+           fontsize=8)
+fig1.subplots_adjust(wspace=-0.2)
+
+
+
+#%% Mapping ternary plot of evolving economic structure based on Value added
+# Value added results are not outputed by coal labour nexus: 
+# so it is necessary to recompute them here using structural change indicators
+
+
+Scenarios_name = {'NPI':'WO-NPi-ElecIndus','NDC': 'WO-NDCLTT-ElecIndus','NZ': 'WO-15C-ElecIndus'}
+
+Sector_variables = {'indus': 'Industry and Construction','agric':'Agriculture','servi':'Services'}
+
+VA_Results = pd.DataFrame(columns = ['Scenario','Region', 'Downscaled Region', 'Variable']+[str(x) for x in range(2015,2101)])
+VA_Results=VA_Results.set_index(["Scenario","Region","Downscaled Region",'Variable']) 
+
+Countries = ['CHN','IND']
+
+for scenario, im_scenario in Scenarios_name.items():
+    Structure = pd.read_csv('output_data\Econ_structural_change_'+scenario+'.csv')
+    
+    for sector, variable in Sector_variables.items():
+        for country in Countries:
+            #national value added
+            NVA = Imaclim_data[(Imaclim_data.Variables=='Value Added|'+variable)&
+                        (Imaclim_data.Region==country)&
+                        (Imaclim_data.Scenario==Scenarios_name[scenario])]
+
+            # Downscaling keys
+            DK = Structure[(Structure.Region_name==country)&
+                        (~Structure.Subregion_name.isin(['China','India']))]
+            DK = DK.loc[:,['Subregion_name']+[sector + str(x) for x in range(2015,2101)]].set_index('Subregion_name') 
+            DK.columns = range(2015,2101)
+
+            for region in DK.index:
+                VA_Results.loc[(scenario,country,region,sector),:] =  (DK.loc[region,2015]*NVA.values[0][5:])
+                VA_Results.loc[(scenario+'_sc',country,region,sector),:] =  (DK.loc[region,:]*NVA.values[0][5:]).values
+            
+VA_Results=VA_Results.reset_index()
+#%%
+VAshare_results = pd.DataFrame(columns = ['Scenario', 'Downscaled Region','Variable']+[str(x) for x in range(2015,2101)] )
+VAshare_results=VAshare_results.set_index(['Scenario', 'Downscaled Region','Variable'])
+for region in VA_Results['Downscaled Region'].unique():
+    for scenario in VA_Results.Scenario.unique():
+        filtered = VA_Results[(VA_Results['Downscaled Region']==region)&
+                                (VA_Results.Scenario==scenario)]
+        for variable in VA_Results.Variable.unique():
+            tot = filtered.sum(axis=0).loc[[str(x) for x in range(2015,2101)]]
+            tot[tot==0]=1
+            VAshare_results.loc[(scenario,region,variable),:] = (filtered.loc[filtered.Variable==variable,[str(x) for x in range(2015,2101)]]/tot).values[0]
+VAshare_results=VAshare_results.reset_index()
+# %%
+
+Regions = Result_data[~Result_data['Downscaled Region'].isin(['China','India','Andaman & Nicobar Islands','Puducherry'])]['Downscaled Region'].unique()
+
+
+fig = plt.figure(figsize=(25, 20))
+
+ts = [2015,2040,2060]
+
+subdivisions = 20
+ax, col_bin = define_ternary_color_space(fig,subdivisions)
+
+Va_Variables = {
+    "agri" : "agric",
+    'indus' : "indus",
+    "serv" : 'servi'
+}
+
+
+
+for ind_scenario, scenario in enumerate(['NPI','NPI_sc']):
+    for t_index in range(len(ts)):
+        ax = fig.add_axes([0.4+0.255*t_index, 0.7-0.25*ind_scenario, 0.25, 0.25])
+        t = ts[t_index]
+        ax = ternary_map(ax, VAshare_results, t, scenario, Va_Variables, Regions, Asia,col_bin)
+
+        if ind_scenario == 0:
+            ax.set_title(t, fontsize=14)
+        if t_index == 0:
+            ax.set_ylabel(scenario, fontsize=14)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_xlim([65,140])
+        ax.set_ylim([7,55])
+
+
+# %%

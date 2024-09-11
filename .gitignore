@@ -6,6 +6,7 @@
 *.jpg
 *.png
 *.tex
+*.docx
 
 /notebooks/shapefiles
 /notebooks/__pycache__
