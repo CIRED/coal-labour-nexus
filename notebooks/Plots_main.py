@@ -41,7 +41,7 @@ formatter.set_powerlimits((-1, 1))
 T = range(2015, 2101)
 T = np.array(T)
 
-file_name = list(np.array([['../coal.labour.nexus/output/Downscaled_coal_labour_' + x + y + '.csv' for x in ['NDC','NPI','NZ']] for y in ['','_PG0','_R55','_gem','_EW']]).flatten())
+file_name = list(np.array([['../coal.labour.nexus/output/Downscaled_coal_labour_' + x + y + '.csv' for x in ['NDC','NPI','NZ']] for y in ['','_PG0','_R55','_gem','_EW','_min','_max']]).flatten())
 
 Result_data = []
 for file in file_name:
@@ -131,20 +131,41 @@ for c_index in [0, 1]:
 
 
     Scen_y = []
+    S_maxy = []
+    S_miny = []
     for j,scenario in enumerate(Scenarios):
         COAL_emp = Result_data[(Result_data['Downscaled Region'] == country)
                                & (Result_data['Variable'] == Variable) &
                                (Result_data['Scenario'] == Scenarios[j])]
 
         y = np.zeros(86)
+        if '_PG0' not in scenario:
+            miny = y
+            maxy = y 
         for region in Regions[c_index]:
             y = y + np.array(Result_data[
                 (Result_data['Downscaled Region'] == region)
                 & (Result_data['Variable'] == Variable)
                 &
                 (Result_data['Scenario'] == Scenarios[j])].values[0][6:]) / 1e6
+            
+            if '_PG0' not in scenario:
+                miny = miny + np.array(Result_data[
+                    (Result_data['Downscaled Region'] == region)
+                    & (Result_data['Variable'] == Variable)
+                    &
+                    (Result_data['Scenario'] == Scenarios[j]+'_min')].values[0][6:]) / 1e6
+                maxy = maxy + np.array(Result_data[
+                    (Result_data['Downscaled Region'] == region)
+                    & (Result_data['Variable'] == Variable)
+                    &
+                    (Result_data['Scenario'] == Scenarios[j]+'_max')].values[0][6:]) / 1e6
 
         Scen_y.append(y)
+        
+        if '_PG0' not in scenario:
+            S_maxy.append(maxy)
+            S_miny.append(miny)
 
         if Scenarios[j] in  ['NPI','NDC','NZ']:
             if COAL_emp.values[0][6:][
@@ -174,6 +195,8 @@ for c_index in [0, 1]:
                     print(f'In {country}, under NPI coal employment must be phased out by {T[COAL_emp.values[0][6:] < COAL_emp.values[0][6:][5] *0.05][0]}')
 
     Scen_y = pd.DataFrame(Scen_y, index=Scenarios)
+    S_maxy = pd.DataFrame(S_maxy, index=Scen_type)
+    S_miny = pd.DataFrame(S_miny, index=Scen_type)
 
     for Scen_type_ind,scenario in enumerate(Scenarios):
         ax.plot(T[T < 2070],
@@ -182,6 +205,14 @@ for c_index in [0, 1]:
                 linestyle=Rlinestyle[Scen_type_ind],
                 linewidth=Rlinewidth[Scen_type_ind],
                 alpha=Ralpha[Scen_type_ind],)
+        
+        if '_PG0' not in scenario:
+            ax.fill_between(T[T < 2070],
+                            S_miny.loc[scenario].values[T < 2070],
+                            S_maxy.loc[scenario].values[T < 2070],
+                            color=Colors[scenario.split('_')[0]],
+                            alpha = 0.2,
+                            zorder = 0)
 
     # Formatting axes
     ax.set_title(country)

@@ -305,7 +305,7 @@ for ind_reg, region in enumerate(Regions):
 
         result = (df-df_base)/df_base*100
         smoothed_result = result.rolling(axis=1,window=8,center=True).mean()
-        ax.plot(T[T<2070], [result.loc[0,str(x)] for x in T[T<2070]], label=Scenarios[ind_scenario], color = Colors[scenario], linewidth= 0.5)
+        # ax.plot(T[T<2070], [result.loc[0,str(x)] for x in T[T<2070]], label=Scenarios[ind_scenario], color = Colors[scenario], linewidth= 0.5)
         ax.plot(T[T<2070], [smoothed_result.loc[0,str(x)] for x in T[T<2070]], label=Scenarios[ind_scenario], color = Colors[scenario])
 
 
@@ -324,10 +324,10 @@ for Scen_type_ind, scenario in enumerate(Scenarios):
                               label=['NDC-LTT','1.5°C'][Scen_type_ind],
                               linewidth = 0.5
                              ))
-    alines.append(axs[0].plot([],[],
-                              color=Colors[scenario],
-                              label=['NDC-LTT 8 year rolling average','1.5°C 8 year rolling average'][Scen_type_ind],
-                             ))
+    # alines.append(axs[0].plot([],[],
+    #                           color=Colors[scenario],
+    #                           label=['NDC-LTT 8 year rolling average','1.5°C 8 year rolling average'][Scen_type_ind],
+    #                          ))
 
 labels = [la[0].get_label() for la in alines]
 handles = [label[0] for label in alines]
