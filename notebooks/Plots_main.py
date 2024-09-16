@@ -206,6 +206,7 @@ for c_index in [0, 1]:
                 linewidth=Rlinewidth[Scen_type_ind],
                 alpha=Ralpha[Scen_type_ind],)
         
+        
         if '_PG0' not in scenario:
             ax.fill_between(T[T < 2070],
                             S_miny.loc[scenario].values[T < 2070],
@@ -638,6 +639,103 @@ cax.legend(handles=alines,
 
 fig1.subplots_adjust(wspace=-0.45,hspace=0.2)
 
+#%% 1.1b) Calibration source
+# ===========================================================================================================================
+
+Regions = np.unique(Result_data[~Result_data['Downscaled Region'].isin(
+    ['China','India', 'Rest of Asia', 'Asia without Indonesia', 'Indonesia'])]
+                    ['Downscaled Region'].values)
+
+Scenarios =  ['NPI','NDC','NZ','NPI_gem','NDC_gem','NZ_gem']
+
+Scenarios = ['NPI_gem','NPI_min','NPI','NPI_max',
+             'NDC_gem','NDC_min','NDC','NDC_max',
+             'NZ_gem','NZ_min','NZ','NZ_max']
+
+
+Scenarios_names = ['NPI','NDC','1.5°C','NPI GEM','NDC GEM','1.5 GEM']
+
+Scenarios_names = Scenarios
+
+fig1, axs1 = plt.subplots(3,4, figsize=(18/1.6, 15.3/1.6))
+
+axs = [axs1]
+
+axs = np.array(axs).flatten()
+t0 = 2019
+t1 = 2050
+Data_Chn=[]
+Data_Ind=[]
+
+key_data = {}
+s0 = 0
+for s_index, scenario in enumerate(Scenarios):# [0,3,1,4,2,5]:
+    ax = axs[s_index]
+    # s0+=1
+    # scenario = Scenarios[s_index]
+    Asia_Data, key_data, cmap_zip = pf.plot_vulnerability_bivariate(scenario, ax, Regions, Result_data, T, t0, t1, Asia, s_index, key_data, Scenarios_names)
+    
+
+cmap, b_xlim, b_ylim, n = cmap_zip
+
+cax = fig1.add_axes([0.85, 0.3+0.075, 0.25, 0.25])
+cax = xycmap.bivariate_legend(ax=cax, sx=Asia_Data.dropna(subset=['share_n_finding','share_destruction'])['share_n_finding'].values, sy=Asia_Data.dropna(subset=['share_n_finding','share_destruction'])['share_destruction'].values, cmap=cmap, xlims=b_xlim,ylims=b_ylim) #xlims=(0,0.5),ylims=(0,0.06)
+cax.set_xlabel('Share of workers not \n finding new employment',fontsize=11)
+cax.set_ylabel('Decrease in relative coal jobs',fontsize=11)
+if min(n)>5:    
+    cax.set_xticks([pf.interpol(x,b_xlim,cax.get_xlim()) for x in [0.5,0.7,0.9]])
+    cax.set_yticks([pf.interpol(np.log(x),b_ylim,cax.get_ylim()) for x in [1e-3,5e-3,0.01,0.05]])
+    cax.set_xticklabels(["50%","70%","90%"],fontsize=11)
+    cax.set_yticklabels(["0.1%","0.5%","1%","5%"],fontsize=11)
+    
+for region in ['China','India','Shanxi','Jharkhand']:
+    xs = []
+    ys = []
+    for s_index in [0,1,2]:
+        xs.append(pf.interpol(key_data[region+str(s_index)]['coordinates'][0],b_xlim,cax.get_xlim()))
+        ys.append(pf.interpol(key_data[region+str(s_index)]['coordinates'][1],b_ylim,cax.get_ylim()))
+    cax.plot(xs,ys,color='k',alpha=0.25,zorder=-0,linewidth=5)
+for region in ['China','India','Shanxi','Jharkhand']:
+    xs = []
+    ys = []
+    for s_index in [3,4,5]:
+        xs.append(pf.interpol(key_data[region+str(s_index)]['coordinates'][0],b_xlim,cax.get_xlim()))
+        ys.append(pf.interpol(key_data[region+str(s_index)]['coordinates'][1],b_ylim,cax.get_ylim()))
+    cax.plot(xs,ys,color='k',alpha=0.25,zorder=-0,linewidth=5)
+
+for region in ['China','India','Shanxi','Jharkhand']:
+    xs = []
+    ys = []
+    for s_index in [0,1,2,3,4,5]:
+        xs.append(pf.interpol(key_data[region+str(s_index)]['coordinates'][0],b_xlim,cax.get_xlim()))
+        ys.append(pf.interpol(key_data[region+str(s_index)]['coordinates'][1],b_ylim,cax.get_ylim()))
+        cax.scatter(xs[-1],ys[-1],color=Colors[key_data[region+str(s_index).split('_')[0]]['Scenario']],marker='o',s=key_data[region+str(s_index)]['destruction']/1200,edgecolor='k',linewidth=0.4,zorder=1)
+    cax.annotate(region,(xs[0],ys[0]-0.1),ha='center',va='top',fontsize=8)
+
+
+
+# Defining a legend mannualy 
+alines = []
+alines.append(cax.scatter([], [], color=Colors['NPI'], marker='o',edgecolor='k',linewidth=0.4, s=40))
+alines.append(cax.scatter([], [], color=Colors['NDC'], marker='o',edgecolor='k',linewidth=0.4, s=40))
+alines.append(cax.scatter([], [], color=Colors['NZ'], marker='o',edgecolor='k',linewidth=0.4, s=40))
+alines.append(cax.scatter([], [], color=Colors['NPI_gem'], marker='o',edgecolor='k',linewidth=0.4, s=40))
+alines.append(cax.scatter([], [], color=Colors['NDC_gem'], marker='o',edgecolor='k',linewidth=0.4, s=40))
+alines.append(cax.scatter([], [], color=Colors['NZ_gem'], marker='o',edgecolor='k',linewidth=0.4, s=40))
+alines.append(cax.scatter([], [], color='white', marker='o',s=0))
+alines.append(cax.scatter([], [], color='Grey', marker='o',edgecolor='k',linewidth=0.4, s=2e5/1200))
+alines.append(cax.scatter([], [], color='Grey', marker='o',edgecolor='k',linewidth=0.4, s=4e5/1200))
+alines.append(cax.scatter([], [], color='Grey', marker='o',edgecolor='k',linewidth=0.4, s=6e5/1200))
+labels = ['NPi','NDC-LTT', '1.5°C','NPi GEM','NDC GEM','1.5°C GEM','Job losses \n [people]','200k','400k','600k']
+cax.legend(handles=alines,
+           labels=labels,
+           loc='center right',
+           bbox_to_anchor=(1.5, 0.5),
+           frameon=False,
+           fontsize=8)
+
+fig1.subplots_adjust(wspace=-0.45,hspace=0.2)
+
 #%% 1.2) Structural change
 # ===========================================================================================================================
 
@@ -1020,6 +1118,8 @@ pf.plotting_with_AR6_range(var,var,regions_ar6,categories,df,cols,Imaclim_data,T
 #%% 3.3) Electricity from coal
 var = 'Secondary Energy|Electricity|Coal'
 pf.plotting_with_AR6_range(var,var,regions_ar6,categories,df,cols,Imaclim_data,T,True)
+
+# pf.plotting_with_AR6_range(var,var,regions_ar6,categories,df,cols,Imaclim_data,T,True)
 
 
 #%% 3.4) Investment in coal supply

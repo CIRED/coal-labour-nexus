@@ -62,6 +62,31 @@ DOSE['ln_share_agman'] = np.log(DOSE.share_ag / DOSE.share_man)
 DOSE['ln_share_servman'] = np.log(DOSE.share_serv / DOSE.share_man)
 DOSE['ln_gdp'] = np.log(DOSE.grp_pc_usd_2015)
 
+
+
+#%% Aggregate DOSE data at the national level
+
+DOSE['ag_grp_usd_2015'] = DOSE.ag_grp_pc_usd_2015 * DOSE['pop'] 
+DOSE['man_grp_usd_2015'] = DOSE.man_grp_pc_usd_2015 * DOSE['pop']
+DOSE['serv_grp_usd_2015'] = DOSE.serv_grp_pc_usd_2015 * DOSE['pop']
+DOSE['grp_usd_2015'] = DOSE.grp_pc_usd_2015 * DOSE['pop']
+
+NDOSE = DOSE.groupby(['country','year']).sum().reset_index().drop(columns= ['region','GID_0','GID_1'])
+
+NDOSE['ag_grp_pc_usd_2015'] = NDOSE.ag_grp_usd_2015 / NDOSE['pop'] 
+NDOSE['man_grp_pc_usd_2015'] = NDOSE.man_grp_usd_2015 / NDOSE['pop']
+NDOSE['serv_grp_pc_usd_2015'] = NDOSE.serv_grp_usd_2015 / NDOSE['pop']
+NDOSE['grp_pc_usd_2015'] = NDOSE.grp_usd_2015 / NDOSE['pop']
+
+
+NDOSE['share_ag'] = NDOSE.ag_grp_pc_usd_2015 / NDOSE.grp_pc_usd_2015
+NDOSE['share_man'] = NDOSE.man_grp_pc_usd_2015 / NDOSE.grp_pc_usd_2015
+NDOSE['share_serv'] = NDOSE.serv_grp_pc_usd_2015 / NDOSE.grp_pc_usd_2015
+
+NDOSE['ln_share_agman'] = np.log(NDOSE.share_ag / NDOSE.share_man)
+NDOSE['ln_share_servman'] = np.log(NDOSE.share_serv / NDOSE.share_man)
+NDOSE['ln_gdp'] = np.log(NDOSE.grp_pc_usd_2015)
+
 #%%# Evaluating the economic and population growth from 2016:
 evol={}
 pevol={}
@@ -171,20 +196,27 @@ for ind_var, variable in enumerate(['agriculture','industry','services']):
 
 #%%
 # Plotting regional structural change
-fig, axs = plt.subplots(1,3,figsize=(10,6))
+fig, axs = plt.subplots(2,3,figsize=(10,6))
 scenario = 'WO-NPi-ElecIndus'
-for ind_var, variable in enumerate(['agriculture','industry','services']):
+variables = ['agriculture','industry','services']
+for ind_var, variable in enumerate(variables):
     output = [xa,xm,xs][ind_var]
-    ax = axs[ind_var]#,ind_scenario]
     for ind_country, country in enumerate(['China','India']):
+        ax = axs[ind_country, ind_var]
         regions = DOSE[(DOSE.country==country) & (DOSE.year == year_base)]['region'].unique()
         for ind_region, region in enumerate(regions):
             if region in ['Jharkhand', 'Bihar']:
-                ax.plot(ysave[region,ind_scenario],output[region,ind_scenario],color='k',linewidth=0.5)
-                # ax.text(T[-1],output[region,ind_scenario][-1],region,horizontalalignment='right')
+                ax.plot(ysave[region,ind_scenario],output[region,ind_scenario],color=['red','orange'][ind_country],linewidth=0.5)
+                ax.text(ysave[region,ind_scenario][-1],output[region,ind_scenario][-1],region,horizontalalignment='left')
             else:
-                ax.plot(ysave[region,ind_scenario],output[region,ind_scenario],color=['red','orange'][ind_country],linewidth=0.25)
-    ax.set_title(variable)
+                ax.plot(ysave[region,ind_scenario],output[region,ind_scenario],color=['red','orange'][ind_country],linewidth=0.2)
+        
+        ax.scatter(NDOSE.loc[NDOSE.country==country,'ln_gdp'][0::5],NDOSE.loc[NDOSE.country==country,['share_ag','share_man','share_serv'][ind_var]][0::5],color='k',s=5)
+        ax.set_ylim([0,1])
+        ax.set_xlim([5,12])
+    
+[ax.set_title(variable) for ax,variable in zip(axs[0,:],variables)]
+
     
 
 
@@ -207,91 +239,40 @@ for ind_country, country in enumerate(['China','India']):
 
 #%%
 # Plotting evolution of regional contributions
-fig, axs = plt.subplots(3,3,figsize=(10,6))
+import seaborn as sns
+import random
+fig, axs = plt.subplots(1,3,figsize=(10,6))
 
 for ind_var, variable in enumerate(['agriculture','industry','services']):
     output = [contribm,contribm,contribs][ind_var]
-    for ind_scenario, scenario in enumerate(['WO-NPi-ElecIndus', 'WO-NDCLTT-ElecIndus', 'WO-15C-ElecIndus']):
-        scen_name = ['NPI','NDC','NZ'][ind_scenario]
-        ax = axs[ind_var,ind_scenario]
-        for ind_country, country in enumerate(['China','India']):
-            regions = DOSE[(DOSE.country==country) & (DOSE.year == year_base)]['region'].unique()
+    # for ind_scenario, scenario in enumerate(['WO-NPi-ElecIndus', 'WO-NDCLTT-ElecIndus', 'WO-15C-ElecIndus']):
+    ind_scenario = 0
+    scenario = 'WO-NPi-ElecIndus'
+    scen_name = ['NPI','NDC','NZ'][ind_scenario]
+    ax = axs[ind_var]
+    for ind_country, country in enumerate(['China','India']):
+        regions = DOSE[(DOSE.country==country) & (DOSE.year == year_base)]['region'].unique()
 
-            for ind_region, region in enumerate([x for x in regions[((regions!='Shanxi')|(regions!='Jharkhand')).any()][0]]+['Shanxi','Jharkhand']):
-                if region in ['Shanxi','Jharkhand','Bihar']:
-                    linewidth = 1.5
-                    ax.text(T[-1],output[region,ind_scenario][-1]/output[region,ind_scenario][0],region,horizontalalignment='right')
-                    ax.plot(T,output[region,ind_scenario]/output[region,ind_scenario][0],color='k',linewidth=1.25)
-                else:
-                    linewidth = 0.75
-                    ax.plot(T,output[region,ind_scenario]/output[region,ind_scenario][0],color=['red','orange'][ind_country],linewidth=0.75)
-                # ax.text(T[0],output[region,ind_scenario][0],region)
-        if ind_var == 0:
-            ax.set_title(scen_name)
+        for ind_region, region in enumerate([x for x in regions[((regions!='Shanxi')|(regions!='Jharkhand')).any()][0]]+['Shanxi','Jharkhand']):
+            if region in ['Shanxi','Jharkhand']:
+                code = 'CN-SX' if region == "Shanxi" else 'IN-JH'
 
-        if ind_scenario == 0:
-            ax.set_ylabel(variable+'\n Evolution of the\n contribution [-]')
+                linewidth = 1.5
+                ax.text(T[-1],output[region,ind_scenario][-1]/output[region,ind_scenario][0],code,ha='left',va= 'center',fontsize=8)
+                ax.plot(T,output[region,ind_scenario]/output[region,ind_scenario][0],color='k',linewidth=1.25)
+            else:
+                linewidth = 0.75
+                ax.plot(T,output[region,ind_scenario]/output[region,ind_scenario][0],color=[sns.color_palette('Reds',n_colors=20),sns.color_palette('Oranges',n_colors=20)][ind_country][random.randint([15,5][ind_country],[19,15][ind_country])],linewidth=0.75)
+            # ax.text(T[0],output[region,ind_scenario][0],region)
+    # if ind_var == 0:
+    ax.set_title(variable.capitalize())
 
-        ax.axhline(1, color='k',linewidth=0.5)
-        ax.set_ylim([0.5,1.5])
+    if ind_var == 0:
+        ax.set_ylabel('Evolution of the\n contribution [-]')
 
-#%%
-#%%     Stacked bars function
-def get_cumulated_array(data, **kwargs):
-    cum = data.clip(**kwargs)
-    cum = np.cumsum(cum, axis=0)
-    d = np.zeros(np.shape(data))
-    d[1:] = cum[:-1]
-    return d
-
-
-fig, axs = plt.subplots(3, 4, figsize=(10, 5))
-
-country = 'China'
-cntry = 'CHN'
-regions = Cregion
-
-for ind_var, variable in enumerate(['agriculture','industry','services','gdp']):
-    output = [contribm,contribm,contribs,contribg][ind_var]
-    for ind_scenario, scenario in enumerate(['WO-NPi-ElecIndus', 'WO-NDCLTT-ElecIndus', 'WO-15C-ElecIndus']):
-        data = []
-        ax = axs[ind_scenario,ind_var]
-        for ind_region, region in enumerate(regions):   
-            data.append(output[region,ind_scenario])
-        data = np.array(data)
-        #data = np.divide(data, np.sum(data, axis=0))
-
-        data_shape = np.shape(data)
-        cumulated_data = get_cumulated_array(data, min=0)
-        cumulated_data_neg = get_cumulated_array(data, max=0)
-
-        # Re-merge negative and positive data.
-        row_mask = (data < 0)
-        cumulated_data[row_mask] = cumulated_data_neg[row_mask]
-        data_stack = cumulated_data
-
-        alines = []
-        for i in np.arange(0, data_shape[0]):
-            alines.append([
-                ax.bar(T,
-                       data[i],
-                       bottom=data_stack[i],
-                       width=1,
-                       alpha=0.8)
-            ])
-
-        if ind_scenario == 0:
-            ax.set_title(variable)
-        elif ind_scenario == 2:
-            ax.set_xlabel('Year')
-        if ind_var == 0:
-            ax.set_ylabel('Contribution to GDP')
-        else:
-            ax.set_yticklabels([])
-        
-        ax.set_ylim([0,1])
-        ax.set_xlim([2014,2101])
-fig.suptitle('Contribution China')
+    ax.axhline(1, color='k',linewidth=0.5)
+    ax.set_ylim([0.5,1.5])
+    ax.set_xlim([2015,2117])
 
 
 #%%
