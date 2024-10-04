@@ -127,7 +127,7 @@ for c_index in [0, 1]:
 
     ax.axhline(y=0, color='k', linewidth=0.8)
 
-    ax.plot(Historical_data['t'],Historical_data[country]/1e6,color='k')
+    ax.scatter(Historical_data['Year'],Historical_data[country]/1e6,color='k',s=5)
 
 
     Scen_y = []
@@ -232,9 +232,10 @@ for Scen_type_ind in [0,2,4,1,3,5]:
                 linewidth=Rlinewidth[Scen_type_ind],
                 alpha=Ralpha[Scen_type_ind] )[0])
 
-alines.append(axs[0].plot([], [],
+alines.append(axs[0].scatter([], [],
+                        s= 5,
                         color='k',
-                        label='Historical data')[0])
+                        label='Historical data'))
 alines.append(axs[0].scatter([], [],
                         color='k',
                         marker='o',
@@ -1126,4 +1127,9 @@ pf.plotting_with_AR6_range(var,var,regions_ar6,categories,df,cols,Imaclim_data,T
 var = "Investment|Energy Supply|Extraction|Coal"
 pf.plotting_with_AR6_range(var,var,regions_ar6,categories,df,cols,Imaclim_data,T,True)
 
-
+#%% 3.4) Investment in coal supply
+var = 'Carbon Sequestration|CCS|Biomass'
+var_im = 'Carbon Capture|Storage|Biomass'
+regions = regions_ar6[1:3]
+categories = categories[0:2]
+pf.plotting_with_AR6_range(var,var_im,regions,categories,df,cols,Imaclim_data,T,False)
