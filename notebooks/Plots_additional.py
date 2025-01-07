@@ -666,7 +666,7 @@ Scenarios = [
 t0s = [2020, 2020]
 t1s = [2030,2050]
 
-fig, axs = plt.subplots(2,1,figsize=pf.standard_figure_size())
+fig, axs = plt.subplots(2,1,figsize=(16/2.54,9/2.54))
 
 for ind_t,(t0,t1) in enumerate(zip(t0s,t1s)):
     ax = axs.flatten()[ind_t]
@@ -731,6 +731,7 @@ for ind_t,(t0,t1) in enumerate(zip(t0s,t1s)):
         x+=1
     ax.set_yticks([0,1])
     ax.set_yticklabels(['China','India'])
+    ax.axhline(y=0.5, color='k', linestyle=':',linewidth = 0.5)
     ax.set_ylim([-0.5,1.5])
     ax.set_title(str(t0)+' - '+str(t1))
     ax.set_xlim([0,1])
@@ -739,6 +740,32 @@ for ind_t,(t0,t1) in enumerate(zip(t0s,t1s)):
     else:
         ax.set_xlabel('Share layoffs not finding employment')
 [ax.text(0.02,0.92, label, transform=ax.transAxes, fontsize= 11, fontweight='bold', va='top', ha='left') for ax, label in zip(axs.flatten(),['a)','b)'])]
+
+
+#Legend
+alines = []
+for ind_scenario in range(4,-1,-1):
+    scenario = Scenarios[ind_scenario]
+    alines.append(ax.scatter([],[],
+                             color=pf.defining_waysout_colour_scheme()[scenario],
+                             label=['NPi','NDC-LTT','NDC-LTT w/CCS','1.5°C','1.5°C w/CCS'][ind_scenario]))
+    
+alines.append(ax.scatter([],[],s=0,label='Job destruction'))
+for size in [5000,50000,500000]:
+    alines.append(ax.scatter([],[],s=4.5e-5*size,color='grey',label=size))
+labels = [la.get_label() for la in alines]
+handles = [label for label in alines]
+
+fig.legend(handles=alines,
+           labels=labels,
+            loc='center left',
+           bbox_to_anchor=(1, 0.5),
+           frameon=False)
+
+
+
+
+
 
 fig.set_tight_layout('tight')
 #%% 13) Consumption and extraction budget
@@ -1137,7 +1164,7 @@ def Grid_Employment_Destruction(fig,axs,T,Result_data,ind_country,U):
     [ax.axis('off') for ax in axs.flatten()]
     regions = pf.defining_province_grid()[ind_country]
 
-    Scenarios = ['NPI','NDC','NZ','NDC_CCS1','NZ_CCS1']
+    Scenarios = ['NZ','NDC','NPI','NZ_CCS1','NDC_CCS1']
 
     t0 = 2020
     t1 = 2060
@@ -1226,12 +1253,12 @@ def Grid_Employment_Destruction(fig,axs,T,Result_data,ind_country,U):
 
     
     # Legend in bottom right corner
-    ax = axs[-1,[0,-1][ind_country]]
+    ax = axs[-1,[2,-2][ind_country]]
     alines = []
     for ind_scenario, scenario in enumerate(Scenarios[:5]):
-        alines.append(ax.plot([],[],color=pf.defining_waysout_colour_scheme()[scenario.split('_PG0')[0]], label=scenario))
+        alines.append(ax.plot([],[],color=pf.defining_waysout_colour_scheme()[scenario.split('_PG0')[0]], label=['1.5°C','NDC-LTT','NPi','1.5°C-CCS','NDC-LTT-CCS'][ind_scenario]))
     alines.append(ax.plot([],[], color='k', linestyle=':',label='No growth'))
-    ax.legend(fontsize=20,ncol=2)
+    ax.legend(fontsize=25,ncol=2)
     
     return fig
 
@@ -1239,7 +1266,7 @@ def Grid_Employment_Destruction(fig,axs,T,Result_data,ind_country,U):
 
 
 for ind_country, country in enumerate(['CHN','IND']):
-    fig, axs = plt.subplots(8,[6,8][ind_country],figsize=(20,20))
+    fig, axs = plt.subplots(8,[6,8][ind_country],figsize=(26,20))
     
     Grid_Employment_Destruction(fig,axs,T,Result_data,ind_country,False)
 

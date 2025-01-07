@@ -145,8 +145,7 @@ else:
     Rlinestyle = ['-',':']*5
     Rlinewidth = [1,0.75]* 5
     Rmarker = ['',''] * 5
-    Scen_list = [0,2,4,6,8,1,3,5,7,9]
-    # Scen_list = [0,3,6,1,4,7,2,5,8]
+    Scen_list = [4,2,0,8,6]
 Scenarios = [x + y for x in Scen_type for y in Alt_type]
 
 
@@ -261,15 +260,19 @@ for c_index in [0, 1]:
 
 alines = []
 
-for ind, Scen_type_ind in enumerate(Scen_list):#[0,2,4,1,3,5]:
+for ind, Scen_type_ind in enumerate(Scen_list):
     scenario = Scenarios[Scen_type_ind]
     alines.append(axs[0].plot([], [],
                               color=Colors[scenario.split('_PG0')[0]],
-                              label=['NPi','NDC-LTT','1.5°C','NDC-LTT-CCS','1.5°C-CCS','NPi no growth','NDC-LTT no growth','1.5°C no growth','NDC-LTT-CCS no growth','1.5°C-CCS no growth'][ind],
-                              linestyle=Rlinestyle[Scen_type_ind],
+                              label=['1.5°C','NDC-LTT','NPi','1.5°C-CCS','NDC-LTT-CCS'][ind],
                 linewidth=Rlinewidth[Scen_type_ind],
                 alpha=Ralpha[Scen_type_ind] )[0])
+    
 
+
+
+alines.append(axs[0].plot([],[],color='k',linestyle='-',label='Productivity growth')[0])
+alines.append(axs[0].plot([],[],color='k',linestyle=':',label='No productivity growth')[0])
 alines.append(axs[0].scatter([], [],
                         s= 5,
                         color='k',
