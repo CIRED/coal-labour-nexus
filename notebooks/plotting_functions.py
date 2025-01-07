@@ -39,15 +39,20 @@ def save_figure(fig,name,format):
 
 
 def defining_waysout_colour_scheme():
-    Colors = {'NPI':sns.color_palette()[3],
-            'NDC':sns.color_palette()[2],
-            'NZ':sns.color_palette()[0],
-            'WO-NPi-ElecIndus':sns.color_palette()[3],
-            'WO-NDCLTT-ElecIndus':sns.color_palette()[2],
-            'WO-15C-ElecIndus':sns.color_palette()[0],
-            'NPI_gem':sns.color_palette('pastel')[3],
-            'NDC_gem':sns.color_palette('pastel')[2],
-            'NZ_gem':sns.color_palette('pastel')[0]}
+    Colors = {'NPI':"steelblue",
+            'NDC':"tomato",
+            'NZ':"lightseagreen",
+            'WO-NPi-ElecIndus-CCS0':"steelblue",
+            'WO-NDCLTT-ElecIndus-CCS0':"tomato",
+            'WO-15C-ElecIndus-CCS0':"lightseagreen",
+            'WO-NDCLTT-ElecIndus-CCS1':"palevioletred",
+            'WO-15C-ElecIndus-CCS1':"yellowgreen",
+            'WO-18C-ElecIndus':'blue',
+            'NPI_gem':sns.color_palette('pastel')[4],
+            'NDC_gem':sns.color_palette('pastel')[3],
+            'NZ_gem':sns.color_palette('pastel')[1],
+            'NDC_CCS1':"palevioletred",
+            'NZ_CCS1':"yellowgreen"}
     return Colors
 
 
@@ -92,7 +97,11 @@ def Energy_colors():
 #=========================================================================================================
 #    Misc
 def interpol(x, xlim, ylim):
-    y = ylim[0] + (ylim[1]-ylim[0])/(xlim[1]-xlim[0])*(x-xlim[0])
+
+    if (x<xlim[0])|(x>xlim[1]): #Not plotting beyond axis limits
+        y= np.nan
+    else:
+        y = ylim[0] + (ylim[1]-ylim[0])/(xlim[1]-xlim[0])*(x-xlim[0])
     return y
 
 
@@ -169,6 +178,7 @@ def plot_vulnerability_bivariate(scenario, ax, Regions, Result_data, T, t0, T1, 
     Dc=[]
     DI=[]
     share_destruction =[]
+    creation = []
     destruction = []
     Ls = []
 
@@ -194,10 +204,14 @@ def plot_vulnerability_bivariate(scenario, ax, Regions, Result_data, T, t0, T1, 
         Ls.append(L[0])
 
         y = float((L[T == 2020] - L[T == t1]) / LF0)
+        creation.append(1) if ((L[T==2020]!=0)&(((type(T1) is str)&(t1==2100))|(y<0))) else creation.append(0) #
         y = np.nan if y == 0 else np.log(y)
         
         share_destruction.append(y)
-        destruction.append(float((L[T == 2020] - L[T == t1]) ))
+
+        destroyed = float((L[T == 2020] - L[T == t1]) )
+        y = np.nan if destroyed<=0 else y #Mapping regions with no decrease in employment in grey
+        destruction.append(destroyed)
 
 
         
@@ -225,18 +239,20 @@ def plot_vulnerability_bivariate(scenario, ax, Regions, Result_data, T, t0, T1, 
         else:
             DI.append(share_n_finding[-1])
     
-       
 
+    
     Regions = list(Regions)
     share_n_finding = pd.DataFrame(
-        data=np.array([list(Regions), share_n_finding,cntry,share_destruction,destruction,Ls]).transpose(),
-        columns=['Region_Nam', 'share_n_finding','Region','share_destruction','destruction','Workforce']
+        data=np.array([list(Regions), share_n_finding,cntry,share_destruction,destruction,Ls,creation]).transpose(),
+        columns=['Region_Nam', 'share_n_finding','Region','share_destruction','destruction','Workforce','creation']
         )
 
     share_n_finding['share_n_finding'] = pd.to_numeric(share_n_finding['share_n_finding'], errors='coerce')
     share_n_finding['share_destruction'] = pd.to_numeric(share_n_finding['share_destruction'], errors='coerce')
     share_n_finding['destruction'] = pd.to_numeric(share_n_finding['destruction'], errors='coerce')
     share_n_finding['Workforce'] = pd.to_numeric(share_n_finding['Workforce'], errors='coerce')
+
+
     
    
     Asia_Data = Asia.merge(share_n_finding, on='Region_Nam')
@@ -252,6 +268,9 @@ def plot_vulnerability_bivariate(scenario, ax, Regions, Result_data, T, t0, T1, 
     
     
     Asia_Data_with_colors = Asia_Data.merge(cmapi, on='Region_Nam', how='left').fillna(color_not_plotted)
+    
+    Asia_Data_with_colors.loc[Asia_Data_with_colors['creation']=='1','colors']='lightgreen'
+    
     Asia_Data_with_colors.plot(
         ax=ax, 
         color=Asia_Data_with_colors['colors'],
@@ -264,7 +283,7 @@ def plot_vulnerability_bivariate(scenario, ax, Regions, Result_data, T, t0, T1, 
     Asia[Asia['region']=='Asia'].plot(ax=ax, color=color_not_plotted, edgecolor='black',linewidth=0.5)
     Asia[Asia['region']=='Disputed'].plot(ax=ax, color=color_not_plotted, edgecolor='black', linestyle='--',linewidth=0.5)
     
-    for region in ['Shanxi','Inner Mongolia','Jharkhand','Odisha','Chhattisgarh']:
+    for region in ['Shanxi','Inner Mongolia','Jharkhand','Odisha','Chhattisgarh','Henan','Shandong']:
         key_data[region+str(s_index)] = {'Downscaled Region':region,
                                          'Scenario':scenario,
                                          'coordinates':[
@@ -352,6 +371,13 @@ def destination_bar(Result_data, X, T, t0, t1, Scenario, ax, region, provinces, 
         Indirect += In
         Unemployed += U
         Hire += H
+
+    if t1==2100: # Not plotting if employment never meets threshold
+        Retirement=0 
+        Direct =0 
+        Indirect =0 
+        Unemployed =0 
+        Hire =0 
 
     data = np.array([Retirement, 
                      Direct, 
@@ -777,6 +803,140 @@ def finding_emp_threshold_date(data,threshold,T):
         T1 = 2100
     return T1
 
+
+
+#==================================================================================================================================================================================================================
+#==================================================================================================================================================================================================================
+#                                                              Additional
+#==================================================================================================================================================================================================================
+#==================================================================================================================================================================================================================
+
+def pseudo_log(x, linthresh=5e-4):
+    pl = np.sign(x)*np.log1p(np.abs(x))
+    return pl
+
+def color_not_plotted():
+    return '#EAEAEA'
+
+
+def calc_share_destruction(Result_data,region,T,t0,t1,Ls,scenario):
+
+    
+    L = Result_data[(Result_data['Downscaled Region'] == region)
+                    & (Result_data['Variable'] == 'Employment|Coal|Downscaled') 
+                    & (Result_data['Scenario'] == scenario)].values[0][6:]
+    LF0 = float(
+        Result_data[(Result_data['Downscaled Region'] == region)
+                    & (Result_data['Variable'] == 'Labour Force|Downscaled')
+                    & (Result_data['Scenario'] == scenario)].values[0][6])
+    Ls.append(L[0])
+
+    y = float((L[T == t0] - L[T == t1]) / LF0)
+    return Ls, y
+
+def calc_share_n_finding(Result_data,region,T,t0,t1,share_n_finding,scenario):
+
+    D = np.array(
+        Result_data[(Result_data['Variable'] == 'Coal Worker Destination|Instant Match')
+                    & (Result_data['Scenario'] == scenario) 
+                    & (Result_data['Downscaled Region'] == region)].values.flat[6:][(T < t1) & (T > t0)])
+    U = np.array(Result_data[
+        (Result_data['Variable'] == 'Coal Worker Destination|Unemployment')
+                & (Result_data['Scenario'] == scenario) 
+                            & (Result_data['Downscaled Region'] == region)].values.flat[6:][(T < t1)
+                                                        & (T > t0)])
+    In = np.array(Result_data[(Result_data['Variable'] == 'Coal Worker Destination|Delayed Match')
+                            & (Result_data['Scenario'] == scenario) &
+                            (Result_data['Downscaled Region']
+                            == region)].values.flat[6:][(T < t1)
+                                                        & (T > t0)])
+
+    share_n_finding=append_real_results(share_n_finding,D,U,In)
+
+    L = Result_data[(Result_data['Downscaled Region'] == region)
+                    & (Result_data['Variable'] == 'Employment|Coal|Downscaled') 
+                    & (Result_data['Scenario'] == scenario)].values[0][6:]
+    
+    if L[T == t0] <= L[T == t1]: #Not plotting regions 
+        share_n_finding[-1]=np.nan
+    
+    return share_n_finding
+
+def calc_workforce(Result_data,region,Calced_data,scenario):
+
+    LF = Result_data.loc[(Result_data['Downscaled Region']==region)&(Result_data.Scenario==scenario)&(Result_data.Variable=='Labour Force|Downscaled'),'2015'].values[0]
+    CL = Result_data.loc[(Result_data['Downscaled Region']==region)&(Result_data.Scenario==scenario)&(Result_data.Variable=='Employment|Coal|Downscaled'),'2015'].values[0]
+    
+    Calced_data.append(CL/LF)
+
+    return Calced_data
+    
+def monovariate_map(var,t0,T1,ax,cax,zlim,colormap,Result_data,scenario,Asia,norm=None):
+    Regions = np.unique(Result_data[~Result_data['Downscaled Region'].isin(
+    ['China', 'India', 'Rest of Asia', 'Asia without Indonesia', 'Indonesia'])]
+                    ['Downscaled Region'].values)
+    T = range(2015, 2101)
+    T = np.array(T)
+    Ls = []
+    share_n_finding = []
+    Calced_data = []
+    # Iterating over regions
+    for region in list(Regions):
+
+        if type(T1) is str:
+            threshold = 0.8
+            t1 =finding_emp_threshold_date(Result_data[(Result_data['Downscaled Region']==region)&
+                            (Result_data.Scenario==scenario)],threshold,T)
+
+        else:
+            t1=T1
+       
+        if var == "share_destruction":
+            Ls, y = calc_share_destruction(Result_data,region,T,t0,t1,Ls,scenario)
+            y = pseudo_log(y)
+            Calced_data.append(y)
+        elif var == "Finding_new_emp":
+            Calced_data=calc_share_n_finding(Result_data,region,T,t0,t1,Calced_data,scenario)
+            # Calced_data.append(share_n_finding)
+        elif var== 'Workforce':
+            Calced_data = calc_workforce(Result_data,region,Calced_data,scenario) 
+        else:
+            # return 
+            print('unknown')
+
+    Calced_data = pd.DataFrame(data=np.array([list(Regions), Calced_data]).transpose(),
+                        columns=['Region_Nam', 'Calced_data'])
+
+    Asia_Data = Asia.merge(Calced_data, on='Region_Nam')
+
+    Asia_Data['Calced_data'] = pd.to_numeric(Asia_Data['Calced_data'], errors='coerce')
+    
+    
+    cbar = Asia_Data.plot(column='Calced_data',
+                        cmap=colormap,
+                        legend=True,
+                        ax=ax,
+                        edgecolor='black',
+                        missing_kwds={
+                            "color": color_not_plotted(),
+                            "label": "Missing values",
+                        },
+                        vmin=zlim[0],
+                        vmax=zlim[1],
+                        linewidth=0.75,
+                        cax=cax,
+                        rasterized=True,
+                        norm=norm)
+
+    Asia[Asia['region']=='Asia'].plot(ax=ax, color=color_not_plotted(), edgecolor='black',linewidth=0.5)
+    Asia[Asia['region']=='Disputed'].plot(ax=ax, color=color_not_plotted(), edgecolor='black', linestyle='--',linewidth=0.5)
+    
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_xlim([65,140])
+    ax.set_ylim([7,55])
+
+    return ax
 
 
 

@@ -42,12 +42,17 @@ formatter.set_powerlimits((-1, 1))
 T = range(2015, 2101)
 T = np.array(T)
 
-file_name = list(np.array([['../coal.labour.nexus/output/Downscaled_coal_labour_' + x + y + '.csv' for x in ['NDC','NPI','NZ']] for y in ['','_PG0','_R55','_gem','_EW']]).flatten())
+
+file_name = list(np.array([['../coal.labour.nexus/output/Downscaled_coal_labour_' + x + y + '.csv' for x in ['NPI','NDC','NZ','NDC_CCS1','NZ_CCS1']] for y in ['','_PG0','_R55','_min','_max']]).flatten())
 
 Result_data = []
 for file in file_name:
-    Result_data.append(pd.read_csv(file))#, dtype=str))
+    data = pd.read_csv(file)
+    data.Scenario = data.Scenario
+    Result_data.append(data)
 
+
+#======
 Result_data = pd.concat(Result_data, ignore_index=True)
 
 Result_data.iloc[:, 6:] = Result_data.iloc[:, 6:].applymap(lambda x: str(x).replace('D', 'E'))
@@ -57,7 +62,7 @@ Result_data.iloc[:, 6:] = Result_data.iloc[:, 6:].apply(pd.to_numeric, errors='c
 
 #%% Importing Imaclim results
 
-scenarios = list(np.array([[ x + y  for x in ['WO-NPi-ElecIndus','WO-NDCLTT-ElecIndus','WO-15C-ElecIndus']] for y in ['']]).flatten())
+scenarios = list(np.array([[ x + y  for x in ['WO-NPi-ElecIndus-CCS0','WO-NDCLTT-ElecIndus-CCS0','WO-15C-ElecIndus-CCS0','WO-NDCLTT-ElecIndus-CCS1','WO-15C-ElecIndus-CCS1']] for y in ['']]).flatten())
 
 Imaclim_data = []
 for scenario in scenarios:
@@ -81,6 +86,9 @@ Historical_data = pd.read_csv('data/Historical_labour.csv')
 # Region positions for grid plots
 provincesChina, provincesIndia = pf.defining_province_grid()
 
+
+region_indices = pd.read_csv('..\coal.labour.nexus\data\Coal_labour\Downscaling\Indexes.csv')
+
 # ===========================================================================================================================
 #Unit
 exa2giga        =                 1e9 # G / E
@@ -96,7 +104,7 @@ Sectors = ['Coal','Oil','Gas','ET','Elec','BTP','Services','Air','Mer','Ot','Agr
 
 cols = ['k','darkgrey','grey']+[sns.color_palette('pastel')[x] for x in [8,9,7,3,4,5,6,2,0] ]+[sns.color_palette()[1]]
 
-Scenarios = ['WO-NPi-ElecIndus','WO-NDCLTT-ElecIndus','WO-15C-ElecIndus']
+Scenarios = ['WO-NPi-ElecIndus-CCS0','WO-NDCLTT-ElecIndus-CCS0','WO-15C-ElecIndus-CCS0']
 Scenarios_name = ['NPI','WO-NDCLTT','WO-15C']
 
 Regions = ['China','India']
@@ -184,7 +192,7 @@ for ind_scenario, scenario in enumerate(Scenarios):
 #%% 2) Carbon price
 Regions = ['World','CHN','IND']
 variable = 'Price|Carbon'
-Scenarios = ['WO-NPi-ElecIndus','WO-NDCLTT-ElecIndus','WO-15C-ElecIndus']
+Scenarios = ['WO-NPi-ElecIndus-CCS0','WO-NDCLTT-ElecIndus-CCS0','WO-15C-ElecIndus-CCS0']
 
 fig, axs = plt.subplots(1,3, figsize=pf.standard_figure_size())
 
@@ -286,7 +294,7 @@ for s_index, scenario in enumerate(Scenarios):
     
 # %% 4) "Macroeconomic cost"
 
-Scenarios = ['WO-NDCLTT-ElecIndus','WO-15C-ElecIndus']
+Scenarios = ['WO-NDCLTT-ElecIndus-CCS0','WO-15C-ElecIndus-CCS0']
 var = 'GDP|PPP'
 Regions = ['CHN','IND']
 
@@ -294,9 +302,9 @@ fig, axs = plt.subplots(1,2, figsize=pf.standard_figure_size())
 for ind_reg, region in enumerate(Regions):
     ax = axs[ind_reg]
     ax.axhline(y=0,color='k',linewidth=0.75,linestyle='--')
-    base = Imaclim_data[(Imaclim_data['Scenario']=='WO-NPi-ElecIndus') & (Imaclim_data['Region']==region) & (Imaclim_data['Variables']==var)].values[0][5:]
+    base = Imaclim_data[(Imaclim_data['Scenario']=='WO-NPi-ElecIndus-CCS0') & (Imaclim_data['Region']==region) & (Imaclim_data['Variables']==var)].values[0][5:]
     
-    df_base = Imaclim_data[(Imaclim_data['Scenario']=='WO-NPi-ElecIndus') & (Imaclim_data['Region']==region) & (Imaclim_data['Variables']==var)].apply(pd.to_numeric,errors='coerce').reset_index(drop=True)
+    df_base = Imaclim_data[(Imaclim_data['Scenario']=='WO-NPi-ElecIndus-CCS0') & (Imaclim_data['Region']==region) & (Imaclim_data['Variables']==var)].apply(pd.to_numeric,errors='coerce').reset_index(drop=True)
     
     for ind_scenario, scenario in enumerate(Scenarios):
         y = (Imaclim_data[(Imaclim_data['Scenario']==scenario) & (Imaclim_data['Region']==region) & (Imaclim_data['Variables']==var)].values[0][5:]-base)/base*100
@@ -379,7 +387,7 @@ for ind_var, var in enumerate(variables_ar6):
         ax.plot(q50.columns, q50.values[0], color = sns.color_palette()[[4,2][i_p]],linewidth=[1,1.5][i_p])
 
         
-        y = Imaclim_data[(Imaclim_data['Scenario']==['WO-NPi-ElecIndus','WO-NDCLTT-ElecIndus'][i_p]) & (Imaclim_data['Region']=='World') & (Imaclim_data['Variables']==var)].values[0][5:]
+        y = Imaclim_data[(Imaclim_data['Scenario']==['WO-NPi-ElecIndus-CCS0','WO-NDCLTT-ElecIndus-CCS0'][i_p]) & (Imaclim_data['Region']=='World') & (Imaclim_data['Variables']==var)].values[0][5:]
         ax.plot(T,y, color=['red','green'][i_p])
 
     if "Wind" in var:
@@ -414,7 +422,7 @@ fix, axs = plt.subplots(1,2,figsize=pf.standard_figure_size())
 for ind_country, country in enumerate(countries):
     ax = axs[ind_country]
     for ind_var, variable in enumerate(variables):
-        y = Imaclim_data[(Imaclim_data['Scenario']=='WO-NDCLTT-ElecIndus') & (Imaclim_data['Region']==country) & (Imaclim_data['Variables']==variable)].values[0][5:]
+        y = Imaclim_data[(Imaclim_data['Scenario']=='WO-NDCLTT-ElecIndus-CCS0') & (Imaclim_data['Region']==country) & (Imaclim_data['Variables']==variable)].values[0][5:]
         ax.plot(T,y,label=variable,color=colors[ind_var])
     
     ax.set_label("EJ/yr")
@@ -567,9 +575,9 @@ destination_variables = [x for x in Result_data.Variable.unique() if 'Coal Worke
 
 
 Scenarios = {
-    'NPI':'WO-NPi-ElecIndus',
-    'NDC':'WO-NDCLTT-ElecIndus',
-    'NZ':'WO-15C-ElecIndus',
+    'NPI':'WO-NPi-ElecIndus-CCS0',
+    'NDC':'WO-NDCLTT-ElecIndus-CCS0',
+    'NZ':'WO-15C-ElecIndus-CCS0',
 }
 
 t0 = 2025-2015
@@ -627,9 +635,9 @@ Elec_variables = ['Secondary Energy|Electricity|'+x for x in Fuels]
 Countries = ["CHN",'IND']
 
 Scenarios = [
-            'WO-NPi-ElecIndus',
-            'WO-NDCLTT-ElecIndus',
-            'WO-15C-ElecIndus',
+            'WO-NPi-ElecIndus-CCS0',
+            'WO-NDCLTT-ElecIndus-CCS0',
+            'WO-15C-ElecIndus-CCS0',
             ]
 
 
@@ -647,16 +655,18 @@ exclude_downscaled_regions = ['China','India']
 
 Scenarios = [
             'NPI',
+            'NDC_CCS1',
             'NDC',
+            'NZ_CCS1',
             'NZ',
             ]
 
 
 
-t0s = [2020,2020,2020, 2020]
-t1s = [2030,2040,2050, '80%']
+t0s = [2020, 2020]
+t1s = [2030,2050]
 
-fig, axs = plt.subplots(2,2,figsize=pf.standard_figure_size())
+fig, axs = plt.subplots(2,1,figsize=pf.standard_figure_size())
 
 for ind_t,(t0,t1) in enumerate(zip(t0s,t1s)):
     ax = axs.flatten()[ind_t]
@@ -686,7 +696,7 @@ for ind_t,(t0,t1) in enumerate(zip(t0s,t1s)):
 
             print(f'Under {scenario}, between {t0}-{t1} in {country}, the range of share of workers leaving into unemployment is {max(Share_U)-min(Share_U):0.2f} ({min(Share_U):0.2f}-{max(Share_U):0.2f})' )
             
-            pos = x+[-0.28,0,0.28][ind_scenario]
+            pos = x+[-0.35,-0.17,0,0.17,0.35][ind_scenario]
             bxplot=ax.boxplot(Share_U,
                     positions=[pos],
                     vert=False,
@@ -694,13 +704,14 @@ for ind_t,(t0,t1) in enumerate(zip(t0s,t1s)):
                     showfliers=False,
                     whiskerprops={'linestyle': 'none'},
                     capprops={'linestyle':'none'},
-                    zorder=1 )
+                    zorder=1,
+                    widths=0.09 )
             
             # Customizing the appearance
             for box in bxplot['boxes']:
                 box.set_facecolor(pf.defining_waysout_colour_scheme()[scenario])
-                box.set_alpha(0.5)  # Reduce the alpha of the face color
-
+                box.set_alpha(0.75)  
+                
             # Set the median line color to black
             for median in bxplot['medians']:
                 median.set_color('black')
@@ -712,10 +723,10 @@ for ind_t,(t0,t1) in enumerate(zip(t0s,t1s)):
             # Data points
             for ind in Share_U.index:
                 y = Share_U.loc[ind]
-                xs = np.random.normal(pos, 0.07, size=1)
-                ax.scatter(y,xs,s=5e-5*TotDestination[ind],color=pf.defining_waysout_colour_scheme()[scenario])
+                xs = np.random.normal(pos, 0.05, size=1)
+                ax.scatter(y,xs,s=4.5e-5*TotDestination[ind],color=pf.defining_waysout_colour_scheme()[scenario])
                 if ind in ['Shanxi','Odisha','Jharkhand']:
-                    ax.text(y+1e-2,xs,ind,fontsize=5.5,verticalalignment='center_baseline')
+                    ax.text(y+1e-2,xs,region_indices.loc[region_indices.Subregion_name==ind,'Subregion_iso'].values[0],fontsize=5,verticalalignment='center_baseline')
 
         x+=1
     ax.set_yticks([0,1])
@@ -723,11 +734,11 @@ for ind_t,(t0,t1) in enumerate(zip(t0s,t1s)):
     ax.set_ylim([-0.5,1.5])
     ax.set_title(str(t0)+' - '+str(t1))
     ax.set_xlim([0,1])
-    if ind_t not in [2,3]:
+    if ind_t not in [1]:
         ax.set_xticklabels([])
     else:
         ax.set_xlabel('Share layoffs not finding employment')
-[ax.text(0.02,0.92, label, transform=ax.transAxes, fontsize= 11, fontweight='bold', va='top', ha='left') for ax, label in zip(axs.flatten(),['a)','b)','c)','d)'])]
+[ax.text(0.02,0.92, label, transform=ax.transAxes, fontsize= 11, fontweight='bold', va='top', ha='left') for ax, label in zip(axs.flatten(),['a)','b)'])]
 
 fig.set_tight_layout('tight')
 #%% 13) Consumption and extraction budget
@@ -738,9 +749,9 @@ t1 = 2101
 
 Regions = [x for x in Imaclim_data.Region.unique() if x!='World']
 Scenarios = [
-            'WO-NPi-ElecIndus',
-            'WO-NDCLTT-ElecIndus',
-            'WO-15C-ElecIndus',
+            'WO-NPi-ElecIndus-CCS0',
+            'WO-NDCLTT-ElecIndus-CCS0',
+            'WO-15C-ElecIndus-CCS0',
             ]
 
 
@@ -1026,3 +1037,596 @@ for ind_country, country in enumerate(['CHN','IND']):
     
     pf.Grid_Unemployment_Destruction(fig,axs,T,Result_data,ind_country)
 
+
+
+#%% 16 ) 
+
+
+# Importing trajectory files for comparison
+
+
+
+# - décroissance de la production :"Resource|Extraction|Coal|Downscaled"
+#  la croissance de la productivité :  "Labour Productivity|Coal|Downscaled"
+
+
+Scenarios = ['NPI','NDC','NZ']
+Regions = ['China','Shanxi','Henan','India','Jharkhand','Odisha']
+# Regions = ['Henan','Odisha','Xinjiang','Chhattisgarh']
+
+Variables = ["Resource|Extraction|Coal|Downscaled"]
+
+fig, axs = plt.subplots(len(Scenarios), len(Regions), figsize=(10,7))
+
+for ind_scenario, scenario in enumerate(Scenarios):
+    for ind_region, region in enumerate(Regions):
+        ax = axs[ind_scenario, ind_region]
+
+
+        y = -Result_data[
+            (Result_data['Downscaled Region']==region)&
+            (Result_data['Scenario']==scenario)&
+            (Result_data['Variable']=="Resource|Extraction|Coal|Downscaled")
+        ].iloc[:,6:].pct_change(axis=1).rolling(window=5, axis=1).mean()*100
+
+        ax.plot(T,y.values[0],label="Production\n drop",linewidth=0.7)
+
+        
+        y = Result_data[
+            (Result_data['Downscaled Region']==region)&
+            (Result_data['Scenario']==scenario)&
+            (Result_data['Variable']=="Labour Productivity|Coal|Downscaled")
+        ].iloc[:,6:].pct_change(axis=1).rolling(window=5, axis=1).mean()*100
+
+        ax.plot(T,y.values[0],label="Productivity\n increase",linewidth=0.7)
+
+        y = -100*Result_data[
+            (Result_data['Downscaled Region']==region)&
+            (Result_data['Scenario']==scenario)&
+            (Result_data['Variable']=='Employment|Coal|Downscaled')
+        ].iloc[:,6:].pct_change(axis=1).rolling(window=5, axis=1).mean()
+
+        ax.plot(T,y.values[0],label="Coal labour\n drop",color='k',linewidth=1)
+
+
+        y = 100*(Result_data[
+            (Result_data['Downscaled Region']==region)&
+            (Result_data['Scenario']==scenario)&
+            (Result_data['Variable']=='Unemployment|Downscaled')
+        ].iloc[:,6:].reset_index()/Result_data[
+            (Result_data['Downscaled Region']==region)&
+            (Result_data['Scenario']==scenario)&
+            (Result_data['Variable']=='Labour Force|Downscaled')
+        ].iloc[:,6:].reset_index()).iloc[:,1:].apply(pd.to_numeric,errors='coerce')#.rolling(window=5, axis=1).mean()
+
+        ax.plot(T,y.values[0],label="Unemployment\n rate",linewidth=1)
+
+        
+
+
+
+
+[ax.set_title(region) for ax, region in zip(axs[0,:],Regions) ]
+[ax.set_ylabel(scenario+'\n [%]') for ax, scenario in zip(axs[:,0],Scenarios) ]
+# 
+[ax.axhline(y=0,color='k',linewidth=0.7) for ax in axs.flatten()]
+# axs.flatten()[-1].legend(fontsize=5)
+axs[1,-1].legend(fontsize=8, 
+           bbox_to_anchor=(1, 0.75))
+
+fig.set_tight_layout('tight')
+
+[ax.set_ylim([-10,20]) for ax in axs.flatten()]
+[ax.set_xlim([2015,2070]) for ax in axs.flatten()]
+
+fig.suptitle('5 year rolling average of coal production drop and productivity increase \n in selected regions under central scenarios', fontsize=9)
+
+#%%
+# 17) Grid of employment in all regions
+
+def CCS_linestyle(CCS):
+    CCS_linestyle={
+        '':'-',
+        'CCS0':'-',
+        'CCS1':':',
+    }[CCS]
+    return CCS_linestyle
+
+def Grid_Employment_Destruction(fig,axs,T,Result_data,ind_country,U):
+    Step = 5
+    [ax.axis('off') for ax in axs.flatten()]
+    regions = pf.defining_province_grid()[ind_country]
+
+    Scenarios = ['NPI','NDC','NZ','NDC_CCS1','NZ_CCS1']
+
+    t0 = 2020
+    t1 = 2060
+
+    for region, position in regions.items():
+
+        ax = axs[position]
+        ax.axis('on')
+        if U:
+            ax1, ax2 = pf.halve_axes(fig,ax)
+            ax1.axhline(y=0,color='k',linewidth=0.5)
+            
+            variable = 'Unemployment|Downscaled'
+            variable = 'Labour Productivity|Coal|Downscaled'
+
+            for ind_scenario, scenario in enumerate(Scenarios):
+                ax1.plot(
+                    T[(t0<=T)&(T<=t1)][0:-1:Step],
+                    Result_data[
+                        (Result_data['Downscaled Region']==region)&
+                        (Result_data.Scenario==scenario)&
+                        (Result_data.Variable==variable)
+                    ].values[0][6:][(t0<=T)&(T<=t1)][0:-1:Step],
+                    color=pf.defining_waysout_colour_scheme()[scenario]
+                )
+            ax1.set_xticks([])
+        
+        else:
+            ax2=ax
+
+        
+        ax2.axhline(y=0,color='k',linewidth=0.5)
+        
+        variable = 'Employment|Coal|Downscaled'
+        for ind_scenario, scenario in enumerate(Scenarios):
+  
+            y = Result_data[
+                    (Result_data['Downscaled Region']==region)&
+                    (Result_data.Scenario==scenario)&
+                    (Result_data.Variable==variable)
+                ].apply(pd.to_numeric,errors='coerce')*1e-3
+            
+
+            
+            if y.sum(axis=1).values[0]==0:
+                ax2.set_facecolor('lightgrey')
+                ax2.set_yticks([])
+                ax2.set_xticks([])
+            else:
+                ax2.plot(
+                    T[(t0<=T)&(T<=t1)][0:-1:Step],
+                    y.values[0][6:][(t0<=T)&(T<=t1)][0:-1:Step],
+                    color=pf.defining_waysout_colour_scheme()[scenario.split('_PG0')[0]],
+                )
+
+                # Only for regions that have coal labour in the first place we also plot without productivity growth
+
+                y = Result_data[
+                    (Result_data['Downscaled Region']==region)&
+                    (Result_data.Scenario==scenario+'_PG0')&
+                    (Result_data.Variable==variable)
+                ].apply(pd.to_numeric,errors='coerce')*1e-3
+
+                ax2.plot(
+                    T[(t0<=T)&(T<=t1)][0:-1:Step],
+                    y.values[0][6:][(t0<=T)&(T<=t1)][0:-1:Step],
+                    color=pf.defining_waysout_colour_scheme()[scenario.split('_')[0]],
+                    linestyle = (0,(1,3))
+                )
+
+                if region == 'Shanxi':
+                    ax2.set_ylim([-20,900])
+                    ax2.spines['left'].set_color('red') 
+                    ax.tick_params(axis='y', colors='red')
+                elif region =='Jharkhand':
+                    ax2.set_ylim([-7,375])
+                    ax2.spines['left'].set_color('red') 
+                    ax.tick_params(axis='y', colors='red')
+                else:
+                    ax2.set_ylim([[-20,350],[-7,200]][ind_country])
+
+
+        
+        ax2.text(0.05,0.05,region,transform=ax.transAxes, fontsize= 13, fontweight='bold')
+        
+
+    
+    # Legend in bottom right corner
+    ax = axs[-1,[0,-1][ind_country]]
+    alines = []
+    for ind_scenario, scenario in enumerate(Scenarios[:5]):
+        alines.append(ax.plot([],[],color=pf.defining_waysout_colour_scheme()[scenario.split('_PG0')[0]], label=scenario))
+    alines.append(ax.plot([],[], color='k', linestyle=':',label='No growth'))
+    ax.legend(fontsize=20,ncol=2)
+    
+    return fig
+
+
+
+
+for ind_country, country in enumerate(['CHN','IND']):
+    fig, axs = plt.subplots(8,[6,8][ind_country],figsize=(20,20))
+    
+    Grid_Employment_Destruction(fig,axs,T,Result_data,ind_country,False)
+
+
+# %%
+# 18 ) Regional sequences
+
+country = 'IND'
+countries = ['CHN','IND']
+
+fig, axs = plt.subplots(2,1,figsize=(10,5), height_ratios = [22/12,1])
+
+for ind_country, country in enumerate(countries):
+    ax = axs[ind_country]
+    # Sort by highest 
+    df = Result_data[
+        (Result_data.Scenario=='NPI')&
+        (Result_data.Variable=='Employment|Coal|Downscaled')&
+        (~Result_data['Downscaled Region'].isin(['China','India']))&
+        (Result_data['2015']!=0)&
+        (Result_data.Region==country)]
+
+    df.loc[:,'2015'] = df.loc[:,'2015'].apply(pd.to_numeric,errors='coerce')
+
+    sorted_regions = df.sort_values(by='2015',ascending=False)['Downscaled Region'].values
+    print(len(sorted_regions))
+
+    Scenarios = ['NPI','NDC','NZ']
+
+
+    for ind_region, region in enumerate(sorted_regions):
+
+        for ind_scenario, scenario in enumerate(Scenarios):
+
+            y = len(sorted_regions)-ind_region + [0.25,0,-0.25][ind_scenario]
+
+            x = Result_data[
+                (Result_data.Scenario==scenario)&
+                (Result_data.Variable=='Employment|Coal|Downscaled')&
+                (Result_data['Downscaled Region']==region)].values[0][6:]
+
+            peak =  T[x==max(x)]
+            half = T[(x<=max(x)/2)&(T>=peak)]
+            half = half[0] if len(half)!=0 else 2100
+            phase = T[x<=max(x)*0.05]
+            phase = phase[0] if len(phase)!=0 else 2101
+
+            ax.plot([peak,phase],[y,y],color=pf.defining_waysout_colour_scheme()[scenario],alpha=0.5)
+            ax.scatter(peak,y,s=5,marker='x',color=pf.defining_waysout_colour_scheme()[scenario])
+            ax.scatter(half,y,s=5,color=pf.defining_waysout_colour_scheme()[scenario])
+            ax.scatter(phase,y,s=5,marker='^',color=pf.defining_waysout_colour_scheme()[scenario])
+
+
+    ax.set_xlim([2010,2100])
+    ax.set_yticks(range(1,1+len(sorted_regions)))
+    ax.set_yticklabels(sorted_regions[::-1])
+
+axs[0].set_xticks([])
+fig.set_tight_layout('tight')
+
+[ax.text(0.02,0.97, label, transform=ax.transAxes, fontsize= 11, fontweight='bold', va='top', ha='left') for ax, label in zip(axs.flatten(),['a)','b)'])]
+
+
+ax = axs[1]
+alines = []
+for scenario in Scenarios:
+    alines.append(
+        ax.plot([],[], color=pf.defining_waysout_colour_scheme()[scenario],label=scenario)[0]
+    )
+alines.append(ax.scatter([],[],s=10,color='k',marker='x',label='Peak'))
+alines.append(ax.scatter([],[],s=10,color='k',label='50% of peak'))
+alines.append(ax.scatter([],[],s=10,color='k',marker='^',label='95% phase out peak'))
+
+
+labels = [la.get_label() for la in alines]
+handles = [label for label in alines]
+
+fig.legend(handles=handles,
+           labels=labels,
+           loc='lower center',
+           ncol=2,
+           fontsize=7,
+           bbox_to_anchor=(0.5, -0.05),#-0.15),
+           frameon=False)
+
+#%% 19 ) GDP and oil prices
+
+Countries = ['World','CHN','IND']
+Variables = ['GDP|PPP','Price|Primary Energy|Oil','Z']
+Scenarios = ['WO-NPi-ElecIndus-CCS0', 'WO-NDCLTT-ElecIndus-CCS0', 'WO-15C-ElecIndus-CCS0']
+
+
+fig, axs = plt.subplots(5,3,figsize=(13,5))
+
+for ind_variable, variable in enumerate(Variables):
+    for ind_country, country in enumerate(Countries):
+        ax = axs[ind_variable+1,ind_country]
+
+        for ind_scenario, scenario in enumerate(Scenarios):
+            y = Imaclim_data[
+                (Imaclim_data.Scenario==scenario)&
+                (Imaclim_data.Variables==variable)&
+                (Imaclim_data.Region==country)
+            ].iloc[:,5:]
+
+            if variable=='GDP|PPP':
+                y =y.pct_change(axis=1).rolling(window=10, axis=1).mean()*100
+            if variable=='Z':
+                y = y.apply(pd.to_numeric,errors='coerce').rolling(window=10, axis=1).mean()
+            
+            ax.plot(T[T<2050],y.values[0][T<2050],color=pf.defining_waysout_colour_scheme()[scenario],linewidth=0.7)
+
+for ind_scenario, scenario in enumerate(Scenarios):
+    for ind_country, country in enumerate(Countries):
+        ax = axs[4,ind_country]
+        gdp = Imaclim_data[
+                    (Imaclim_data.Scenario==scenario)&
+                    (Imaclim_data.Variables=='GDP|PPP')&
+                    (Imaclim_data.Region==country)
+                ].iloc[:,5:].pct_change(axis=1).rolling(window=10, axis=1).mean()
+        z = Imaclim_data[
+                    (Imaclim_data.Scenario==scenario)&
+                    (Imaclim_data.Variables=='Z')&
+                    (Imaclim_data.Region==country)
+                ].iloc[:,5:]
+        gdp_z = (gdp.reset_index()/z.reset_index())
+        ax.plot(T[T<2050],gdp_z.values[0][1:][T<2050],color=pf.defining_waysout_colour_scheme()[scenario],linewidth=0.7)
+        ax.set_ylim([[0,-0.5,-0.5][ind_country],[0.03,2,2][ind_country]])
+
+for ind_country, country in enumerate(Countries):
+    for ind_scenario, scenario in enumerate(Scenarios[1:]):
+        ax = axs[0,ind_country]
+        gdp0 = Imaclim_data[
+                    (Imaclim_data.Scenario==scenario)&
+                    (Imaclim_data.Variables=='GDP|PPP')&
+                    (Imaclim_data.Region==country)
+                ].iloc[:,5:]
+        gdp1 = Imaclim_data[
+                    (Imaclim_data.Scenario==Scenarios[0])&
+                    (Imaclim_data.Variables=='GDP|PPP')&
+                    (Imaclim_data.Region==country)
+                ].iloc[:,5:]
+        dgdp = (gdp0.reset_index()-gdp1.reset_index())/gdp1.reset_index()
+        ax.plot(T[T<2050],dgdp.values[0][1:][T<2050],color=pf.defining_waysout_colour_scheme()[scenario],linewidth=0.7)
+        
+
+[ax.set_ylim([-0.2,0.2]) for ax in axs[0,:]]
+[ax.axhline(y=0,color='k',linewidth=0.75) for ax in axs[0,:]]
+[ax.set_ylim([2,10.5]) for ax in axs[1,:]]
+[ax.set_ylim([1,15]) for ax in axs[2,:]]
+[ax.set_ylim([0.08,0.26]) for ax in axs[3,1:]]
+[ax.axvline(x=2027,color='k',linewidth=0.75,linestyle='--') for ax in axs[:,2]]
+[ax.axvline(x=2038,color='k',linewidth=0.75,linestyle='--') for ax in axs[:,2]]
+
+[ax.axvline(x=2032,color='k',linewidth=0.75,linestyle='--') for ax in axs[:,1]]
+[ax.axvline(x=2042,color='k',linewidth=0.75,linestyle='--') for ax in axs[:,1]]
+
+[ax.set_title(country) for ax, country in zip(axs[0,:],Countries)]
+[ax.set_xlim([2020,2050]) for ax in axs.flatten()]
+axs[0,0].set_ylabel('GDP losses\n[%]')
+axs[1,0].set_ylabel('GDP growth\n[%]')
+axs[2,0].set_ylabel('Oil Price\n[US$2010/GJ]')
+axs[3,0].set_ylabel('Z\n[-]')
+axs[4,0].set_ylabel('dGDPdt/Z\n[-]')
+
+
+#%% 20) Decomposing GDP differences
+
+
+window = 5
+
+Variables = ['Household','Government','Investment','Trade']
+
+Countries = ['World','CHN','IND']
+Scenarios = ['WO-NDCLTT-ElecIndus-CCS0', 'WO-15C-ElecIndus-CCS0']
+npi = 'WO-NPi-ElecIndus'
+
+fig, axs = plt.subplots(2,3,figsize=(10,5))
+
+for ind_country, country in enumerate(Countries):
+    
+    C0 = Imaclim_data[(Imaclim_data.Region==country)&(Imaclim_data.Scenario==npi)&(Imaclim_data.Variables=='Expenditure|Household')].iloc[:,5:].apply(pd.to_numeric).rolling(window=window, axis=1).mean().values[0]
+    G0 = Imaclim_data[(Imaclim_data.Region==country)&(Imaclim_data.Scenario==npi)&(Imaclim_data.Variables=='Expenditure|Government')].iloc[:,5:].apply(pd.to_numeric).rolling(window=window, axis=1).mean().values[0]
+    I0 = Imaclim_data[(Imaclim_data.Region==country)&(Imaclim_data.Scenario==npi)&(Imaclim_data.Variables=='Investment')].iloc[:,5:].apply(pd.to_numeric).rolling(window=window, axis=1).mean().values[0]
+    Y0 = Imaclim_data[(Imaclim_data.Region==country)&(Imaclim_data.Scenario==npi)&(Imaclim_data.Variables=='GDP|MER')].iloc[:,5:].apply(pd.to_numeric).rolling(window=window, axis=1).mean().values[0]
+    T0 = Y0-I0-C0-G0
+
+    for ind_scenario, scenario in enumerate(Scenarios):
+        ax = axs[ind_scenario,ind_country]
+
+        C1 = Imaclim_data[(Imaclim_data.Region==country)&(Imaclim_data.Scenario==scenario)&(Imaclim_data.Variables=='Expenditure|Household')].iloc[:,5:].apply(pd.to_numeric).rolling(window=window, axis=1).mean().values[0]
+        G1 = Imaclim_data[(Imaclim_data.Region==country)&(Imaclim_data.Scenario==scenario)&(Imaclim_data.Variables=='Expenditure|Government')].iloc[:,5:].apply(pd.to_numeric).rolling(window=window, axis=1).mean().values[0]
+        I1 = Imaclim_data[(Imaclim_data.Region==country)&(Imaclim_data.Scenario==scenario)&(Imaclim_data.Variables=='Investment')].iloc[:,5:].apply(pd.to_numeric).rolling(window=window, axis=1).mean().values[0]
+        Y1 = Imaclim_data[(Imaclim_data.Region==country)&(Imaclim_data.Scenario==scenario)&(Imaclim_data.Variables=='GDP|MER')].iloc[:,5:].apply(pd.to_numeric).rolling(window=window, axis=1).mean().values[0]
+        T1 = Y1-I1-C1-G1
+
+
+        dC = (C1-C0)/(Y0)
+        dG = (G1-G0)/(Y0)
+        dI = (I1-I0)/(Y0)
+        dT = (T1-T0)/(Y0)
+        dY = (Y1-Y0)/(Y0)
+
+        data = [dC,dG,dI,dT]
+
+        data_shape, data_stack = pf.get_data_stack(data)
+        alines = []
+        
+        for i in np.arange(0, data_shape[0]):
+            alines.append([
+                ax.bar(T[T<2050],
+                        data[i][T<2050],
+                        bottom=data_stack[i][T<2050],
+                        width=1,
+                        alpha=0.6,
+                        label = Variables[i],
+                        )
+            ])
+        ax.plot(T[T<2050],dY[T<2050],color='k',linestyle='--')
+
+        ax.set_ylim([[-0.06,-0.2][ind_scenario],[0.03,0.2][ind_scenario]])
+
+handles = [aline[0] for aline in alines]
+labelz = [aline[0].get_label() for aline in alines]
+fig.legend(handles=handles,
+           labels=labelz,
+           loc='lower center',
+           ncol=4,
+           bbox_to_anchor=(0.5, +0.01),
+           frameon=False)
+[ax.axvline(x=2027,color='k',linewidth=0.75,linestyle='--') for ax in axs[:,2]]
+[ax.axvline(x=2038,color='k',linewidth=0.75,linestyle='--') for ax in axs[:,2]]
+
+[ax.axvline(x=2032,color='k',linewidth=0.75,linestyle='--') for ax in axs[:,1]]
+[ax.axvline(x=2042,color='k',linewidth=0.75,linestyle='--') for ax in axs[:,1]]
+
+
+[ax.set_title(country) for ax, country in zip(axs[0,:],Countries)]
+[ax.set_xlim([2020,2050]) for ax in axs.flatten()]
+[ax.set_ylabel(scenario) for ax, scenario in zip(axs[:,0],Scenarios)]
+[ax.set_title(country) for ax, country in zip(axs[0,:],Countries)]
+
+
+#%% 21) Decomposing GDP differences by sector
+
+
+window = 5
+
+Variables = ['Services','Industry and construction','Agriculture','Other']
+
+Countries = ['World','CHN','IND']
+Scenarios = ['WO-NDCLTT-ElecIndus-CCS0', 'WO-15C-ElecIndus-CCS0']
+npi = 'WO-NPi-ElecIndus-CCS0'
+
+fig, axs = plt.subplots(2,3,figsize=(10,5))
+
+for ind_country, country in enumerate(Countries):
+    
+    S0 = Imaclim_data[(Imaclim_data.Region==country)&(Imaclim_data.Scenario==npi)&(Imaclim_data.Variables=='Value Added|Services')].iloc[:,5:].apply(pd.to_numeric).rolling(window=window, axis=1).mean().values[0]
+    M0 = Imaclim_data[(Imaclim_data.Region==country)&(Imaclim_data.Scenario==npi)&(Imaclim_data.Variables=='Value Added|Industry and Construction')].iloc[:,5:].apply(pd.to_numeric).rolling(window=window, axis=1).mean().values[0]
+    A0 = Imaclim_data[(Imaclim_data.Region==country)&(Imaclim_data.Scenario==npi)&(Imaclim_data.Variables== 'Value Added|Agriculture')].iloc[:,5:].apply(pd.to_numeric).rolling(window=window, axis=1).mean().values[0]
+    Y0 = Imaclim_data[(Imaclim_data.Region==country)&(Imaclim_data.Scenario==npi)&(Imaclim_data.Variables=='GDP|MER')].iloc[:,5:].apply(pd.to_numeric).rolling(window=window, axis=1).mean().values[0]
+    O0 = Y0-S0-M0-A0
+
+    if min(O0)<0:
+        print(f'{country} O0 smaller than one')
+
+    for ind_scenario, scenario in enumerate(Scenarios):
+        ax = axs[ind_scenario,ind_country]
+
+        S1 = Imaclim_data[(Imaclim_data.Region==country)&(Imaclim_data.Scenario==scenario)&(Imaclim_data.Variables=='Value Added|Services')].iloc[:,5:].apply(pd.to_numeric).rolling(window=window, axis=1).mean().values[0]
+        M1 = Imaclim_data[(Imaclim_data.Region==country)&(Imaclim_data.Scenario==scenario)&(Imaclim_data.Variables=='Value Added|Industry and Construction')].iloc[:,5:].apply(pd.to_numeric).rolling(window=window, axis=1).mean().values[0]
+        A1 = Imaclim_data[(Imaclim_data.Region==country)&(Imaclim_data.Scenario==scenario)&(Imaclim_data.Variables== 'Value Added|Agriculture')].iloc[:,5:].apply(pd.to_numeric).rolling(window=window, axis=1).mean().values[0]
+        Y1 = Imaclim_data[(Imaclim_data.Region==country)&(Imaclim_data.Scenario==scenario)&(Imaclim_data.Variables=='GDP|MER')].iloc[:,5:].apply(pd.to_numeric).rolling(window=window, axis=1).mean().values[0]
+        O1 = Y1-S1-M1-A1
+
+        if min(O1)<0:
+            print(f'{country} O1 {scenario} smaller than one')
+
+
+        dS = (S1-S0)/(Y0)
+        dM = (M1-M0)/(Y0)
+        dA = (A1-A0)/(Y0)
+        dO = (O1-O0)/(Y0)
+        dY = (Y1-Y0)/(Y0)
+
+        data = [dS,dM,dA,dO]
+
+        data_shape, data_stack = pf.get_data_stack(data)
+        alines = []
+        
+        for i in np.arange(0, data_shape[0]):
+            alines.append([
+                ax.bar(T[T<2050],
+                        data[i][T<2050],
+                        bottom=data_stack[i][T<2050],
+                        width=1,
+                        alpha=0.6,
+                        label = Variables[i],
+                        )
+            ])
+        ax.plot(T[T<2050],dY[T<2050],color='k',linestyle='--')
+
+        ax.set_ylim([[-0.06,-0.2][ind_scenario],[0.03,0.2][ind_scenario]])
+
+handles = [aline[0] for aline in alines]
+labelz = [aline[0].get_label() for aline in alines]
+fig.legend(handles=handles,
+           labels=labelz,
+           loc='lower center',
+           ncol=4,
+           bbox_to_anchor=(0.5, +0.01),
+           frameon=False)
+[ax.axvline(x=2027,color='k',linewidth=0.75,linestyle='--') for ax in axs[:,2]]
+[ax.axvline(x=2038,color='k',linewidth=0.75,linestyle='--') for ax in axs[:,2]]
+
+[ax.axvline(x=2032,color='k',linewidth=0.75,linestyle='--') for ax in axs[:,1]]
+[ax.axvline(x=2042,color='k',linewidth=0.75,linestyle='--') for ax in axs[:,1]]
+
+
+[ax.set_title(country) for ax, country in zip(axs[0,:],Countries)]
+[ax.set_xlim([2020,2050]) for ax in axs.flatten()]
+[ax.set_ylabel(scenario) for ax, scenario in zip(axs[:,0],Scenarios)]
+[ax.set_title(country) for ax, country in zip(axs[0,:],Countries)]
+
+# %% 22) Emissions 
+
+Scenarios = ['WO-NPi-ElecIndus-CCS0','WO-NDCLTT-ElecIndus-CCS0','WO-15C-ElecIndus-CCS0']
+var = 'Emissions|CO2|Energy and Industrial Processes'
+var = 'GDP|PPP'
+var = 'Price|Carbon'
+# var = 'Secondary Energy|Electricity|Coal'
+Regions = ['World','CHN','IND']
+
+fig, axs = plt.subplots(1,3, figsize=pf.standard_figure_size())
+for ind_reg, region in enumerate(Regions):
+    ax = axs[ind_reg]
+    ax.axhline(y=0,color='k',linewidth=0.75,linestyle='--')
+    
+    for ind_scenario, scenario in enumerate(Scenarios):
+        y = Imaclim_data[(Imaclim_data['Scenario']==scenario) & (Imaclim_data['Region']==region) & (Imaclim_data['Variables']==var)].values[0][5:]
+        ax.plot(T,y)
+# %% 23) Regionally gridded destination bar graph
+
+
+
+def Grid_Destination(fig,axs,T,Result_data,ind_country,dynamic,Scenario):
+    Step = 5
+    [ax.axis('off') for ax in axs.flatten()]
+    regions = pf.defining_province_grid()[ind_country]
+
+    Scenarios = ['NPI','NDC','NZ','NDC_CCS1','NZ_CCS1']
+
+    t0 = 2020
+    t1 = 2060
+
+    for region, position in regions.items():
+        
+        ax = axs[position]
+        ax.axis('on')
+        data_save = {}
+        X = [0]
+        s_index = 0
+
+        y = Result_data[
+                    (Result_data['Downscaled Region']==region)&
+                    (Result_data.Scenario==Scenario)&
+                    (Result_data.Variable=='Employment|Coal|Downscaled')
+                ].loc[:,"2015"].values[0]
+
+        if y==0:
+            ax.set_yticks([])
+            ax.set_facecolor('lightgrey')
+            ax.set_xticks([])
+        else:
+            if dynamic:
+                X = range(t0,t1)
+                for ind_t,t in enumerate(X):
+                    _, alines = pf.destination_bar(Result_data, X, T, t-1, t+1, Scenario, ax, ['China','India'][ind_country], {region:''}, data_save, ind_t)
+
+        ax.text(0.05,0.05,region,transform=ax.transAxes, fontsize= 11, fontweight='bold')  
+    return fig
+
+
+
+Scenario = 'NPI'
+for ind_country, country in enumerate(['CHN','IND']):
+    fig, axs = plt.subplots(8,[6,8][ind_country],figsize=(20,20))
+    
+    Grid_Destination(fig,axs,T,Result_data,ind_country,True,Scenario)
