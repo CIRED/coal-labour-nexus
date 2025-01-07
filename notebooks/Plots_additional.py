@@ -669,7 +669,7 @@ t1s = [2030,2050]
 fig, axs = plt.subplots(2,1,figsize=(16/2.54,9/2.54))
 
 for ind_t,(t0,t1) in enumerate(zip(t0s,t1s)):
-    ax = axs.flatten()[ind_t]
+    ax = axs[ind_t,0]
     x=0
     
     
@@ -1657,3 +1657,5 @@ for ind_country, country in enumerate(['CHN','IND']):
     fig, axs = plt.subplots(8,[6,8][ind_country],figsize=(20,20))
     
     Grid_Destination(fig,axs,T,Result_data,ind_country,True,Scenario)
+
+# %%

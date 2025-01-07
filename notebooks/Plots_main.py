@@ -18,6 +18,7 @@ import seaborn as sns
 import pyam
 # Plotting functions
 import plotting_functions as pf
+import matplotlib.colors as mcolors
 # import importlib
 # importlib.reload(pf)
 
@@ -1297,6 +1298,32 @@ fig.subplots_adjust(hspace=-0.4)
 
 
 
+def _forward(x):
+    thresh_neg = -0.0005  # Threshold for negative values
+    thresh_pos = 0.002    # Threshold for positive values
+
+    # Apply symlog transformation
+    y = np.where(
+        x >= 0,
+        np.log(1 + x / thresh_pos),
+        -np.log(1 + x / thresh_neg)
+    )
+    return y
+
+# Define the inverse transformation
+def _inverse(y):
+    thresh_neg = -0.0005  # Threshold for negative values
+    thresh_pos = 0.002    # Threshold for positive values
+
+    # Apply inverse symlog transformation
+    x = np.where(
+        y >= 0,
+        thresh_pos * (np.exp(y) - 1),
+        thresh_neg * (np.exp(-y) - 1)
+    )
+    return x
+
+
 import importlib
 importlib.reload(pf)
 
@@ -1335,11 +1362,11 @@ stretch = 0.1
 norm = TwoSlopeNorm(vmin=vmin, vcenter=vcenter, vmax=vmax)
 # norm = PseudologNorm(vmin=vmin, vcenter=vcenter, vmax=vmax, stretch=stretch)
 
-
+# norm = mcolors.FuncNorm((_forward, _inverse), vmin=vmin, vmax=vmax)
 
 ax = axs[0,0]
 ax.set_title('2015 Workforce')
-ax = pf.monovariate_map('Workforce',t0,T1,ax,cax,zlim,colormap,Result_data,scenario,Asia,norm)
+ax = pf.monovariate_map('Workforce',t0,T1,ax,cax2,zlim,colormap,Result_data,scenario,Asia,norm)
 for s_index, scenario in enumerate(Scenarios):
     ax = axs.flatten()[1+s_index]
     ax = pf.monovariate_map(var,t0,T1,ax,cax2,zlim,colormap,Result_data,scenario,Asia,norm)
@@ -1352,4 +1379,9 @@ cax2.set_yscale('linear')
 cax2.set_yticks([-0.004,0,0.02,0.04])
 cax2.set_yticklabels(['-0.4%','0%','2%','4%'])
 fig.subplots_adjust(hspace=-0.4)
+
+
+# pf.save_figure(fig,'4_Map_linear','svg')
+
+#%%
 

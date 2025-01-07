@@ -25,13 +25,13 @@ def standard_figure_size():
 
 #=========================================================================================================
 # Save figure
-def save_figure(fig,name,format):
+def save_figure(fig,name,format,dpi=400):
     figure_path = os.path.join('figures')
 
     if not os.path.exists(figure_path):
         os.makedirs(figure_path)
 
-    fig.savefig(os.path.join(figure_path,name+'.'+format))
+    fig.savefig(os.path.join(figure_path,name+'.'+format),dpi=dpi)
 
 
 #=========================================================================================================
@@ -280,8 +280,8 @@ def plot_vulnerability_bivariate(scenario, ax, Regions, Result_data, T, t0, T1, 
         alpha=1)
 
 
-    Asia[Asia['region']=='Asia'].plot(ax=ax, color=color_not_plotted, edgecolor='black',linewidth=0.5)
-    Asia[Asia['region']=='Disputed'].plot(ax=ax, color=color_not_plotted, edgecolor='black', linestyle='--',linewidth=0.5)
+    Asia[Asia['region']=='Asia'].plot(ax=ax, color=color_not_plotted, edgecolor='black',linewidth=0.5,rasterized=True)
+    Asia[Asia['region']=='Disputed'].plot(ax=ax, color=color_not_plotted, edgecolor='black', linestyle='--',linewidth=0.5,rasterized=True)
     
     for region in ['Shanxi','Inner Mongolia','Jharkhand','Odisha','Chhattisgarh','Henan','Shandong']:
         key_data[region+str(s_index)] = {'Downscaled Region':region,
@@ -928,8 +928,8 @@ def monovariate_map(var,t0,T1,ax,cax,zlim,colormap,Result_data,scenario,Asia,nor
                         rasterized=True,
                         norm=norm)
 
-    Asia[Asia['region']=='Asia'].plot(ax=ax, color=color_not_plotted(), edgecolor='black',linewidth=0.5)
-    Asia[Asia['region']=='Disputed'].plot(ax=ax, color=color_not_plotted(), edgecolor='black', linestyle='--',linewidth=0.5)
+    Asia[Asia['region']=='Asia'].plot(ax=ax, color=color_not_plotted(), edgecolor='black',linewidth=0.5,rasterized=True)
+    Asia[Asia['region']=='Disputed'].plot(ax=ax, color=color_not_plotted(), edgecolor='black', linestyle='--',linewidth=0.5,rasterized=True)
     
     ax.set_xticks([])
     ax.set_yticks([])
