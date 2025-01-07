@@ -666,10 +666,11 @@ Scenarios = [
 t0s = [2020, 2020]
 t1s = [2030,2050]
 
-fig, axs = plt.subplots(2,1,figsize=(16/2.54,9/2.54))
+# fig, axs = plt.subplots(2,2,figsize=(16/2.54,9/2.54))
+fig, axs = plt.subplots(2,2,figsize=pf.standard_figure_size())
 
 for ind_t,(t0,t1) in enumerate(zip(t0s,t1s)):
-    ax = axs[ind_t,0]
+    
     x=0
     
     
@@ -694,52 +695,65 @@ for ind_t,(t0,t1) in enumerate(zip(t0s,t1s)):
             Share_U = U/TotDestination
             Share_U=Share_U.dropna()
 
+            R = Result_data[(Result_data.Variable=='Coal Worker Destination|Retire')&
+                        (Result_data.Region==country)&
+                        (~Result_data['Downscaled Region'].isin(exclude_downscaled_regions))&
+                        (Result_data.Scenario==scenario)].drop(['Model','Region','Scenario','Variable','Unit'],axis=1).groupby('Downscaled Region').sum().loc[:,[str(x) for x in range(2020,T1)]].sum(axis=1)
+
+            Share_R = R/(R+TotDestination)
+            Share_R=Share_R.dropna()
+
             print(f'Under {scenario}, between {t0}-{t1} in {country}, the range of share of workers leaving into unemployment is {max(Share_U)-min(Share_U):0.2f} ({min(Share_U):0.2f}-{max(Share_U):0.2f})' )
             
             pos = x+[-0.35,-0.17,0,0.17,0.35][ind_scenario]
-            bxplot=ax.boxplot(Share_U,
-                    positions=[pos],
-                    vert=False,
-                    patch_artist=True,
-                    showfliers=False,
-                    whiskerprops={'linestyle': 'none'},
-                    capprops={'linestyle':'none'},
-                    zorder=1,
-                    widths=0.09 )
-            
-            # Customizing the appearance
-            for box in bxplot['boxes']:
-                box.set_facecolor(pf.defining_waysout_colour_scheme()[scenario])
-                box.set_alpha(0.75)  
+
+            for ind_var, var in enumerate([Share_U,Share_R]):
+                ax = axs[ind_t,ind_var]
+                bxplot=ax.boxplot(var,
+                        positions=[pos],
+                        vert=False,
+                        patch_artist=True,
+                        showfliers=False,
+                        whiskerprops={'linestyle': 'none'},
+                        capprops={'linestyle':'none'},
+                        zorder=1,
+                        widths=0.09 )
                 
-            # Set the median line color to black
-            for median in bxplot['medians']:
-                median.set_color('black')
+                # Customizing the appearance
+                for box in bxplot['boxes']:
+                    box.set_facecolor(pf.defining_waysout_colour_scheme()[scenario])
+                    box.set_alpha(0.5)  
+                    box.set_edgecolor('black')
+                    box.set_linewidth(0.5)  # Set the edge linewidth here
+                    
+                # Set the median line color to black
+                for median in bxplot['medians']:
+                    median.set_color('black')
 
-            for box in bxplot['boxes']:
-                box.set_edgecolor('black')
 
-            ax.scatter(np.mean(Share_U),pos,s=3,color='k',zorder=2)
-            # Data points
-            for ind in Share_U.index:
-                y = Share_U.loc[ind]
-                xs = np.random.normal(pos, 0.05, size=1)
-                ax.scatter(y,xs,s=4.5e-5*TotDestination[ind],color=pf.defining_waysout_colour_scheme()[scenario])
-                if ind in ['Shanxi','Odisha','Jharkhand']:
-                    ax.text(y+1e-2,xs,region_indices.loc[region_indices.Subregion_name==ind,'Subregion_iso'].values[0],fontsize=5,verticalalignment='center_baseline')
+                ax.scatter(np.mean(var),pos,s=3,color='k',zorder=2)
+                # Data points
+                for ind in var.index:
+                    y = var.loc[ind]
+                    xs = np.random.normal(pos, 0.05, size=1)
+                    ax.scatter(y,xs,s=4.5e-5*TotDestination[ind],color=pf.defining_waysout_colour_scheme()[scenario])
+                    if ind in ['Shanxi','Odisha','Jharkhand'] and ind_var==0:
+                        ax.text(y+1e-2,xs,region_indices.loc[region_indices.Subregion_name==ind,'Subregion_iso'].values[0],fontsize=5,verticalalignment='center_baseline')
 
         x+=1
-    ax.set_yticks([0,1])
-    ax.set_yticklabels(['China','India'])
-    ax.axhline(y=0.5, color='k', linestyle=':',linewidth = 0.5)
-    ax.set_ylim([-0.5,1.5])
-    ax.set_title(str(t0)+' - '+str(t1))
-    ax.set_xlim([0,1])
-    if ind_t not in [1]:
-        ax.set_xticklabels([])
-    else:
-        ax.set_xlabel('Share layoffs not finding employment')
-[ax.text(0.02,0.92, label, transform=ax.transAxes, fontsize= 11, fontweight='bold', va='top', ha='left') for ax, label in zip(axs.flatten(),['a)','b)'])]
+    for ind_var in [0,1]:
+        ax = axs[ind_t,ind_var]
+        ax.set_yticks([0,1])
+        ax.set_yticklabels(['China','India'])
+        ax.axhline(y=0.5, color='k', linestyle=':',linewidth = 0.5)
+        ax.set_ylim([-0.5,1.5])
+        ax.set_title(str(t0)+' - '+str(t1))
+        ax.set_xlim([0,1])
+
+[ax.set_xticklabels([]) for ax in axs[0,:]]
+axs[1,0].set_xlabel('Share layoffs not finding employment')
+axs[1,1].set_xlabel('Share destruction in retirement')
+[ax.text(0.02,0.92, label, transform=ax.transAxes, fontsize= 11, fontweight='bold', va='top', ha='left') for ax, label in zip(axs.flatten(),['a)','b)','c)','d)'])]
 
 
 #Legend
@@ -750,7 +764,7 @@ for ind_scenario in range(4,-1,-1):
                              color=pf.defining_waysout_colour_scheme()[scenario],
                              label=['NPi','NDC-LTT','NDC-LTT w/CCS','1.5°C','1.5°C w/CCS'][ind_scenario]))
     
-alines.append(ax.scatter([],[],s=0,label='Job destruction'))
+alines.append(ax.scatter([],[],s=0,label='Number of Workers'))
 for size in [5000,50000,500000]:
     alines.append(ax.scatter([],[],s=4.5e-5*size,color='grey',label=size))
 labels = [la.get_label() for la in alines]
