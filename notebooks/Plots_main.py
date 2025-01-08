@@ -112,6 +112,52 @@ Colors = pf.defining_waysout_colour_scheme()
 # ===========================================================================================================================
 
 
+#%% 0) Scenarios descriptions
+# ===========================================================================================================================
+
+Step = 5
+
+Countries = ['World','CHN','IND']
+Scenarios = ['WO-15C-ElecIndus-CCS0', 'WO-NDCLTT-ElecIndus-CCS0','WO-NPi-ElecIndus-CCS0',
+        'WO-15C-ElecIndus-CCS1','WO-NDCLTT-ElecIndus-CCS1']
+
+
+Scenarios_names = ['1.5°C','NDC-LTT','NPi','1.5°C-CCS','NDC-LTT-CCS']
+Variables = ['Emissions|CO2|Energy and Industrial Processes',
+             'Resource|Extraction|Coal',
+             'Secondary Energy|Electricity|Coal']
+
+fig, axs = plt.subplots(len(Variables),len(Countries),figsize=pf.standard_figure_size())
+
+for ind_country, country in enumerate(Countries):
+    for ind_var, variable in enumerate(Variables):
+        ax = axs[ind_var,ind_country]
+        alines = []
+        for ind_scen, scenario in enumerate(Scenarios):
+
+            y = Imaclim_data[(Imaclim_data.Variables==variable)&
+                             (Imaclim_data.Scenario == scenario)&
+                             (Imaclim_data.Region   == country)].values[0][5:]
+            
+            ax.axhline(y=0,color='k',linewidth=0.75)
+            alines.append(ax.plot(T[0:-1:Step],y[0:-1:Step],label=Scenarios_names[ind_scen],color=Colors[scenario])[0])
+
+[ax.set_xticks([]) for ax in axs[:2,:].flatten()]
+[ax.set_ylabel(unit) for ax, unit in zip(axs[:,0],['Emissions\n MtCO2/yr','Coal extraction\n EJ/yr','Power from\n coal\n EJ/yr'])]
+[ax.set_title(country) for ax, country in zip(axs[0,:],['World','China','India'])]
+
+labels = [la.get_label() for la in alines]
+handles = [label for label in alines]
+
+fig.legend(handles=alines,
+           labels=labels,
+           loc='lower center',
+           ncol=2,
+           bbox_to_anchor=(0.5, -0.18),
+           frameon=False)
+
+fig.set_tight_layout('tight')
+
 #%% 1) Employment trajectories
 # ===========================================================================================================================
 
@@ -1299,7 +1345,7 @@ fig.subplots_adjust(hspace=-0.4)
 
 
 def _forward(x):
-    thresh_neg = -0.0005  # Threshold for negative values
+    thresh_neg = -0.00025  # Threshold for negative values
     thresh_pos = 0.002    # Threshold for positive values
 
     # Apply symlog transformation
@@ -1312,7 +1358,7 @@ def _forward(x):
 
 # Define the inverse transformation
 def _inverse(y):
-    thresh_neg = -0.0005  # Threshold for negative values
+    thresh_neg = -0.00025  # Threshold for negative values
     thresh_pos = 0.002    # Threshold for positive values
 
     # Apply inverse symlog transformation
@@ -1362,7 +1408,7 @@ stretch = 0.1
 norm = TwoSlopeNorm(vmin=vmin, vcenter=vcenter, vmax=vmax)
 # norm = PseudologNorm(vmin=vmin, vcenter=vcenter, vmax=vmax, stretch=stretch)
 
-# norm = mcolors.FuncNorm((_forward, _inverse), vmin=vmin, vmax=vmax)
+norm = mcolors.FuncNorm((_forward, _inverse), vmin=vmin, vmax=vmax)
 
 ax = axs[0,0]
 ax.set_title('2015 Workforce')
