@@ -662,6 +662,11 @@ Scenarios = [
             ]
 
 
+loc = {"Shanxi":(0.75,-0.1),
+       "Jharkhand":(0.7,1.4),
+       "Odisha":(0.85,0.8),
+       'Chhattisgarh':(0.1,1)}
+
 
 t0s = [2020, 2020]
 t1s = [2030,2050]
@@ -737,8 +742,12 @@ for ind_t,(t0,t1) in enumerate(zip(t0s,t1s)):
                     y = var.loc[ind]
                     xs = np.random.normal(pos, 0.05, size=1)
                     ax.scatter(y,xs,s=4.5e-5*TotDestination[ind],color=pf.defining_waysout_colour_scheme()[scenario])
-                    if ind in ['Shanxi','Odisha','Jharkhand'] and ind_var==0:
-                        ax.text(y+1e-2,xs,region_indices.loc[region_indices.Subregion_name==ind,'Subregion_iso'].values[0],fontsize=5,verticalalignment='center_baseline')
+                    if ind in ['Shanxi','Odisha','Jharkhand','Chhattisgarh']:# and ind_var==0:
+                        ax.plot([y,loc[ind][0]],[xs,loc[ind][1]],color='k',linewidth=0.6,alpha=0.4)
+                
+                if ind_scenario==0:
+                    for ind in ['Shanxi','Odisha','Jharkhand','Chhattisgarh']:
+                        ax.text(loc[ind][0],loc[ind][1],region_indices.loc[region_indices.Subregion_name==ind,'Subregion_iso'].values[0],fontsize=5,verticalalignment='center_baseline')
 
         x+=1
     for ind_var in [0,1]:

@@ -16,6 +16,7 @@ import xycmap
 from matplotlib import ticker
 import seaborn as sns
 import pyam
+import string
 # Plotting functions
 import plotting_functions as pf
 import matplotlib.colors as mcolors
@@ -395,11 +396,12 @@ import importlib
 importlib.reload(pf)
 
 Provinces = [provincesChina, provincesIndia]
-Countries = ['China', 'India']
+Countries = ['China', 'India','Shanxi','Jharkhand','Chhattisgarh']
+
 nls = [6, 8]
 
-Scenarioss = [ ['NPI','NDC','NZ']]*3
-Scenarioss_name = [[ 'NPi', 'NDC\nLTT', '1.5°C']]*3
+Scenarioss = [ ['NPI','NDC','NDC_CCS1','NZ','NZ_CCS1']]*3
+Scenarioss_name = [[ 'NPi', 'NDC\nLTT', 'NDC\nLTT-CCS', '1.5°C', '1.5°C\nCCS']]*3
 
 T0s = [2020]*3
 T1s = [2030,2050,'80%']
@@ -408,14 +410,18 @@ Xs = [
     list(range(len(Scenarioss[0])))
 ]*3
 data_save = {}
-fig, axs = plt.subplots(2,
+fig, axs = plt.subplots(len(Countries),
                         len(T1s),
-                        figsize=pf.standard_figure_size(),
+                        figsize=(20/2.54,13/2.54),
                         )
-for c_index in [0, 1]:
+for c_index in range(len(Countries)):
     x = 0
-    provinces = Provinces[c_index]
-    region = ['China', 'India'][c_index]
+    
+    region = Countries[c_index]
+    if c_index <2:
+        provinces = Provinces[c_index]
+    else:
+        provinces = {x:0 for x in [region]}
     
     for stype_index, (t0,T1) in enumerate(zip(T0s,T1s)):
         ax = axs[c_index][stype_index]
@@ -439,7 +445,7 @@ for c_index in [0, 1]:
 
             data_save, alines = pf.destination_bar(Result_data, X, T, t0, t1, Scenario, ax, region, provinces, data_save, s_index)
             if (stype_index == 2)&(t1!=2100):
-                ax.text(X[s_index],data_save[(region,Scenario,t1)][:-1].sum(),t1+1,style='italic')
+                ax.text(X[s_index],data_save[(region,Scenario,t1)][:-1].sum(),t1+1,style='italic',fontsize=6)
 
 
             x += 1
@@ -465,10 +471,12 @@ for c_index in [0, 1]:
             rotation=90,
             )
 
-        ax.set_ylim([-0.5, 3.8])
+letters = [x+')' for x in string.ascii_lowercase]
+[ax.set_ylim([-0.5, 3.8]) for ax in axs[[0,1],:].flatten()]
+[ax.set_ylim([-0.3, 1]) for ax in axs[2:,:].flatten()]
 
 [ax.set_yticklabels([]) for ax in axs[:,[1,2]].flatten()]
-[ax.text(0.02,0.96, label, transform=ax.transAxes, fontsize= 11, fontweight='bold', va='top', ha='left') for ax, label in zip(axs.flatten(),['a)','b)','c)','d)','e)','f)'])]
+[ax.text(0.02,0.96, label, transform=ax.transAxes, fontsize= 11, fontweight='bold', va='top', ha='left') for ax, label in zip(axs.flatten(),letters)]
 
 fig.legend(handles=alines,
            labels=labs,
@@ -1080,8 +1088,8 @@ time_gap = 10
 
 Ts = range(2015,2095,time_gap)
 Regions = ['CHN','IND']
-Scenarios =['WO-NPi-ElecIndus-CCS0', 'WO-NDCLTT-ElecIndus-CCS0', 'WO-15C-ElecIndus-CCS0']
-Outputs_name = ['NPi','NDC-LTT','1.5°C']
+Scenarios =['WO-NPi-ElecIndus-CCS0', 'WO-NDCLTT-ElecIndus-CCS0', 'WO-NDCLTT-ElecIndus-CCS1', 'WO-15C-ElecIndus-CCS0', 'WO-15C-ElecIndus-CCS1']
+Outputs_name = ['NPi','NDC-LTT','NDC-LTT-CCS','1.5°C','1.5°C-CCS']
 
 Variabless = [
     'Import|Coal',
@@ -1177,15 +1185,17 @@ for ind_region, region in enumerate(Regions):
         ax.set_ylim([[0,220],[-20,130],[-30,53],[0,60],[-7,15],[-7,16]][ind_region])
         ax.set_xlim([2010,2090])
 
+
+[ax.set_yticklabels([]) for ax in axs[:,1:].flatten()]
 handles = [aline[0] for aline in alines]
 labelz = [aline[0].get_label() for aline in alines]
 fig.legend(handles=handles,
            labels=labelz,
-           loc='lower center',
+           loc='upper center',
            ncol=4,
-           bbox_to_anchor=(0.5, +0.01),
+           bbox_to_anchor=(0.5, -0),# +0.01),
            frameon=False)
-fig.suptitle('Use of primary energy from coal', y=0.92, fontsize=16)
+fig.suptitle('Use of primary energy from coal', y=1.05, fontsize=16)
 
 
 #%%
