@@ -568,11 +568,11 @@ def add_coaloutput_comparisons(axs,regions_ar6,categories):
     #Plotting aditional trajectories
     for i_r, reg in enumerate(regions_ar6):
         for i_c, cat in enumerate(categories):
-            ax = axs[i_r, i_c]
-            ax.plot(Q_WEB['t'], [float(x) for x in Q_WEB[['World','China','India'][i_r]]], color='gray', alpha=1, linestyle='-', linewidth=1.2)
+            ax = axs[i_r][i_c]
+            ax.plot(Q_WEB['t'], [float(x) for x in Q_WEB[['World','China','India'][i_r]]], color='k', alpha=1, linestyle='-', linewidth=1.2)
 
             if i_r != 1:
-                ax.plot(SEI['t'][1:], [float(x) for x in SEI[['GPP','CHN_GPP','IND_GPP'][i_r]][1:]], color='red', alpha=1, linestyle='-', linewidth=1.2)
+                ax.plot(SEI['t'][1:], [float(x) for x in SEI[['GPP','CHN_GPP','IND_GPP'][i_r]][1:]], color='red', alpha=1, linestyle='--', linewidth=1.2)
 
 
 def add_emissions_comparisons(axs,regions_ar6,categories):

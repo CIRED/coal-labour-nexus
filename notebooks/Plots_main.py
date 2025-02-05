@@ -115,7 +115,8 @@ Colors = pf.defining_waysout_colour_scheme()
 
 #%% 0) Scenarios descriptions
 # ===========================================================================================================================
-
+import importlib
+importlib.reload(pf)
 Step = 5
 
 Countries = ['World','CHN','IND']
@@ -125,8 +126,8 @@ Scenarios = ['WO-15C-ElecIndus-CCS0', 'WO-NDCLTT-ElecIndus-CCS0','WO-NPi-ElecInd
 
 Scenarios_names = ['1.5°C','NDC-LTT','NPi','1.5°C-CCS','NDC-LTT-CCS']
 Variables = ['Emissions|CO2|Energy and Industrial Processes',
-             'Resource|Extraction|Coal',
-             'Secondary Energy|Electricity|Coal']
+             'Resource|Extraction|Coal',]
+            #  'Secondary Energy|Electricity|Coal']
 
 fig, axs = plt.subplots(len(Variables),len(Countries),figsize=pf.standard_figure_size())
 
@@ -143,9 +144,17 @@ for ind_country, country in enumerate(Countries):
             ax.axhline(y=0,color='k',linewidth=0.75)
             alines.append(ax.plot(T[0:-1:Step],y[0:-1:Step],label=Scenarios_names[ind_scen],color=Colors[scenario])[0])
 
-[ax.set_xticks([]) for ax in axs[:2,:].flatten()]
+        
+
+pf.add_coaloutput_comparisons([[axs[1,0]],[axs[1,1]],[axs[1,2]]],Countries,[0])
+
+[ax.set_xticks([]) for ax in axs[:-1,:].flatten()]
 [ax.set_ylabel(unit) for ax, unit in zip(axs[:,0],['Emissions\n MtCO2/yr','Coal extraction\n EJ/yr','Power from\n coal\n EJ/yr'])]
 [ax.set_title(country) for ax, country in zip(axs[0,:],['World','China','India'])]
+[ax.set_xlim([2005,2100]) for ax in axs.flatten()]
+
+alines.append(ax.plot([],[],color='k',label='Historical data')[0])
+alines.append(ax.plot([],[],color='red',linestyle='--',label='Planned production')[0])
 
 labels = [la.get_label() for la in alines]
 handles = [label for label in alines]
@@ -153,12 +162,13 @@ handles = [label for label in alines]
 fig.legend(handles=alines,
            labels=labels,
            loc='lower center',
-           ncol=2,
+           ncol=3,
            bbox_to_anchor=(0.5, -0.18),
            frameon=False)
 
 fig.set_tight_layout('tight')
 
+pf.save_figure(fig,'0_scenario','jpg',dpi=600)
 #%% 1) Employment trajectories
 # ===========================================================================================================================
 
@@ -248,7 +258,7 @@ for c_index in [0, 1]:
             S_maxy.append(maxy)
             S_miny.append(miny)
 
-        if Scenarios[j] in  ['NPI','NDC','NZ']:
+        if Scenarios[j] in  ['NPI','NDC','NZ','NDC_CCS1','NZ_CCS1']:
             if COAL_emp.values[0][6:][
                     T < 2070][-1] < COAL_emp.values[0][6:][5] / 2:
                 
@@ -386,7 +396,7 @@ fig.legend(handles=alines,
 
 
 
-pf.save_figure(fig,'1_Employment','svg')
+pf.save_figure(fig,'1_Employment','jpg',dpi=600)
 
 # %% 2) Mobility of laid-off coal workers between 2020-2030 and 2020-2050.
 # ===========================================================================================================================
@@ -1422,7 +1432,7 @@ norm = mcolors.FuncNorm((_forward, _inverse), vmin=vmin, vmax=vmax)
 
 ax = axs[0,0]
 ax.set_title('2015 Workforce')
-ax = pf.monovariate_map('Workforce',t0,T1,ax,cax2,zlim,colormap,Result_data,scenario,Asia,norm)
+ax = pf.monovariate_map('Workforce',t0,T1,ax,cax2,zlim,colormap,Result_data,'NPI',Asia,norm)
 for s_index, scenario in enumerate(Scenarios):
     ax = axs.flatten()[1+s_index]
     ax = pf.monovariate_map(var,t0,T1,ax,cax2,zlim,colormap,Result_data,scenario,Asia,norm)
@@ -1437,7 +1447,7 @@ cax2.set_yticklabels(['-0.4%','0%','2%','4%'])
 fig.subplots_adjust(hspace=-0.4)
 
 
-# pf.save_figure(fig,'4_Map_linear','svg')
+pf.save_figure(fig,'4_Map_linear','svg')
 
 #%%
 
