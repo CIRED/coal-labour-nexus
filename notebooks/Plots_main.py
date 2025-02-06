@@ -127,7 +127,6 @@ Scenarios = ['WO-15C-ElecIndus-CCS0', 'WO-NDCLTT-ElecIndus-CCS0','WO-NPi-ElecInd
 Scenarios_names = ['1.5°C','NDC-LTT','NPi','1.5°C-CCS','NDC-LTT-CCS']
 Variables = ['Emissions|CO2|Energy and Industrial Processes',
              'Resource|Extraction|Coal',]
-            #  'Secondary Energy|Electricity|Coal']
 
 fig, axs = plt.subplots(len(Variables),len(Countries),figsize=pf.standard_figure_size())
 
@@ -180,8 +179,6 @@ Regions = [
     for x in [0, 1]
 ]
 Scen_type = ['NPI','NDC','NZ','NDC_CCS1','NZ_CCS1']
-
-
 
 
 Show_uncertainty = False
@@ -270,13 +267,17 @@ for c_index in [0, 1]:
                 
                 if COAL_emp.values[0][6:][
                     T < 2070][-1] < COAL_emp.values[0][6:][5] *0.05:
-                    ax.scatter(T[COAL_emp.values[0][6:] < COAL_emp.values[0][6:][5] *0.05][0],
+                    t95 = T[COAL_emp.values[0][6:] < COAL_emp.values[0][6:][5] *0.05][0]
+                    ax.scatter(t95,
                             -0.125,
                             color=Colors[scenario.split('_PG0')[0]],
                             marker='^',
                             s=20)
                     
-
+                    # Outputing some results for text
+                    if Scenarios[j] in ['NPI','NDC','NZ']:
+                        print(f'In {country} under {Scenarios[j]}, 95% of jobs disappear by {t95} \n')
+                    
 
     Scen_y = pd.DataFrame(Scen_y, index=Scenarios)
     S_maxy = pd.DataFrame(S_maxy, index=Scen_type)
@@ -307,6 +308,22 @@ for c_index in [0, 1]:
     ax.set_ylabel('Million workers')
     ax.set_ylim([-0.25, 5])
     ax.axvline(x=2020, color='k', linestyle='--', linewidth=0.8)
+
+
+    # Outputing some results for text
+    #2020-2030 Job cuts
+    jc = (Scen_y.loc[['NPI','NDC','NZ'],5]-Scen_y.loc[['NPI','NDC','NZ'],15])*1e-1*1e3
+    print(f'In {country}, {jc} thousand jobs are cut annually between 2020 and 2030')
+
+    #Peak destruction by productivity
+    for scenario in ['NDC','NZ']:
+        dif = (Scen_y.loc[scenario+'_PG0']-Scen_y.loc[scenario])*1e3
+        tdif = T[dif==max(dif)][0]
+        print(f'In {country} under {scenario}, {max(dif)} jobs are destroyed by productivity in {tdif}')
+
+    #Destruction by productivity in NPI 2070
+    dif = (Scen_y.loc['NPI_PG0',55]-Scen_y.loc['NPI',55])*1e3
+    print(f'In {country} under NPI, {dif} jobs are destroyed by productivity')
 
 alines = []
 
@@ -444,6 +461,157 @@ fig.subplots_adjust(hspace=-0.4)
 pf.save_figure(fig,'E_Map_linear','svg')
 
 
+
+
+# %% 4) Boxplot of share not finding per scenario
+
+import importlib
+importlib.reload(pf)
+
+all_region_names = False
+
+region_indices = pf.def_region_indices()
+destination_variables = [x for x in Result_data.Variable.unique() if 'Coal Worker Destination' in x if 'Retire' not in x and 'Hire' not in x]
+
+Countries = ["CHN",'IND']
+exclude_downscaled_regions = ['China','India']
+
+Scenarios = [
+            'NPI',
+            'NDC_CCS1',
+            'NDC',
+            'NZ_CCS1',
+            'NZ',
+            ][::-1]
+
+
+loc = {"Shanxi":(0.75,-0.1),
+       "Jharkhand":(0.7,1.4),
+       "Odisha":(0.85,0.8),
+       'Chhattisgarh':(0.1,1)}
+
+
+t0s = [2020, 2020]
+t1s = [2030,2050] 
+fig, axs = plt.subplots(2,2,figsize=(16/2.54,9/2.54))
+
+
+
+for ind_t,(t0,t1) in enumerate(zip(t0s,t1s)):
+    
+    x=0
+    
+    
+    for ind_country, country in enumerate(Countries):
+        for ind_scenario, scenario in enumerate(Scenarios):
+
+            if type(t1) is str:
+                threshold = 0.8
+                T1 = pf.finding_emp_threshold_date(Result_data[(Result_data['Downscaled Region']==exclude_downscaled_regions[ind_country])&(Result_data.Scenario==scenario)],threshold,T)
+
+            else:
+                T1 = t1
+
+            Share_U, Share_R, TotDestination = pf.destination_share(Result_data,country,scenario,TotDestination,t0,T1)
+
+            print(f'Under {scenario}, between {t0}-{t1} in {country}, the range of share of workers leaving into unemployment is {max(Share_U)-min(Share_U):0.2f} ({min(Share_U):0.2f}-{max(Share_U):0.2f})' )
+            
+            pos = x+[-0.35,-0.17,0,0.17,0.35][ind_scenario]
+
+            for ind_var, var in enumerate([Share_U,Share_R]):
+                
+                ax = axs[ind_t,ind_var]
+                # ax = axs[ind_var]
+
+                if ind_var==0:
+                    ax.arrow(0.8,0.5,0.1,0,head_width=0.03,color='k')
+                    ax.text(0.85,0.34,"increased\n vulnerability",fontsize=4,fontweight='normal')
+                else:
+                    ax.arrow(0.2,0.5,-0.1,0,head_width=0.03,color='k')
+                    ax.text(0.11,0.34,"increased\n vulnerability",fontsize=4,fontweight='normal')
+
+
+                bxplot=ax.boxplot(var,
+                        positions=[pos],
+                        vert=False,
+                        patch_artist=True,
+                        showfliers=False,
+                        whiskerprops={'linestyle': 'none'},
+                        capprops={'linestyle':'none'},
+                        zorder=1,
+                        widths=0.09 )
+                
+                # Customizing the appearance
+                for box in bxplot['boxes']:
+                    box.set_facecolor(pf.defining_waysout_colour_scheme()[scenario])
+                    box.set_alpha(0.5)  
+                    box.set_edgecolor('black')
+                    box.set_linewidth(0.5)  # Set the edge linewidth here
+                    
+                # Set the median line color to black
+                for median in bxplot['medians']:
+                    median.set_color('black')
+
+
+                ax.scatter(np.mean(var),pos,s=3,color='k',zorder=2)
+                # Data points
+                for ind in var.index:
+                    y = var.loc[ind]
+                    xs = np.random.normal(pos, 0.05, size=1)
+                    ax.scatter(y,xs,s=4.5e-5*TotDestination[ind],color=pf.defining_waysout_colour_scheme()[scenario])
+                    if ind in ['Shanxi','Odisha','Jharkhand','Chhattisgarh'] and ind_scenario==0:
+                        # ax.plot([y,loc[ind][0]],[xs,loc[ind][1]],color='k',linewidth=0.6,alpha=0.4)
+                        ax.text(y,xs,region_indices.loc[region_indices.Subregion_name==ind,'Subregion_iso'].values[0],fontsize=5,verticalalignment='center_baseline')
+                    elif all_region_names:
+                        ax.text(y,xs,region_indices.loc[region_indices.Subregion_name==ind,'Subregion_iso'].values[0].split('-')[1],fontsize=4,verticalalignment='center_baseline')
+                
+
+        x+=1
+    for ind_var in [0,1]:
+        ax = axs[ind_t,ind_var]
+        ax.set_yticks([0,1])
+        ax.set_yticklabels(['China','India'])
+        ax.axhline(y=0.5, color='k', linestyle=':',linewidth = 0.5)
+        ax.set_ylim([-0.5,1.5])
+        ax.set_title(str(t0)+' - '+str(t1))
+        ax.set_xlim([0,1])
+
+if np.size(axs[0])>1:
+    [ax.set_xticklabels([]) for ax in axs[0,:]]
+    axs[1,0].set_xlabel('Share layoffs not finding employment')
+    axs[1,1].set_xlabel('Share destruction in retirement')
+else:
+    axs[0].set_xlabel('Share layoffs not finding employment')
+    axs[1].set_xlabel('Share destruction in retirement')
+
+
+
+    [ax.text(0.02,0.92, label, transform=ax.transAxes, fontsize= 11, fontweight='bold', va='top', ha='left') for ax, label in zip(axs.flatten(),['a)','b)','c)','d)'])]
+
+#Legend
+alines = []
+for ind_scenario in range(4,-1,-1):
+    scenario = Scenarios[ind_scenario]
+    alines.append(ax.scatter([],[],
+                             color=pf.defining_waysout_colour_scheme()[scenario],
+                             label=['NPi','NDC-LTT','NDC-LTT w/CCS','1.5°C','1.5°C w/CCS'][ind_scenario]))
+    
+alines.append(ax.scatter([],[],s=0,label='Number of Workers'))
+for size in [5000,50000,500000]:
+    alines.append(ax.scatter([],[],s=4.5e-5*size,color='grey',label=size))
+labels = [la.get_label() for la in alines]
+handles = [label for label in alines]
+
+fig.legend(handles=alines,
+           labels=labels,
+            loc='center left',
+           bbox_to_anchor=(1, 0.5),
+           frameon=False)
+
+
+
+fig.set_tight_layout('tight')
+pf.save_figure(fig,'4_Boxplot_presentation','jpg',dpi=700)
 
 
 # %% ED2) Mobility of laid-off coal workers between 2020-2030 and 2020-2050.

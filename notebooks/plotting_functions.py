@@ -1171,3 +1171,38 @@ def semisymlognorm():
     colormap = plt.cm.PiYG_r
     norm = mcolors.FuncNorm((_forward, _inverse), vmin=vmin, vmax=vmax)
     return zlim, norm, colormap
+
+
+#===
+
+def def_region_indices():
+    region_indices = pd.read_csv('..\coal.labour.nexus\data\Coal_labour\Downscaling\Indexes.csv')
+    return region_indices
+
+
+def destination_share(Result_data,country,scenario,TotDestination,t0,T1):
+    '''
+    This functions aims to calculate share of job destruction leaving into retirement and share of layoffs leaving into retirement for given regions
+    It is designed specially for use in plotting boxplot of state-provincial-wise results
+    '''
+    destination_variables = [x for x in Result_data.Variable.unique() if 'Coal Worker Destination' in x if 'Retire' not in x and 'Hire' not in x]
+    exclude_downscaled_regions = ['China','India']
+    
+    Destination = Result_data[(Result_data.Variable.isin(destination_variables))&
+                            (Result_data.Region==country)&
+                            (~Result_data['Downscaled Region'].isin(exclude_downscaled_regions))&
+                            (Result_data.Scenario==scenario)]
+    U = Destination[Destination.Variable=='Coal Worker Destination|Unemployment'].drop(['Model','Region','Scenario','Variable','Unit'],axis=1).groupby('Downscaled Region').sum().loc[:,[str(x) for x in range(2020,T1)]].sum(axis=1)
+    TotDestination = Destination.drop(['Model','Region','Scenario','Variable','Unit'],axis=1).groupby('Downscaled Region').sum().loc[:,[str(x) for x in range(t0,T1)]].sum(axis=1)
+    TotDestination[TotDestination==0]=np.nan
+    Share_U = U/TotDestination
+    Share_U=Share_U.dropna()
+
+    R = Result_data[(Result_data.Variable=='Coal Worker Destination|Retire')&
+                (Result_data.Region==country)&
+                (~Result_data['Downscaled Region'].isin(exclude_downscaled_regions))&
+                (Result_data.Scenario==scenario)].drop(['Model','Region','Scenario','Variable','Unit'],axis=1).groupby('Downscaled Region').sum().loc[:,[str(x) for x in range(2020,T1)]].sum(axis=1)
+
+    Share_R = R/(R+TotDestination)
+    Share_R=Share_R.dropna()
+    return Share_U, Share_R, TotDestination
