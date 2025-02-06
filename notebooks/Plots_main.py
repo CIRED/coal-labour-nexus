@@ -419,7 +419,32 @@ for ind_country, country in enumerate(['CHN','IND']):
     pf.save_figure(fig,'2_Grid_employment_'+country,'svg')
 
 
+#%%
+# Outputing some results for text
+# Phase out years in Shanxi and Jharkhand
+for region in ['Shanxi','Jharkhand']:
+    l = Result_data[(Result_data['Downscaled Region']==region)&(Result_data.Variable=='Employment|Coal|Downscaled')&(Result_data.Scenario=="NZ")].values[0][6:] 
+    t95 = T[l<=l[5]*0.05][0]
+    print(f'Reaching 1.5°C with limited CCS availability necessitates a near total phase-out by {t95} in {region} ')
 
+    LF = Result_data[(Result_data['Downscaled Region']==region)&(Result_data.Variable=='Labour Force|Downscaled')&(Result_data.Scenario=="NZ")].values[0][6:]
+    print(f'{region} is one of the most exposed with {100*(l[5]/LF[5]):0.1f}% of 2015 labour force working in the coal sector ')
+    
+    reduc = (l[5]-l[10])/LF[5]*100
+    print(f'Even with access to CCS, under 1.5°C, {region} sees {reduc:0.1f}% of its labour force laid off between 2020 and 2025.')
+
+    l = Result_data[(Result_data['Downscaled Region']==region)&(Result_data.Variable=='Employment|Coal|Downscaled')&(Result_data.Scenario=="NDC")].values[0][6:] 
+    reduc = (1-l[T==t95]/l[5])*100
+    l = Result_data[(Result_data['Downscaled Region']==region)&(Result_data.Variable=='Employment|Coal|Downscaled')&(Result_data.Scenario=="NDC_CCS1")].values[0][6:] 
+    reducCCS = (1-l[T==t95]/l[5])*100
+    print(f'By that date, coal labour must have been reduced by {reduc[0]:0.0f}%  ({reducCCS[0]:0.0f}% with CCS) to achieve NDC-LTT goals')
+
+
+for region in ['Henan','Shandong']:
+    for scenario in ['NPI','NDC','NZ']:
+        l = Result_data[(Result_data['Downscaled Region']==region)&(Result_data.Variable=='Employment|Coal|Downscaled')&(Result_data.Scenario==scenario)].values[0][6:] 
+        t95 = T[l<=l[5]*0.05][0]
+        print(f'{scenario} a near total phase-out by {t95} in {region} ')
 
 # %% 3) Mapping exposisition
 
@@ -514,8 +539,19 @@ for ind_t,(t0,t1) in enumerate(zip(t0s,t1s)):
 
             Share_U, Share_R, TotDestination = pf.destination_share(Result_data,country,scenario,TotDestination,t0,T1)
 
-            print(f'Under {scenario}, between {t0}-{t1} in {country}, the range of share of workers leaving into unemployment is {max(Share_U)-min(Share_U):0.2f} ({min(Share_U):0.2f}-{max(Share_U):0.2f})' )
-            
+            if (scenario == "NZ") & (t1==2030):
+
+                u_national = sum((TotDestination*Share_U).dropna())/sum(TotDestination.dropna())
+                r_national = ((TotDestination*Share_R/(1-Share_R))).dropna()
+                r_national = sum(r_national.dropna())/(sum(r_national.dropna())+sum(TotDestination.dropna()))
+                print(f'Under {scenario}, between {t0}-{t1} in {country}, the share of workers leaving into unemployment is {u_national:0.2f} ({min(Share_U):0.2f}-{max(Share_U):0.2f}), that\'s {sum((TotDestination*Share_U).dropna()):0.0f} workers' )
+                print(f'Under {scenario}, between {t0}-{t1} in {country}, the share of workers leaving into retirement is {r_national:0.2f} ({min(Share_R):0.2f}-{max(Share_R):0.2f})' )
+            elif (scenario=="NZ") & (t1==2050):
+                region = ['Shanxi','Jharkhand'][ind_country]
+                su = Share_U[region]
+                tu = (TotDestination*Share_U)[region]
+                print(f'Under {scenario} in {region}, {su:0.2f}% (ie {tu:0.0f} workers) may not find employment')
+
             pos = x+[-0.35,-0.17,0,0.17,0.35][ind_scenario]
 
             for ind_var, var in enumerate([Share_U,Share_R]):
@@ -560,7 +596,6 @@ for ind_t,(t0,t1) in enumerate(zip(t0s,t1s)):
                     xs = np.random.normal(pos, 0.05, size=1)
                     ax.scatter(y,xs,s=4.5e-5*TotDestination[ind],color=pf.defining_waysout_colour_scheme()[scenario])
                     if ind in ['Shanxi','Odisha','Jharkhand','Chhattisgarh'] and ind_scenario==0:
-                        # ax.plot([y,loc[ind][0]],[xs,loc[ind][1]],color='k',linewidth=0.6,alpha=0.4)
                         ax.text(y,xs,region_indices.loc[region_indices.Subregion_name==ind,'Subregion_iso'].values[0],fontsize=5,verticalalignment='center_baseline')
                     elif all_region_names:
                         ax.text(y,xs,region_indices.loc[region_indices.Subregion_name==ind,'Subregion_iso'].values[0].split('-')[1],fontsize=4,verticalalignment='center_baseline')
