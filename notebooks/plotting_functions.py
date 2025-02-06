@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 import xycmap
 import seaborn as sns
 import os
+from matplotlib.colors import TwoSlopeNorm
+import matplotlib.colors as mcolors
 
 
 
@@ -1013,3 +1015,159 @@ def Grid_Unemployment_Destruction(fig,axs,T,Result_data,ind_country):
         ax1.set_xticks([])
         ax2.text(0.05,0.05,region,transform=ax.transAxes, fontsize= 11, fontweight='bold')
     return fig
+
+
+
+def grid_scale_treatment(region,ax,ax2,ind_country):
+    if region == 'Shanxi':
+        ax2.set_ylim([-20,900])
+        ax2.spines['left'].set_color('red') 
+        ax.tick_params(axis='y', colors='red')
+    elif region =='Jharkhand':
+        ax2.set_ylim([-7,375])
+        ax2.spines['left'].set_color('red') 
+        ax.tick_params(axis='y', colors='red')
+    else:
+        ax2.set_ylim([[-20,350],[-7,200]][ind_country])
+    return region, ax, ax2
+
+
+
+def Grid_Employment_Destruction(fig,axs,T,Result_data,ind_country,U):
+    grid_scale_same = True
+    Step = 1
+    [ax.axis('off') for ax in axs.flatten()]
+    axs[0,0].text(0.05,0.5,['a)','b)'][ind_country],transform=axs[0,0].transAxes, fontsize= 40, fontweight='bold')
+    regions = defining_province_grid()[ind_country]
+
+    Scenarios = ['NZ','NDC','NPI','NZ_CCS1','NDC_CCS1']
+
+    t0 = 2020
+    t1 = 2060
+
+    for region, position in regions.items():
+
+        ax = axs[position]
+        ax.axis('on')
+        if U:
+            ax1, ax2 = halve_axes(fig,ax)
+            ax1.axhline(y=0,color='k',linewidth=0.5)
+            
+            variable = 'Unemployment|Downscaled'
+            variable = 'Labour Productivity|Coal|Downscaled'
+
+            for ind_scenario, scenario in enumerate(Scenarios):
+                ax1.plot(
+                    T[(t0<=T)&(T<=t1)][0:-1:Step],
+                    Result_data[
+                        (Result_data['Downscaled Region']==region)&
+                        (Result_data.Scenario==scenario)&
+                        (Result_data.Variable==variable)
+                    ].values[0][6:][(t0<=T)&(T<=t1)][0:-1:Step],
+                    color=defining_waysout_colour_scheme()[scenario]
+                )
+            ax1.set_xticks([])
+        
+        else:
+            ax2=ax
+
+        
+        ax2.axhline(y=0,color='k',linewidth=0.5)
+        
+        variable = 'Employment|Coal|Downscaled'
+        for ind_scenario, scenario in enumerate(Scenarios):
+  
+            y = Result_data[
+                    (Result_data['Downscaled Region']==region)&
+                    (Result_data.Scenario==scenario)&
+                    (Result_data.Variable==variable)
+                ].apply(pd.to_numeric,errors='coerce')*1e-3
+            
+
+            
+            if y.sum(axis=1).values[0]==0:
+                ax2.set_facecolor('lightgrey')
+                ax2.set_yticks([])
+                ax2.set_xticks([])
+            else:
+                ax2.plot(
+                    T[(t0<=T)&(T<=t1)][0:-1:Step],
+                    y.values[0][6:][(t0<=T)&(T<=t1)][0:-1:Step],
+                    color=defining_waysout_colour_scheme()[scenario.split('_PG0')[0]],
+                    linewidth=3,
+                )
+
+                # Only for regions that have coal labour in the first place we also plot without productivity growth
+
+                y = Result_data[
+                    (Result_data['Downscaled Region']==region)&
+                    (Result_data.Scenario==scenario+'_PG0')&
+                    (Result_data.Variable==variable)
+                ].apply(pd.to_numeric,errors='coerce')*1e-3
+
+                ax2.plot(
+                    T[(t0<=T)&(T<=t1)][0:-1:Step],
+                    y.values[0][6:][(t0<=T)&(T<=t1)][0:-1:Step],
+                    color=defining_waysout_colour_scheme()[scenario.split('_')[0]],
+                    linestyle = (0,(1,3)),
+                    linewidth=3
+                )
+
+                if grid_scale_same:
+                    grid_scale_treatment(region, ax, ax2, ind_country)
+
+
+        
+        ax2.text(0.05,0.05,region,transform=ax.transAxes, fontsize= 17, fontweight='bold')
+        
+    
+    # Legend in bottom right corner
+    ax = axs[-1,[2,-2][ind_country]]
+    alines = []
+    for ind_scenario, scenario in enumerate(Scenarios[:5]):
+        alines.append(ax.plot([],[],linewidth=3,color=defining_waysout_colour_scheme()[scenario.split('_PG0')[0]], label=['1.5°C','NDC-LTT','NPi','1.5°C-CCS','NDC-LTT-CCS'][ind_scenario]))
+    alines.append(ax.plot([],[], color='k', linestyle=':',label='No growth'))
+    ax.legend(fontsize=25,ncol=2)
+    
+    return fig
+
+
+#========================================================================================================================================
+# Defining functions to use nonlinear colormap in monovariate exposure graphs
+
+def _forward(x):
+    thresh_neg = -0.00025  # Threshold for negative values
+    thresh_pos = 0.002    # Threshold for positive values
+
+    # Apply symlog transformation
+    y = np.where(
+        x >= 0,
+        np.log(1 + x / thresh_pos),
+        -np.log(1 + x / thresh_neg)
+    )
+    return y
+
+# Define the inverse transformation
+def _inverse(y):
+    thresh_neg = -0.00025  # Threshold for negative values
+    thresh_pos = 0.002    # Threshold for positive values
+
+    # Apply inverse symlog transformation
+    x = np.where(
+        y >= 0,
+        thresh_pos * (np.exp(y) - 1),
+        thresh_neg * (np.exp(-y) - 1)
+    )
+    return x
+
+
+def semisymlognorm():
+    # Define a custom colormap to differentiate positive and negative values
+    vmin = -0.005
+    vmax = 0.05  
+    vcenter = 0.0 
+    stretch = 0.1
+    zlim = [vmin,vmax]
+    colormap = plt.cm.PiYG_r
+    norm = mcolors.FuncNorm((_forward, _inverse), vmin=vmin, vmax=vmax)
+    return zlim, norm, colormap

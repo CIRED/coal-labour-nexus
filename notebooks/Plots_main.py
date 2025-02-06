@@ -276,14 +276,6 @@ for c_index in [0, 1]:
                             marker='^',
                             s=20)
                     
-                if scenario == 'NZ':
-                    print(f'In {country}, coal employment must be halved by {T[COAL_emp.values[0][6:] < COAL_emp.values[0][6:][5] /2][0]} to be 1.5°C-aligned')
-                if (country == 'China')&(scenario=='NZ'):
-                    print(f'In {country}, coal employment must be reduced by 95% by {T[COAL_emp.values[0][6:] < COAL_emp.values[0][6:][5] *0.05][0]} to be consistent with 1.5°C')
-                if (country == 'China')&(scenario=='NDC'):
-                    print(f'In {country}, coal employment must be reduced by 95% by {T[COAL_emp.values[0][6:] < COAL_emp.values[0][6:][5] *0.05][0]} to be consistent with NDC-LTT')
-                # if scenario == 'NPI':
-                #     print(f'In {country}, under NPI coal employment must be phased out by {T[COAL_emp.values[0][6:] < COAL_emp.values[0][6:][5] *0.05][0]}')
 
 
     Scen_y = pd.DataFrame(Scen_y, index=Scenarios)
@@ -398,7 +390,63 @@ fig.legend(handles=alines,
 
 pf.save_figure(fig,'1_Employment','jpg',dpi=600)
 
-# %% 2) Mobility of laid-off coal workers between 2020-2030 and 2020-2050.
+
+# %% 2) Employment trajectories at the regional scale
+# ===========================================================================================================================
+
+
+for ind_country, country in enumerate(['CHN','IND']):
+    fig, axs = plt.subplots(8,[6,8][ind_country],figsize=(26,20))
+    
+    pf.Grid_Employment_Destruction(fig,axs,T,Result_data,ind_country,False)
+    pf.save_figure(fig,'2_Grid_employment_'+country,'svg')
+
+
+
+
+# %% 3) Mapping exposisition
+
+Scenarios = ['NDC_CCS1','NZ_CCS1','NPI','NDC','NZ']
+Scenarios_names = ['NDC-LTT w/CCS','1.5°C w/CCS','NPi','NDC-LTT','1.5°C']
+
+T1 = 2035
+fig, axs = plt.subplots(2,3,
+                        figsize=(20/2.54,15/2.54))
+
+Data_Chn = []
+Data_Ind = []
+var = 'share_destruction'
+
+cax2 = axs[0,2].inset_axes([1.15, -1.3, 0.1, 2.3])
+
+t0=2020
+
+zlim, norm, colormap = pf.semisymlognorm()
+
+ax = axs[0,0]
+ax.set_title('2015 Workforce')
+ax = pf.monovariate_map('Workforce',t0,T1,ax,cax2,zlim,colormap,Result_data,'NPI',Asia,norm)
+for s_index, scenario in enumerate(Scenarios):
+    ax = axs.flatten()[1+s_index]
+    ax = pf.monovariate_map(var,t0,T1,ax,cax2,zlim,colormap,Result_data,scenario,Asia,norm)
+
+[ax.set_title(Scenarios_names[s_index]) for ax,s_index in zip(axs.flatten()[1:],range(5))]
+
+
+# Defining the colobar legend
+cbar = fig.colorbar(plt.cm.ScalarMappable(norm=norm, cmap=colormap), cax=cax2, orientation='vertical')
+cax2.set_yscale('linear')
+cax2.set_yticks([-0.004,0,0.02,0.04])
+cax2.set_yticklabels(['-0.4%','0%','2%','4%'])
+fig.subplots_adjust(hspace=-0.4)
+
+
+pf.save_figure(fig,'E_Map_linear','svg')
+
+
+
+
+# %% ED2) Mobility of laid-off coal workers between 2020-2030 and 2020-2050.
 # ===========================================================================================================================
 # BARCHART DESTINATION 1 Period
 
@@ -461,7 +509,7 @@ for c_index in range(len(Countries)):
             x += 1
 
 
-            if (Scenario == 'NPI')&(stype_index == 1):
+            if (Scenario == 'NZ')&(stype_index == 1):
                 u = round(data_save[(region, Scenario,2030)][3]*1000)
                 print(f'Under {Scenario}, in {region}, {u} thousand workers will not find new employment by 2030')
 
@@ -1359,95 +1407,7 @@ fig.subplots_adjust(hspace=-0.4)
 
 
 
-# %%
-# 3) Mapping exposisition
 
-
-
-def _forward(x):
-    thresh_neg = -0.00025  # Threshold for negative values
-    thresh_pos = 0.002    # Threshold for positive values
-
-    # Apply symlog transformation
-    y = np.where(
-        x >= 0,
-        np.log(1 + x / thresh_pos),
-        -np.log(1 + x / thresh_neg)
-    )
-    return y
-
-# Define the inverse transformation
-def _inverse(y):
-    thresh_neg = -0.00025  # Threshold for negative values
-    thresh_pos = 0.002    # Threshold for positive values
-
-    # Apply inverse symlog transformation
-    x = np.where(
-        y >= 0,
-        thresh_pos * (np.exp(y) - 1),
-        thresh_neg * (np.exp(-y) - 1)
-    )
-    return x
-
-
-import importlib
-importlib.reload(pf)
-
-Scenarios = ['NDC_CCS1','NZ_CCS1','NPI','NDC','NZ']
-Scenarios_names = ['NDC-LTT w/CCS','1.5°C w/CCS','NPi','NDC-LTT','1.5°C']
-
-T1 = 2035
-fig, axs = plt.subplots(2,3,
-                        figsize=(20/2.54,15/2.54))
-
-
-Data_Chn = []
-Data_Ind = []
-var = 'share_destruction'
-
-cax2 = axs[0,2].inset_axes([1.15, -1.3, 0.1, 2.3])
-
-
-t0=2020
-colormap='BrBG'
-zlim= [pf.pseudo_log(-5e-2)
-       ,pf.pseudo_log(5e-2)]
-colormap='Reds'
-zlim = [0,pf.pseudo_log(5e-2)]
-
-from matplotlib.colors import TwoSlopeNorm
-colormap = plt.cm.PiYG_r
-
-# Define the range and midpoint
-vmin = -0.005
-vmax = 0.05  
-vcenter = 0.0 # Midpoint at 0
-stretch = 0.1
-
-# Create a normalization object with a custom center
-norm = TwoSlopeNorm(vmin=vmin, vcenter=vcenter, vmax=vmax)
-# norm = PseudologNorm(vmin=vmin, vcenter=vcenter, vmax=vmax, stretch=stretch)
-
-norm = mcolors.FuncNorm((_forward, _inverse), vmin=vmin, vmax=vmax)
-
-ax = axs[0,0]
-ax.set_title('2015 Workforce')
-ax = pf.monovariate_map('Workforce',t0,T1,ax,cax2,zlim,colormap,Result_data,'NPI',Asia,norm)
-for s_index, scenario in enumerate(Scenarios):
-    ax = axs.flatten()[1+s_index]
-    ax = pf.monovariate_map(var,t0,T1,ax,cax2,zlim,colormap,Result_data,scenario,Asia,norm)
-
-[ax.set_title(Scenarios_names[s_index]) for ax,s_index in zip(axs.flatten()[1:],range(5))]
-
-# cax.set_axis_off()
-cbar = fig.colorbar(plt.cm.ScalarMappable(norm=norm, cmap=colormap), cax=cax2, orientation='vertical')
-cax2.set_yscale('linear')
-cax2.set_yticks([-0.004,0,0.02,0.04])
-cax2.set_yticklabels(['-0.4%','0%','2%','4%'])
-fig.subplots_adjust(hspace=-0.4)
-
-
-pf.save_figure(fig,'4_Map_linear','svg')
 
 #%%
 
