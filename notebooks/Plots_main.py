@@ -1341,7 +1341,15 @@ ds.columns = ['R', 'D', 'I', 'U', 'H']
 ch60 = ds.loc[('China','NZ',t1),'U']
 ch55= ds.loc[('China','NZ_R55',t1),'U']
 
-print(f'Sensitivity analysis shown in the annex where retirement age is moved from 60 to 55 show that such a policy would reduce the number of workers leaving into unemployment from {ch60} to {ch55}.')
+lo_reduc = (1-sum(ds.loc[('China','NZ_R55',t1),['U','D','I']])/sum(ds.loc[('China','NZ',t1),['U','D','I']]))*100
+
+print(f'Sensitivity analysis shown in the annex where retirement age is moved from 60 to 55 show that such a policy would reduce the number of layoffs by {lo_reduc:0.1f}% and hence the number of workers leaving into unemployment from {ch60} to {ch55}.')
+
+
+lo_reduc = (1-sum(ds.loc[('China','NDC_R55',t1),['U','D','I']])/sum(ds.loc[('China','NDC',t1),['U','D','I']]))*100
+in_reduc = (1-sum(ds.loc[('India','NDC_R55',t1),['U','D','I']])/sum(ds.loc[('India','NDC',t1),['U','D','I']]))*100
+print(f'This policy is more efficient for lower ambition scenarios with {lo_reduc:0.1f}% under NDC-LTT ({in_reduc:0.1f}% in India)')
+
 #%% 2) Decomposing coal demand
 # ===========================================================================================================================
 
