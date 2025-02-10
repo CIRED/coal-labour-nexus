@@ -821,6 +821,8 @@ Scenarios = [
             'WO-NPi-ElecIndus-CCS0',
             'WO-NDCLTT-ElecIndus-CCS0',
             'WO-15C-ElecIndus-CCS0',
+            'WO-NDCLTT-ElecIndus-CCS1',
+            'WO-15C-ElecIndus-CCS1',
             ]
 
 
@@ -859,7 +861,7 @@ for norm in [0,1]:
 
     for i in np.arange(0, data_shape[0]):
         alines.append([
-            ax.bar([1,2,3],
+            ax.bar(range(1,1+len(Scenarios)),
                     data[i],
                     bottom=data_stack[i],
                     width=0.8,
@@ -915,7 +917,7 @@ for norm in [0,1]:
 
     for i in np.arange(0, data_shape[0]):
         alines.append([
-            ax.bar([1,2,3],
+            ax.bar(range(1,1+len(Scenarios)),
                     data[i],
                     bottom=data_stack[i],
                     width=0.8,
@@ -930,7 +932,7 @@ for norm in [0,1]:
     data_shape, data_stack = pf.get_data_stack(cum_data)
     for i in np.arange(0, data_shape[0]):
         alines.append([
-            ax.bar(np.array([1,2,3])-0.25,
+            ax.bar(np.array(range(1,1+len(Scenarios)))-0.25,
                     cum_data[i],
                     bottom=data_stack[i],
                     width=0.3,

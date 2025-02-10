@@ -418,7 +418,14 @@ for ind_country, country in enumerate(['CHN','IND']):
     pf.Grid_Employment_Destruction(fig,axs,T,Result_data,ind_country,False)
     pf.save_figure(fig,'2_Grid_employment_'+country,'svg')
 
+#%%
 
+import importlib
+importlib.reload(pf)
+for ind_country, country in enumerate(['CHN','IND']):
+    fig, axs = plt.subplots(8,[6,8][ind_country],figsize=(26,20))
+    
+    pf.Grid_Employment_Destruction(fig,axs,T,Result_data,ind_country,True)
 #%%
 # Outputing some results for text
 # Phase out years in Shanxi and Jharkhand
