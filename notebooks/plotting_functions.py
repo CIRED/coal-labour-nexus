@@ -33,7 +33,7 @@ def save_figure(fig,name,format,dpi=400):
     if not os.path.exists(figure_path):
         os.makedirs(figure_path)
 
-    fig.savefig(os.path.join(figure_path,name+'.'+format),dpi=dpi)
+    fig.savefig(os.path.join(figure_path,name+'.'+format),dpi=dpi, bbox_inches='tight')
 
 
 #=========================================================================================================
@@ -1180,7 +1180,7 @@ def def_region_indices():
     return region_indices
 
 
-def destination_share(Result_data,country,scenario,TotDestination,t0,T1):
+def destination_share(Result_data,country,scenario,t0,T1):
     '''
     This functions aims to calculate share of job destruction leaving into retirement and share of layoffs leaving into retirement for given regions
     It is designed specially for use in plotting boxplot of state-provincial-wise results

@@ -544,7 +544,7 @@ for ind_t,(t0,t1) in enumerate(zip(t0s,t1s)):
             else:
                 T1 = t1
 
-            Share_U, Share_R, TotDestination = pf.destination_share(Result_data,country,scenario,TotDestination,t0,T1)
+            Share_U, Share_R, TotDestination = pf.destination_share(Result_data,country,scenario,t0,T1)
 
             if (scenario == "NZ") & (t1==2030):
 
