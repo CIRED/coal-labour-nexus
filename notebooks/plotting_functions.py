@@ -574,7 +574,7 @@ def add_coaloutput_comparisons(axs,regions_ar6,categories):
             ax.plot(Q_WEB['t'], [float(x) for x in Q_WEB[['World','China','India'][i_r]]], color='k', alpha=1, linestyle='-', linewidth=1.2)
 
             if i_r != 1:
-                ax.plot(SEI['t'][1:], [float(x) for x in SEI[['GPP','CHN_GPP','IND_GPP'][i_r]][1:]], color='red', alpha=1, linestyle='--', linewidth=1.2)
+                ax.plot(SEI['t'][1:], [float(x) for x in SEI[['GPP','CHN_GPP','IND_GPP'][i_r]][1:]], color='red', alpha=1, linestyle='-', linewidth=1.2)
 
 
 def add_emissions_comparisons(axs,regions_ar6,categories):
@@ -665,7 +665,7 @@ def plotting_with_AR6_range(var,var_imaclim,regions_ar6,categories,df,cols,Imacl
             n= len(df.filter(variable=var, region=reg, Category=cat)['scenario'])
 
             # Plotting Imaclim results
-            Output = ['WO-15C-ElecIndus','WO-NDCLTT-ElecIndus','WO-NPi-ElecIndus'][i_c]
+            Output = ['WO-15C-ElecIndus-CCS0','WO-NDCLTT-ElecIndus-CCS0','WO-NPi-ElecIndus-CCS0'][i_c]
             Region = ['World','CHN','IND'][i_r]
 
             y = Imaclim_data[(Imaclim_data['Region'] == Region)&(Imaclim_data['Scenario'] == Output)&(Imaclim_data['Variables'] == var_imaclim)].values[0][5:]*Imaclim_unit_convert
@@ -1126,7 +1126,7 @@ def Grid_Employment_Destruction(fig,axs,T,Result_data,ind_country,U):
     alines = []
     for ind_scenario, scenario in enumerate(Scenarios[:5]):
         alines.append(ax.plot([],[],linewidth=3,color=defining_waysout_colour_scheme()[scenario.split('_PG0')[0]], label=['1.5°C','NDC-LTT','NPi','1.5°C-CCS','NDC-LTT-CCS'][ind_scenario]))
-    alines.append(ax.plot([],[], color='k', linestyle=':',label='No growth'))
+    alines.append(ax.plot([],[], color='k', linestyle=':',label='No productivity growth'))
     ax.legend(fontsize=25,ncol=2)
     
     return fig

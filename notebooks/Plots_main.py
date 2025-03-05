@@ -203,18 +203,12 @@ else:
     Scen_list = [4,2,0,8,6]
 Scenarios = [x + y for x in Scen_type for y in Alt_type]
 
-
-
+Variable = "Employment|Coal|Downscaled"
 fig, axs = plt.subplots(1, 2, figsize=pf.standard_figure_size())
-for c_index in [0, 1]:
-    country = Countries[c_index]
-
-    Variable = "Employment|Coal|Downscaled"
-
+for c_index, country in enumerate(Countries):
+    
     ax = axs[c_index]
-
     ax.axhline(y=0, color='k', linewidth=0.8)
-
     ax.scatter(Historical_data['Year'],Historical_data[country]/1e6,color='k',s=5)
 
 
@@ -284,15 +278,16 @@ for c_index in [0, 1]:
     S_miny = pd.DataFrame(S_miny, index=Scen_type)
 
     for Scen_type_ind,scenario in enumerate(Scenarios):
-        ax.plot(T[T < 2070][0:-1:Step],
-                Scen_y.loc[scenario].values[T < 2070][0:-1:Step],
-                color=Colors[scenario.split('_PG0')[0]],
-                linestyle=Rlinestyle[Scen_type_ind],
-                linewidth=Rlinewidth[Scen_type_ind],
-                alpha=Ralpha[Scen_type_ind],
-                marker= Rmarker[Scen_type_ind],
-                markersize = 3,
-                markevery=int(Step/5))
+        if not ((country=="China") & ('_CCS1' in scenario)): #Not plotting CCS scenarios in China for clarity (overlap with non CCS scenario)
+            ax.plot(T[T < 2070][0:-1:Step],
+                    Scen_y.loc[scenario].values[T < 2070][0:-1:Step],
+                    color=Colors[scenario.split('_PG0')[0]],
+                    linestyle=Rlinestyle[Scen_type_ind],
+                    linewidth=Rlinewidth[Scen_type_ind],
+                    alpha=Ralpha[Scen_type_ind],
+                    marker= Rmarker[Scen_type_ind],
+                    markersize = 3,
+                    markevery=int(Step/5))
         
         
         if (scenario in Scen_type) & Show_uncertainty:
@@ -319,7 +314,7 @@ for c_index in [0, 1]:
     for scenario in ['NDC','NZ']:
         dif = (Scen_y.loc[scenario+'_PG0']-Scen_y.loc[scenario])*1e3
         tdif = T[dif==max(dif)][0]
-        print(f'In {country} under {scenario}, {max(dif)} jobs are destroyed by productivity in {tdif}')
+        print(f'In {country} under {scenario}, {max(dif)} jobs ({0.1*max(dif)/Scen_y.loc[scenario,5]:0.1f}%) are destroyed by productivity in {tdif}')
 
     #Destruction by productivity in NPI 2070
     dif = (Scen_y.loc['NPI_PG0',55]-Scen_y.loc['NPI',55])*1e3
@@ -1538,6 +1533,177 @@ pf.plotting_with_AR6_range(var,var,regions_ar6,categories,df,cols,Imaclim_data,T
 var = 'Output|Coal'
 pf.plotting_with_AR6_range(var,var,regions_ar6,categories,df,cols,Imaclim_data,T,True)
 
+
+
+# %% 3.2.b
+import importlib
+importlib.reload(pf)
+def plot_threshold_range(tq,q25,q50,q75,cols,cat,ax):
+    #Thresholds
+    for ind_box, q in enumerate([0.5,0.05]):
+        t9_l = tq[(q25<=q*q25[tq==2020])&(tq>2020)]
+        t9_m = q50.columns[(q50.values[0]<=q*q50.values[0][q50.columns==2020])&(q50.columns>2020)]
+        t9_h = tq[(q75<=q*q75[tq==2020])&(tq>2020)]
+
+        t9_l = t9_l[0] if len(t9_l)>0 else 2106
+        t9_m = t9_m[0] if len(t9_m)>0 else 2106
+        t9_h = t9_h[0] if len(t9_h)>0 else 2106
+
+
+        ax.bxp(
+            [{'med': t9_m,'q1': t9_l,'q3': t9_h,
+                'whislo': t9_l,'whishi': t9_h }],
+            vert=False,patch_artist=True,boxprops=dict(facecolor=cols[cat], linewidth=0),
+            medianprops=dict(color='k'),showfliers = False, showcaps = False, positions = [[0.2,0.1][ind_box]], widths = [0.075]
+        )
+
+
+def plot_AR6_range_production(var,var_imaclim,regions_ar6,categories,df,cols,Imaclim_data,T,compare_thresholds):
+    """
+    This function overlays own trajectory with those from the AR6 database (Byers et al 2022) for comparable emissions pathways
+    The compare_thresholds boolean enables the function to plot the time-range at which pathways in the dataset reach certain thresholds and compare that with the pathways studied here
+    For certain variables, additional reference scenarios can also be plotted
+    """
+
+    # Special case to convert unit incompatibility between AR6 results and Imaclim results
+    exa2giga        =                 1e9 # G / E
+    tep2gj          =              41.855 # GJ/tep
+    mtoe2gj         =        1e6 * tep2gj # GJ/Mtep
+    mtoe2ej         =  mtoe2gj / exa2giga # EJ/Mtep
+    Imaclim_unit_convert = 1 if var!='Output|Coal' else mtoe2ej
+
+
+    # Creating plot
+    fig, axs = plt.subplots(len(regions_ar6),len(categories))
+
+    if compare_thresholds:
+        cax= [[0,0,0],[0,0,0],[0,0,0]]
+        for i_r, reg in enumerate(regions_ar6):
+            for i_c, cat in enumerate(categories):
+                ax = axs[i_r, i_c]
+                cax[i_r][i_c] = ax.inset_axes([0, -0.12, 1, 0.1])
+
+
+    for i_r, reg in enumerate(regions_ar6):
+        for i_c, cat in enumerate(categories):
+            ax = axs[i_r, i_c]            
+            ax.axhline(y=0, color='k', linewidth=0.75)
+            ax.axvline(2020, color='k', linestyle='--')
+            
+            # Plotting AR6 data
+            # (
+            #     df.filter(variable=var, region=reg, Category=cat).plot.line(
+            #         color="Category", ax=ax,
+            #         alpha=0, fill_between=True 
+            #     )
+            # )
+
+            tq = df.filter(variable=var, region=reg, Category=cat).compute.quantiles([0.25,0.75]).timeseries().columns
+            q25 = df.filter(variable=var, region=reg, Category=cat).compute.quantiles([0.25,0.75]).timeseries().values[0]
+            q75 = df.filter(variable=var, region=reg, Category=cat).compute.quantiles([0.25,0.75]).timeseries().values[1]
+            q50 = df.filter(variable=var, region=reg, Category=cat).compute.quantiles([0.5]).timeseries()
+
+            filter=(~np.isnan(q75))&(~np.isnan(q25))
+            tq = tq[filter]
+            q25 = q25[filter]
+            q75 = q75[filter]
+
+
+            # ax.fill_between(tq, q25, q75, color=cols[cat], alpha=0.5)
+            df.filter(variable=var, region=reg, Category=cat).plot.line(
+                    color="Category", ax=ax,
+                    alpha=0.5,linewidth=0.2, fill_between=False, rasterized = True 
+                )
+            ax.plot(q50.columns, q50.values[0], color=cols[cat])
+
+            n= len(df.filter(variable=var, region=reg, Category=cat)['scenario'])
+            ax.text(2098,0, f'n={n}', fontsize=8, ha='right')
+
+            # Plotting Imaclim results
+            Region = ['World','CHN','IND'][i_r]
+            Outputs = [['WO-15C-ElecIndus-CCS0','WO-15C-ElecIndus-CCS1'],['WO-NDCLTT-ElecIndus-CCS0','WO-NDCLTT-ElecIndus-CCS1'],['WO-NPi-ElecIndus-CCS0']][i_c]
+            for Output in Outputs:
+                y = Imaclim_data[(Imaclim_data['Region'] == Region)&(Imaclim_data['Scenario'] == Output)&(Imaclim_data['Variables'] == var_imaclim)].values[0][5:]*Imaclim_unit_convert
+                
+                ax.plot(T[::5], y[::5], color=pf.defining_waysout_colour_scheme()[Output],linewidth=1.5)
+
+            if compare_thresholds:
+                ax2 = cax[i_r][i_c]
+                pf.plot_max_range(tq,q25,q50,q75,cols,cat,ax2)
+                plot_threshold_range(tq,q25,q50,q75,cols,cat,ax2)
+
+                for Output in Outputs:
+                    y = Imaclim_data[(Imaclim_data['Region'] == Region)&(Imaclim_data['Scenario'] == Output)&(Imaclim_data['Variables'] == var_imaclim)].values[0][5:]*Imaclim_unit_convert
+                    
+                    # Max
+                    t_m = T[y==max(y)]
+                    t_m = t_m[0] if len(t_m)>0 else 2106
+                    ax2.scatter(t_m, 0.3, color=pf.defining_waysout_colour_scheme()[Output], marker='x', s=6, zorder=5)
+                    [cax[i_r][ni_c].scatter(t_m, 0.3, color='k', alpha=0.3, marker='x', s=6, zorder=5) for ni_c in range(3) if ni_c != i_c]
+
+                    # Threshold
+                    for ind_box, q in enumerate([0.5,0.05]):
+                        t_m = T[y<=q*y[T==2020]]
+                        t_m = t_m[0] if len(t_m)>0 else 2106
+                        ax2.scatter(t_m, [0.2,0.1][ind_box], color=pf.defining_waysout_colour_scheme()[Output], marker=['o','^'][ind_box], s=6, zorder=5)
+                        [cax[i_r][ni_c].scatter(t_m, [0.2,0.1][ind_box], color='k', alpha=0.3, marker=['o','^'][ind_box], s=6, zorder=5) for ni_c in range(3) if ni_c != i_c]
+
+
+
+                # Spetial formatting
+                ax2.set_ylim([0, 0.4])
+                ax2.set_xlim([2010,2105])
+                ax2.set_yticks([])
+                ax2.set_xticks([])
+
+                        
+
+            
+            
+
+            # Formatting the graph
+            ax.set_title("")
+            ax.set_ylim(pf.get_ylim(ax,var,Region))
+            ax.set_xlim([2010,2105])
+            ax.legend().remove()
+            
+
+            unit = df.filter(variable=var, region=reg, Category=cat).unit[0]
+            if i_r ==0:
+                ax.set_title(['1.5°C','NDC LTT','NPI'][i_c]+' - '+cat)
+
+            if (i_r==2):
+                if compare_thresholds:
+                    ax2.set_xticks(ax.get_xticks())
+                    ax2.set_xlim([2010,2105])
+                    ax2.set_ylim([0, 0.4])
+                    ax2.set_xlabel('Year')
+                
+                    ax.set_xticks([])
+                    ax.set_xlabel('')
+                else:
+                    ax.set_xlabel('Year')
+            else:
+                ax.set_xlabel('')
+                ax.set_xticklabels([])
+            
+            if i_c == 0:
+                ax.set_ylabel(["World","China","India"][i_r]+'\n'+unit)
+            else:
+                ax.set_ylabel('')
+                ax.set_yticklabels([])
+
+
+    # Adding extra reference trajectories if they are available for the given variable
+    pf.add_coaloutput_comparisons(axs,regions_ar6,categories) 
+
+
+    fig.suptitle(var)
+
+var = 'Output|Coal'
+plot_AR6_range_production(var,var,regions_ar6,categories,df,cols,Imaclim_data,T,True)
+
+
 #%% 3.3) Electricity from coal
 var = 'Secondary Energy|Electricity|Coal'
 pf.plotting_with_AR6_range(var,var,regions_ar6,categories,df,cols,Imaclim_data,T,True)
@@ -1627,5 +1793,98 @@ fig.subplots_adjust(hspace=-0.4)
 
 
 
-#%%
+#%% =======================================================================================================
 
+regions = ["China","India","Shanxi","Jharkhand","Inner Mongolia","Henan"]
+divide_by = "2020"
+
+def def_destruction_denominator(divide_by,df,scenario,region):
+    if divide_by == "2020":
+        numerator = df.loc[(scenario,region),"2020"]
+    elif divide_by == "Total Destruction":
+        numerator = (df.loc[('NPI_PG0',region)].values-df.loc[(scenario,region)].values) 
+    else:
+        return "Invalid numerator"
+    return numerator
+
+
+variable = 'Employment|Coal|Downscaled'
+
+
+destruction_data = pd.DataFrame(columns=['Region',"Scenario",'Variable']+list(range(2015,2101)))
+destruction_data.set_index(['Region',"Scenario",'Variable'],inplace=True)
+
+diff = True
+
+for ind_region, region in enumerate(regions):
+    country = Result_data.loc[Result_data["Downscaled Region"]==region,"Region"].values[0]
+
+    if region in ['China','India']:
+
+        df = Result_data[(Result_data.Variable==variable)&
+                        (Result_data.Region==country)&
+                        (Result_data['Downscaled Region']!=region)]
+
+        df=df.groupby(["Scenario","Model","Region","Variable","Unit"]).sum().reset_index()
+
+        df['Downscaled Region'] = region
+    else:
+        df = Result_data[(Result_data.Variable==variable)&
+                        (Result_data['Downscaled Region']==region)]
+
+    df=df.set_index(['Scenario','Downscaled Region']).drop(['Model', 'Region', 'Variable', 'Unit'],axis=1)
+    # NPI
+
+
+
+    numerator =def_destruction_denominator(divide_by,df,scenario,region)  
+    destruction_data.loc[(region,"NPI","NPI productivity"),:] = (df.loc[('NPI_PG0',region)].values-df.loc[('NPI',region)].values)/numerator
+    destruction_data.loc[(region,"NPI","Total destruction"),:] =  (df.loc[('NPI_PG0',region)].values-df.loc[("NPI",region)].values)/numerator
+    # Other scenarios
+    for ind_scenario, scenario in enumerate(["NDC","NZ"]):
+        destruction_data.loc[(region,scenario,"Production"),:] = (df.loc[('NPI_PG0',region)].values-df.loc[(scenario+'_PG0',region)].values)/numerator
+        destruction_data.loc[(region,scenario,"NPI productivity"),:] = (df.loc[('NPI_PG0',region)].values-df.loc[('NPI',region)].values)/numerator
+        destruction_data.loc[(region,scenario,"Additional productivity"),:] = (df.loc[(scenario+'_PG0',region)].values-df.loc[(scenario,region)].values-(df.loc[('NPI_PG0',region)].values-df.loc[('NPI',region)].values))/numerator
+        destruction_data.loc[(region,scenario,"Total destruction"),:] =  (df.loc[('NPI_PG0',region)].values-df.loc[(scenario,region)].values)/numerator
+
+scenarios = ["NPI","NDC","NZ"]
+
+color_dict = {
+    "Production":sns.color_palette()[1],
+    "NPI productivity":sns.color_palette()[2],
+    "Additional productivity":sns.color_palette()[3],
+}
+
+
+def fix_xticks(ax,indices):
+    # Fix the tick placement issue
+    tick_positions = range(0, len(indices), 10)  # Positions based on categorical indexing
+    tick_labels = indices[::10]  # Corresponding year labels
+    ax.set_xticks(tick_positions)
+    ax.set_xticklabels(tick_labels, rotation=45)  # Rotate for readability
+    return ax
+
+
+fig, axs = plt.subplots(len(regions),len(scenarios),figsize=(7,5))
+for ind_region, region in enumerate(regions):
+    for ind_scenario, scenario in enumerate(scenarios):
+        ax = axs[ind_region, ind_scenario]
+        df_plot = destruction_data.loc[(region, scenario, destruction_data.index.get_level_values("Variable") != "Total destruction"),:
+                                ].transpose()
+        df_plot.index = df_plot.index.astype(int)
+        df_plot.plot.bar(stacked=True, ax=ax, width=1, alpha=0.5, color=[color_dict[var] for var in df_plot.columns.get_level_values("Variable")])
+
+        ax.plot(destruction_data.loc[(region, scenario,"Total destruction"),:].values,color='k')
+
+        ax.legend([])
+        ax.set_ylim([-1.5,2.5])
+        ax = fix_xticks(ax,df_plot.index)
+
+
+[ax.set_ylabel(country+'\n [-]') for ax, country in zip(axs[:,0],regions)]
+[ax.set_title(scenario) for ax, scenario in zip(axs[0,:],scenarios)]
+
+import matplotlib.patches as mpatches
+legend_handles = [mpatches.Patch(color=color_dict[var], label=var, alpha=0.5) for var in df_plot.columns.get_level_values("Variable")]
+ax.legend(handles=legend_handles, loc='lower left', bbox_to_anchor=(1, 1))
+# %%
