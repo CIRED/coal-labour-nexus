@@ -20,8 +20,6 @@ import string
 # Plotting functions
 import plotting_functions as pf
 import matplotlib.colors as mcolors
-# import importlib
-# importlib.reload(pf)
 
 
 # Setting plotting parameters
@@ -43,16 +41,10 @@ formatter.set_powerlimits((-1, 1))
 T = range(2015, 2101)
 T = np.array(T)
 
-# file_name = list(np.array([['../coal.labour.nexus/output/20241016_Coal_labour_results/Downscaled_coal_labour_' + x + y + '.csv' for x in ['NDC','NPI','NZ']] for y in ['','_PG0','_R55','_gem','_EW','_min','_max','_H40','_H0','_H60','_H20_P0','_H20_P100']]).flatten())
 
-# Result_data = []
-# for file in file_name:
-#     Result_data.append(pd.read_csv(file))#, dtype=str))
 
 #======
-#Load old data
-# file_name = list(np.array([['../coal.labour.nexus/output/Downscaled_coal_labour_' + x + y + '.csv' for x in ['NDC','NPI','NZ']] for y in ['','_PG0','_R55','_gem','_EW']]).flatten())
-file_name = list(np.array([['../coal.labour.nexus/output/Downscaled_coal_labour_' + x + y + '.csv' for x in ['NPI','NDC','NZ','NDC_CCS1','NZ_CCS1']] for y in ['','_PG0','_R55','_min','_max']]).flatten())
+file_name = list(np.array([['../coal.labour.nexus/output/Downscaled_coal_labour_' + x + y + '.csv' for x in ['NPI','NDC','NZ','NDC_CCS1','NZ_CCS1']] for y in ['','_PG0','_R55','_min','_max','_C0I0_P0','_C0I0_P100','_C20I5_P0','_C20I5_P100','_C40I10_P100']]).flatten())
 
 Result_data = []
 for file in file_name:
@@ -171,7 +163,19 @@ pf.save_figure(fig,'0_scenario','jpg',dpi=600)
 #%% 1) Employment trajectories
 # ===========================================================================================================================
 
+from matplotlib.patches import Rectangle
 Step = 5
+
+import re
+def split_by_any_substring(string, substrings):
+    # Create a regex pattern that matches any of the substrings
+    pattern = '|'.join(map(re.escape, substrings))
+
+    # Split the string by the pattern
+    split_list = re.split(pattern, string)
+
+    # Return the first element of the split list
+    return split_list[0]
 
 Countries = ['China','India']
 Regions = [
@@ -187,12 +191,12 @@ Show_alternatives = False
 
 if Show_alternatives:
     Alt_type = [
-    '','_PG0','_H0','_H40','_H60','_H20_P0','_H20_P100']
-    Ralpha = [1, 0.75, 1,1,1,1,1] * 3
-    Rlinestyle = ['-',':','--','--','--','--','--']*3
-    Rlinewidth = [1, 0.75, 0.75, 0.75, 0.75, 0.75, 0.75]* 3
-    Rmarker = ['', '', '^', 'o', 'x','s','D'] * 3
-    Scen_list = [0,7,14,1,8,15]
+    '','_PG0','_C0I0_P0','_C0I0_P100','_C20I5_P0','_C40I10_P100']
+    Ralpha = [1, 0.75, 1,1,1,1] * 5
+    Rlinestyle = ['-',':','--','--','--','--']*5
+    Rlinewidth = [1, 0.75, 0.75, 0.75, 0.75, 0.75]* 5
+    Rmarker = ['', '', '^', 'o', 'x','s'] * 5
+    Scen_list = [0,6,12,18,24]
 else:
     Alt_type = [
     '','_PG0']
@@ -281,7 +285,7 @@ for c_index, country in enumerate(Countries):
         if not ((country=="China") & ('_CCS1' in scenario)): #Not plotting CCS scenarios in China for clarity (overlap with non CCS scenario)
             ax.plot(T[T < 2070][0:-1:Step],
                     Scen_y.loc[scenario].values[T < 2070][0:-1:Step],
-                    color=Colors[scenario.split('_PG0')[0]],
+                    color=Colors[split_by_any_substring(scenario, Alt_type[1:])],
                     linestyle=Rlinestyle[Scen_type_ind],
                     linewidth=Rlinewidth[Scen_type_ind],
                     alpha=Ralpha[Scen_type_ind],
@@ -297,6 +301,18 @@ for c_index, country in enumerate(Countries):
                             color=Colors[scenario.split('_PG0')[0]],
                             alpha = 0.2,
                             zorder = 0)
+    if Show_alternatives:
+        for ind_scen_type, scen_type in enumerate(Scen_type):
+            all_scenario = [scen_type+x for x in ['','_C0I0_P0','_C0I0_P100','_C20I5_P0','_C40I10_P100']]
+            y2030 = Scen_y.loc[all_scenario,15].values
+            y2050 = Scen_y.loc[all_scenario,35].values
+
+            ax.add_patch(Rectangle((2070+2*ind_scen_type, min(y2030)),0.75, max(y2030)-min(y2030),
+                                facecolor= Colors[scen_type], edgecolor='none',alpha=0.55))
+            ax.add_patch(Rectangle((2071+2*ind_scen_type, min(y2050)),0.75, max(y2050)-min(y2050),
+                                facecolor= Colors[scen_type], edgecolor='none',alpha=0.55))
+            ax.plot([2070+2*ind_scen_type,2070.75+2*ind_scen_type],[y2030[0],y2030[0]],color=Colors[scen_type])
+            ax.plot([2071+2*ind_scen_type,2071.75+2*ind_scen_type],[y2050[0],y2050[0]],color=Colors[scen_type])
 
     # Formatting axes
     ax.set_title(country)
@@ -354,26 +370,26 @@ alines.append(axs[0].scatter([], [],
 
 
 
+
+
+
 if Show_alternatives:
 
     alines.append(axs[0].plot([], [],
                             color='k',
-                            label='H20')[0])
+                            label='C20I5_P100')[0])
     alines.append(axs[0].plot([], [],
                             color='k', marker = '^',
-                            label='H0')[0])
+                            label='C0I0_P0')[0])
     alines.append(axs[0].plot([], [],
                             color='k', marker = 'o',
-                            label='H40')[0])
+                            label='C0I0_P100')[0])
     alines.append(axs[0].plot([], [],
                             color='k', marker = 'x',
-                            label='H60')[0])
+                            label='C20I5_P0')[0])
     alines.append(axs[0].plot([], [],
                             color='k', marker = 's',
-                            label='H20_P0')[0])
-    alines.append(axs[0].plot([], [],
-                            color='k', marker = 'D',
-                            label='H20_P100')[0])
+                            label='C40I10_P100')[0])
 
 if Show_uncertainty:
     if ~Show_alternatives:
@@ -1268,13 +1284,31 @@ Provinces = [provincesChina, provincesIndia]
 Countries = ['China', 'India']
 nls = [6, 8]
 
-Scenarioss = [['NPI',  'NPI_R55'],
-              ['NDC', 'NDC_R55'],
-              ['NZ','NZ_R55']]
 
-Scenarioss_name = [['NPI','Retirement \n55'],
-                   ['NDC', 'Retirement \n55'],
-                   ['1.5°C','Retirement \n55']]
+Scenarioss = [["NPI", "NPI_C0I0_P0", "NPI_C0I0_P100", "NPI_C20I5_P0", "NPI_C40I10_P100"],
+              ["NDC", "NDC_C0I0_P0", "NDC_C0I0_P100", "NDC_C20I5_P0", "NDC_C40I10_P100"],
+              ["NDC_CCS1","NDC_CCS1_C0I0_P0", "NDC_CCS1_C0I0_P100", "NDC_CCS1_C20I5_P0", "NDC_CCS1_C40I10_P100"],
+                ["NZ", "NZ_C0I0_P0", "NZ_C0I0_P100", "NZ_C20I5_P0", "NZ_C40I10_P100"],
+                ["NZ_CCS1","NZ_CCS1_C0I0_P0", "NZ_CCS1_C0I0_P100", "NZ_CCS1_C20I5_P0", "NZ_CCS1_C40I10_P100"]]
+
+Scenarioss_name = [["NPI","C0I0_P0", "C0I0_P100", "C20I5_P0", "C40I10_P100"],
+                   ["NDC", "C0I0_P0", "C0I0_P100", "C20I5_P0", "C40I10_P100"],
+                   ["NDC w/ CCS", "C0I0_P0", "C0I0_P100", "C20I5_P0", "C40I10_P100"],
+                   ["1.5°C","C0I0_P0", "C0I0_P100", "C20I5_P0", "C40I10_P100"],
+                   ["1.5°C w/ CCS","C0I0_P0", "C0I0_P100", "C20I5_P0", "C40I10_P100"]]
+
+
+# Scenarioss = [['NPI',  'NPI_R55'],
+#               ['NDC', 'NDC_R55'],
+#               ['NDC_CCS1', 'NDC_CCS1_R55'],
+#               ['NZ','NZ_R55'],
+#               ['NZ_CCS1','NZ_CCS1_R55']]
+
+# Scenarioss_name = [['NPI','Retirement \n55'],
+#                    ['NDC', 'Retirement \n55'],
+#                    ['NDC w/ CCS', 'Retirement \n55'],
+#                    ['1.5°C','Retirement \n55'],
+#                    ['1.5°C w/ CCS','Retirement \n55']]
 
 t0 = 2020
 t1 = 2050
@@ -1282,12 +1316,14 @@ t1 = 2050
 Xs = [
     [x for x in range(len(Scenarioss[0]))],
     [x for x in range(len(Scenarioss[1]))],
-    [x for x in range(len(Scenarioss[2]))]
+    [x for x in range(len(Scenarioss[2]))],
+    [x for x in range(len(Scenarioss[3]))],
+    [x for x in range(len(Scenarioss[4]))]
     ]
 
 data_save = {}
 fig, axs = plt.subplots(2,
-                        3,
+                        5,
                         figsize=pf.standard_figure_size(),
       )
 
@@ -1295,7 +1331,7 @@ for c_index in [0, 1]:
     x = 0
     provinces = Provinces[c_index]
     region = ['China', 'India'][c_index]
-    for stype_index in range(3):
+    for stype_index in range(5):
         ax = axs[c_index][stype_index]
         if stype_index == 0:
             ax.set_ylabel(region + '\nMillion workers')
@@ -1317,8 +1353,106 @@ for c_index in [0, 1]:
             )
         else:
             ax.set_xticks([])
-            ax.set_title(['NPI', 'NDC',
-                          '1.5°C'][stype_index])
+            ax.set_title(['NPI', 'NDC','NDC w/CCS',
+                          '1.5°C','1.5°C w/CCS'][stype_index])
+        if stype_index != 0:
+            ax.set_yticks([])
+        ax.set_ylim([-0.6, 2.38])
+        ax.set_ylim([-1, 3.8])
+
+[ax.set_yticklabels([]) for ax in axs[:,[1,2]].flatten()]
+[ax.text(0.02,0.96, label, transform=ax.transAxes, fontsize= 11, fontweight='bold', va='top', ha='left') for ax, label in zip(axs.flatten(),['a)','b)','c)','d)','e)','f)'])]
+
+
+fig.legend(handles=alines,
+           labels=labs,
+           loc='center left',
+           ncol=1,
+           bbox_to_anchor=(0.9, 0.5),
+           frameon=False)
+
+fig.subplots_adjust(hspace=0.02, wspace=0.02)
+
+
+ds = pd.DataFrame(data_save).T
+ds.columns = ['R', 'D', 'I', 'U', 'H']
+ch60 = ds.loc[('China','NZ',t1),'U']
+ch55= ds.loc[('China','NZ_R55',t1),'U']
+
+lo_reduc = (1-sum(ds.loc[('China','NZ_R55',t1),['U','D','I']])/sum(ds.loc[('China','NZ',t1),['U','D','I']]))*100
+
+print(f'Sensitivity analysis shown in the annex where retirement age is moved from 60 to 55 show that such a policy would reduce the number of layoffs by {lo_reduc:0.1f}% and hence the number of workers leaving into unemployment from {ch60} to {ch55}.')
+
+
+lo_reduc = (1-sum(ds.loc[('China','NDC_R55',t1),['U','D','I']])/sum(ds.loc[('China','NDC',t1),['U','D','I']]))*100
+in_reduc = (1-sum(ds.loc[('India','NDC_R55',t1),['U','D','I']])/sum(ds.loc[('India','NDC',t1),['U','D','I']]))*100
+print(f'This policy is more efficient for lower ambition scenarios with {lo_reduc:0.1f}% under NDC-LTT ({in_reduc:0.1f}% in India)')
+
+
+#%% 1.4) Sensitivity to retirement age
+# ===========================================================================================================================
+
+Provinces = [provincesChina, provincesIndia]
+Countries = ['China', 'India']
+nls = [6, 8]
+
+Scenarioss = [['NPI',  'NPI_R55'],
+              ['NDC', 'NDC_R55'],
+              ['NDC_CCS1', 'NDC_CCS1_R55'],
+              ['NZ','NZ_R55'],
+              ['NZ_CCS1','NZ_CCS1_R55']]
+
+Scenarioss_name = [['NPI','Retirement \n55'],
+                   ['NDC', 'Retirement \n55'],
+                   ['NDC w/ CCS', 'Retirement \n55'],
+                   ['1.5°C','Retirement \n55'],
+                   ['1.5°C w/ CCS','Retirement \n55']]
+
+t0 = 2020
+t1 = 2050
+
+Xs = [
+    [x for x in range(len(Scenarioss[0]))],
+    [x for x in range(len(Scenarioss[1]))],
+    [x for x in range(len(Scenarioss[2]))],
+    [x for x in range(len(Scenarioss[3]))],
+    [x for x in range(len(Scenarioss[4]))]
+    ]
+
+data_save = {}
+fig, axs = plt.subplots(2,
+                        5,
+                        figsize=pf.standard_figure_size(),
+      )
+
+for c_index in [0, 1]:
+    x = 0
+    provinces = Provinces[c_index]
+    region = ['China', 'India'][c_index]
+    for stype_index in range(5):
+        ax = axs[c_index][stype_index]
+        if stype_index == 0:
+            ax.set_ylabel(region + '\nMillion workers')
+        Scenarios = Scenarioss[stype_index]
+        Sc = Scenarios
+        X = Xs[stype_index]
+        for s_index, Scenario in enumerate(Scenarios):
+            data_save, alines = pf.destination_bar(Result_data, X, T, t0, t1, Scenario, ax, region, provinces, data_save, s_index)
+            x += 1
+
+        alines = [x[0] for x in alines]
+        labs = [lab.get_label() for lab in alines]
+        ax.axhline(y=0, color='k', linewidth=0.9)
+        if c_index == 1:
+            ax.set_xticks(X)
+            ax.set_xticklabels(
+                Scenarioss_name[stype_index],
+                rotation=90,
+            )
+        else:
+            ax.set_xticks([])
+            ax.set_title(['NPI', 'NDC','NDC w/CCS',
+                          '1.5°C','1.5°C w/CCS'][stype_index])
         if stype_index != 0:
             ax.set_yticks([])
         ax.set_ylim([-0.6, 2.38])
