@@ -77,6 +77,7 @@ Prod_coal = [];
 if length(strindex(Model,"IMACLIM")) ==0
     disp(Model)
     disp("Importing format from other model");
+    exec("Default.Labour.sce");
 else
     // Post treatment of Imaclim variables to fit in nexus format
     exec("Imaclim.Labour.sce");
@@ -253,7 +254,17 @@ for  k =1:n_downscaled_countries
         if ind_smooth ==1 then
             for t = 2:TimeHorizon-1
                 Coal_jobs(t) =mean(Coal_jobs_temp(t-1:t+1));
+
+                if Coal_jobs(t)<0
+                    disp('Calculated negative employment in Region  : '+string(Region)+'   at time step: '+string(t));
+                end
+
             end
+        end
+
+
+        if min(Coal_jobs)<0
+            disp('!!!!! Negative employment  : '+string(Region))
         end
 
         // Calculating total openings
@@ -375,6 +386,9 @@ for  k =1:n_downscaled_countries
 
         Qcoal_pr(Region,:) = Prod_coal(Region,:);
         Lcoal_pr(Region,:) = Coal_jobs;
+        if min(Lcoal_pr)<0
+            disp('found negative Lcoal_pr')
+        end
         Produ_pr(Region,:) = Productivity(Region,:);
 
         Hire_pr(Region,:) = Coal_hire;
@@ -408,13 +422,11 @@ if ind_unemployment ==1
     mfprintf(fileID,string(...
                 round(max(Negative_unemployment(6,1:70)./LF_pr(1,1:70))*1e4)/1e2)+...
                 "percent"+"\n");
-    // mfprintf(fileID,"In:   " +string(t(find((Negative_unemployment(6,1:70)./LF_pr(1,1:70))=max(Negative_unemployment(6,1:70)./LF_pr(1,1:70)))))+"\n");
     mfprintf(fileID,"Maximum unaccounted workers in India:"+"\n");
     mfprintf(fileID,string(max(Negative_unemployment(7,1:70)))+"\n");
     mfprintf(fileID,"Maximum unaccounted share of labour force in India:"+"\n");
     mfprintf(fileID,string(...
                 round(max(Negative_unemployment(7,1:70)./LF_pr(33,1:70))*1e4)/1e2)+...
                 "percent"+"\n");
-    // mfprintf(fileID,"In:   " +string(t(find((Negative_unemployment(7,1:70)./LF_pr(1,1:70))=max(Negative_unemployment(7,1:70)./LF_pr(1,1:70)))))+"\n");
 end
 mfprintf(fileID,"\n\n\n\n"); 

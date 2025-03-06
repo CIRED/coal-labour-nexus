@@ -68,14 +68,27 @@ for k =1:n_downscaled_countries
 
     // Downscaling coal production
     Regions = find(Emp_struct(:, 1) == downscaled_countries(k));
+    Regions = find(Pr_regi_c == downscaled_countries(k) & Pr_variabs=="CoalOutputYear_reg" & scenario_type==Pr_scenario & productivity_scenario==Pr_prscenario);
+    
+    Country = Regions(1);
+    national_prod = Produ(Country,:);
+    // We assume that national 2015-2021 coal production is distributed similarly to 2021 in the GEM database
+    // This allows us to neglect regions where production has phased out since (eg Beijing) and are thus irrelevant to our analysis 
+    national_prod(1:6) = national_prod(7) ;
 
     for ks = 1:length(Regions)
         Region = Regions(ks);
+        regional_prod = Produ(Region,:);
+        regional_prod(1:6) = regional_prod(7) ;
+        prod_share = regional_prod./national_prod;
 
-        
-        Prod_coal = [Prod_coal; (Data(find(Regions_up==Cname & Variabs_up=='Primary Energy|Coal'),:)+..
-                                Data(find(Regions_up==Cname & Variabs_up=='Trade|Primary Energy|Coal|Volume'),:))*Emp_struct(Region,5)];
-
+        if productivity_growth==0 // If there is not productivity growth, we assume that coal production follows a constant distribution across both countries as variation cannot be explained by varying productivity growth
+            Prod_coal = [Prod_coal; (Data(find(Regions_up==Cname & Variabs_up=='Primary Energy|Coal'),:)+..
+                                    Data(find(Regions_up==Cname & Variabs_up=='Trade|Primary Energy|Coal|Volume'),:)).*prod_share(1)];
+        else
+            Prod_coal = [Prod_coal; (Data(find(Regions_up==Cname & Variabs_up=='Primary Energy|Coal'),:)+..
+                                    Data(find(Regions_up==Cname & Variabs_up=='Trade|Primary Energy|Coal|Volume'),:)).*prod_share];
+        end
     end
 
 end

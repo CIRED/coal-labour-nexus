@@ -1,6 +1,6 @@
 
 if ind_gem == 1
-    Emp_2015_2021 = csvRead('../data/Coal_labour/Downscaling/Coal_jobs_2015_2021.csv');
+    Emp_2015_2021 = csvRead('../data/Coal_labour/Downscaling/Coal_jobs_2015.csv');
 else
     mfprintf(fileID,"GEM"+"\n");
     Emp_2015_2021 = csvRead('../data/Coal_labour/Downscaling/Coal_jobs_2015_2021_GEM.csv');
@@ -12,20 +12,17 @@ Emp_coal = zeros(size(Prod_coal,1),TimeHorizon);
 
 
 
+Emp_coal(:,1) = Emp_2015_2021(2:67,4+ind_workforce);
 
-
-Emp_coal(:,1) = Emp_2015_2021(2:67,5);
-
-// Productivity(:,1:7) = Prod_coal(:,1:7)./Emp_2015_2021(2:67,2:8)
 
 for Country = [6, 7]
     Regions = find(Emp_struct(:, 1) == Country);
     for i = 1:length(Regions)
         Region = Regions(i)-1;
-        if Emp_2015_2021(Region+1,5)==0 
+        if Emp_2015_2021(Region+1,4+ind_workforce)==0 
             Productivity(Region,1)=0;
         else
-            Productivity(Region,1)=  Prod_coal(Region,1)/Emp_2015_2021(Region+1,5);
+            Productivity(Region,1)=  Prod_coal(Region,1)/Emp_2015_2021(Region+1,4+ind_workforce);
         end
     end
 end
@@ -38,19 +35,29 @@ Productivity_growth_rate = productivity_growth;
 Lev = 0.5;
 lambda = 5/100;
 
+
 for Country = [6, 7]
     Regions = find(Emp_struct(:, 1) == Country);
     for i = 1:length(Regions)
         Region = Regions(i)-1;
+        
         for l = 2:6  // Forcing 5.8% growth rate until 2023
             if Country == 6 // In China, 2015-2022 productivity is exogeneous and equal to the observed CAGR to allow for better fit with real world data
                 Productivity(Region,l)=Productivity(Region,l-1)*(1+10.78/100); 
-            else
-                Productivity(Region,l)=Productivity(Region,l-1)*(1+5.8/100); 
+            elseif Country == 7
+                Productivity(Region,l)=Productivity(Region,l-1)*(1+10.57/100); 
             end
         end
+      
+        r_index = find(Pr_regi_c==Country & Pr_regi_dow_c==i-1 & Pr_variabs=='CoalProdvty_growthrate' & Pr_scenario== scenario_type & Pr_prscenario==productivity_scenario);
+        
         for l = 7:TimeHorizon
-            Productivity(Region,l)=Productivity(Region,l-1)*(1+Productivity_growth_rate/100); 
+
+            if Productivity_growth_rate ==0
+                Productivity(Region,l)=Productivity(Region,l-1);
+            else
+                Productivity(Region,l)=Productivity(Region,l-1)*(1+Produ(r_index, l)/100);
+            end
         end
     end 
 end

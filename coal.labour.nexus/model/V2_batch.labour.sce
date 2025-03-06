@@ -11,7 +11,6 @@ SAVEDIR = '../output/'+date+'_Coal_labour_results'; mkdir(SAVEDIR);
 
 diary(SAVEDIR+"/"+date+"_summary.log");
 fileID = mopen(SAVEDIR+'/'+date+"_log.txt",'w') 
-mfprintf(fileID, "File created which is very good \n");
 time=getdate();
 mfprintf(fileID, "Time: "+string(time(7))+":"+string(time(8))+":"+string(time(9))+"\n");
 
@@ -27,36 +26,58 @@ NRegions = size(Region_code,1);
 age_pyramid.china = csvRead('../data/Coal_labour/SSP/Age_pyramid_China.csv');
 age_pyramid.india = csvRead('../data/Coal_labour/SSP/Age_pyramid_India.csv');
 
+//===============================================================================
+// Import functions
+exec("functions.sci",-1)
 
 
 //===============================================================================
 // Copying Imaclim variables to ease transition
 exec("imaclim.variables.sce");
 
-txLact = csvRead('../data/Coal_labour/SSP/active_population_growth_rate__ssp_2023__SSP2.csv','|',[],[],[],'/\/\//');
 txEntr = csvRead('../data/Coal_labour/SSP/txEntry_SSP2.csv',',','.',[]);
 txExit = csvRead('../data/Coal_labour/SSP/txExit_SSP2.csv',',','.',[]);
-txLact_header = txLact(1,:);
-ind_first_year = find(txLact_header == base_year_simulation);
-txLact = txLact(2:$, (ind_first_year+1):$);
+txLact = csvRead('../data/Coal_labour/SSP/txLact_SSP2.csv',',','.',[])
 
 //===============================================================================
 // Defining Scenarios
 
 // IAM trajectory source - pathways are assumed to be stored in *.csv file containing a single scenario from single model with header of the form: [Model, Scenario, Region, Variable, Unit, 2015, ...] 
-NPI = 'IMACLIM_waysout_outputs_WO-NPi-ElecIndus';
-NDC = 'IMACLIM_waysout_outputs_WO-NDCLTT-ElecIndus';
-NZ  = 'IMACLIM_waysout_outputs_WO-15C-ElecIndus';
+NPI_CCS0 = 'IMACLIM_waysout_outputs_WO-NPi-ElecIndus-CCS0';
+NDC_CCS0 = 'IMACLIM_waysout_outputs_WO-NDCLTT-ElecIndus-CCS0';
+NZ_CCS0  = 'IMACLIM_waysout_outputs_WO-15C-ElecIndus-CCS0';
+NDC_CCS1 = 'IMACLIM_waysout_outputs_WO-NDCLTT-ElecIndus-CCS1';
+NZ_CCS1  = 'IMACLIM_waysout_outputs_WO-15C-ElecIndus-CCS1';
 
-NPI = 'IMACLIM_waysout_outputs_WO-NPi-ElecIndus_EW';
-NDC = 'IMACLIM_waysout_outputs_WO-NDCLTT-ElecIndus_EW';
-NZ  = 'IMACLIM_waysout_outputs_WO-15C-ElecIndus_EW';
 
-// List of scenarios and associated 
-scenario_names = ['NPI','NDC','NZ','NPI_gem','NDC_gem','NZ_gem','NPI_PG0','NDC_PG0','NZ_PG0','NPI_R55','NDC_R55','NZ_R55','NPI_EW','NDC_EW','NZ_EW'];
-scenario_source = [NPI,NDC,NZ,NPI,NDC,NZ,NPI,NDC,NZ,NPI,NDC,NZ,NPI,NDC,NZ];
-// scenario_names = ['NPI','NDC','NZ','NPI_Pop','NDC_Pop','NZ_Pop','NPI_sc','NDC_sc','NZ_sc','NPI_Dose','NDC_Dose','NZ_Dose','NPI_dpop','NDC_dpop','NZ_dpop'];
-// scenario_source = [NPI,NDC,NZ,NPI,NDC,NZ,NPI,NDC,NZ,NPI,NDC,NZ,NPI,NDC,NZ];
+
+// 2025-03-05 Productivity SI
+scenario_names = ['NPI','NDC','NZ','NDC_CCS1','NZ_CCS1',...
+                  'NPI_PG0','NDC_PG0','NZ_PG0','NDC_CCS1_PG0','NZ_CCS1_PG0',...
+                  'NPI_R55','NDC_R55','NZ_R55','NDC_CCS1_R55','NZ_CCS1_R55',...
+                  'NPI_min','NDC_min','NZ_min','NDC_CCS1_min','NZ_CCS1_min',...
+                  'NPI_max','NDC_max','NZ_max','NDC_CCS1_max','NZ_CCS1_max',...
+                  'NPI_C0I0_P0','NDC_C0I0_P0','NZ_C0I0_P0','NDC_CCS1_C0I0_P0','NZ_CCS1_C0I0_P0',...
+                  'NPI_C0I0_P100','NDC_C0I0_P100','NZ_C0I0_P100','NDC_CCS1_C0I0_P100','NZ_CCS1_C0I0_P100',...
+                  'NPI_C20I5_P0','NDC_C20I5_P0','NZ_C20I5_P0','NDC_CCS1_C20I5_P0','NZ_CCS1_C20I5_P0',...
+                  'NPI_C20I5_P100','NDC_C20I5_P100','NZ_C20I5_P100','NDC_CCS1_C20I5_P100','NZ_CCS1_C20I5_P100',...
+                  'NPI_C40I10_P0','NDC_C40I10_P0','NZ_C40I10_P0','NDC_CCS1_C40I10_P0','NZ_CCS1_C40I10_P0',...
+                  'NPI_C40I10_P100','NDC_C40I10_P100','NZ_C40I10_P100','NDC_CCS1_C40I10_P100','NZ_CCS1_C40I10_P100']
+
+scenario_source= repmat([NPI_CCS0,NDC_CCS0,NZ_CCS0,NDC_CCS1,NZ_CCS1],1,11);
+Scenario_types = repmat(['NPi_CCS0','NDC_CCS0','1.5C_CCS0','NDC_CCS1','1.5C_CCS1'],1,11);
+productivity_source = ['C20I5_P100','C20I5_P100','C20I5_P100','C20I5_P100','C20I5_P100',...
+                        'C20I5_P100','C20I5_P100','C20I5_P100','C20I5_P100','C20I5_P100',...
+                        'C20I5_P100','C20I5_P100','C20I5_P100','C20I5_P100','C20I5_P100',...
+                        'C20I5_P100','C20I5_P100','C20I5_P100','C20I5_P100','C20I5_P100',...
+                        'C20I5_P100','C20I5_P100','C20I5_P100','C20I5_P100','C20I5_P100',...
+                        'C0I0_P0','C0I0_P0','C0I0_P0','C0I0_P0','C0I0_P0',...
+                        'C0I0_P100','C0I0_P100','C0I0_P100','C0I0_P100','C0I0_P100',...
+                        'C20I5_P0','C20I5_P0','C20I5_P0','C20I5_P0','C20I5_P0',...
+                        'C20I5_P100','C20I5_P100','C20I5_P100','C20I5_P100','C20I5_P100',...
+                        'C40I10_P0','C40I10_P0','C40I10_P0','C40I10_P0','C40I10_P0',...
+                        'C40I10_P100','C40I10_P100','C40I10_P100','C40I10_P100','C40I10_P100',]
+
 
 
 // Initialising parameters with default values
@@ -73,25 +94,59 @@ S_ind_unemployment = ones(size(scenario_names,1),size(scenario_names,2)); // 1: 
 S_ind_entry_leave = ones(size(scenario_names,1),size(scenario_names,2)); // 1: Retiring workers create new vacancies, 2: they do not
 // -  Ouputing treated variables to infill IAM scenarios with missing variables
 S_ind_preparing_infilling = zeros(size(scenario_names,1),size(scenario_names,2));
-
+// -  Workforce - 1: mid, 2: min, 3: max
+S_ind_workforce = ones(size(scenario_names,1),size(scenario_names,2));
 
 
 // Alternative parameters
-S_ind_gem(4:6) = 2;
-S_productivity_growth(7:9) = 0;
-S_retirement_age(10:12) = 55;
+// S_ind_gem(4:6) = 2;
+// S_productivity_growth(7:9) = 0;
+// S_retirement_age(10:12) = 55;
+// S_ind_workforce(16:18) = 2;
+// S_ind_workforce(19:21) = 3;
 
 // S_ind_struct(4:6)=2;
 // S_ind_struct(7:9)=3;
 // S_ind_struct(10:12)=4;
 // S_ind_struct(13:15)=5;
 
-S_ind_preparing_infilling(1:3)=1;
+//1- S_ind_preparing_infilling(1:3)=1;
+
+// Basic SI
+S_productivity_growth(6:10) = 0;
+S_retirement_age(11:15) = 55;
+S_ind_workforce(16:20) = 2;
+S_ind_workforce(21:25) = 3;
+
+
+// Load Productivity path calculated with the productivity nexus
+
+// Inputing productivity path
+Prod_path = csvRead('../productivity_trajectories/coalregion_SensitivityAnalysis_V1.csv",',','[]',"string");
+Prod_path = strsubst(Prod_path, "NA", "0"); 
+
+// separating from metadata
+Prod_header  = Prod_path(1,:);
+Prod_T = Prod_header(10:$);
+Produ  = evstr(Prod_path(2:$,10:$));
+Pr_scenario  = Prod_path(2:$,1);
+Pr_prscenario  = Prod_path(2:$,2)+'_'+Prod_path(2:$,3);
+Pr_regi_c    = evstr(Prod_path(2:$,5));
+Pr_regi_dow_c= evstr(Prod_path(2:$,6));  
+Pr_regi      = Prod_path(2:$,7);
+Pr_regi_dow  = Prod_path(2:$,8);  
+Pr_variabs   = Prod_path(2:$,4);
+
+
 
 //===============================================================================
-for scenario = [1:size(scenario_names,2)]
+for scenario = [1:size(scenario_names,2)];
 
+      disp(scenario_names(scenario))
 
+      scenario_type = Scenario_types(scenario) 
+      productivity_scenario = productivity_source(scenario) 
+      
       runname = scenario_names(scenario);
       mfprintf(fileID,runname+"\n");
 
@@ -103,7 +158,9 @@ for scenario = [1:size(scenario_names,2)]
       ind_unemployment = S_ind_unemployment(scenario);
       ind_entry_leave = S_ind_entry_leave(scenario);
       ind_preparing_infilling = S_ind_preparing_infilling(scenario);
+      ind_workforce = S_ind_workforce(scenario);
       ind_smooth = 1 ;      
+
 
       
       // Inputing data
@@ -111,11 +168,13 @@ for scenario = [1:size(scenario_names,2)]
       
       // Separating values from metadata
       Data_header = Data(1,:);
+      Data_T = Data_header(6:$);
       Data = Data(2:$,:);
+      Scenari_up = Data(:,2);
       Regions_up = Data(:,3);
       Variabs_up = Data(:,4);
       Model = Data(1,1); 
-      Data = strtod(Data(:,6:$));
+      Data=InterpolatingYearlyData(Data);
 
 
       // Running Analysis
