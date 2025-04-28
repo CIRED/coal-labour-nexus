@@ -12,6 +12,9 @@ from matplotlib.colors import PowerNorm
 import sys
 import os
 import mpltern
+import sys
+sys.path.append("..")
+import notebooks.plotting_functions as pf
 
 # Get current working directory
 current_dir = os.getcwd()
@@ -46,7 +49,7 @@ Colors = pf.defining_waysout_colour_scheme()
 T = range(2015, 2101)
 T = np.array(T)
 
-scenarios = list(np.array([[ x + y  for x in ['WO-NPi-ElecIndus','WO-NDCLTT-ElecIndus','WO-15C-ElecIndus']] for y in ['']]).flatten())
+scenarios = list(np.array([[ x + y  for x in ['WO-NPi-ElecIndus-CCS0','WO-NDCLTT-ElecIndus-CCS0','WO-15C-ElecIndus-CCS0']] for y in ['']]).flatten())
 
 Imaclim_data = []
 for scenario in scenarios:
@@ -71,7 +74,7 @@ T = np.array(T)
 input_directory = os.path.join("..","coal.labour.nexus","output")
 
 
-file_name = list(np.array([[input_directory+'/Downscaled_coal_labour_' + x + y + '.csv' for x in ['NDC','NPI','NZ']] for y in ['','_Pop','_dpop','_sc','_Dose']]).flatten())
+file_name = list(np.array([['../coal.labour.nexus/output/Downscaled_coal_labour_' + x + y + '.csv' for x in ['NPI','NDC','NZ','NDC_CCS1','NZ_CCS1']] for y in ['','_tra','_PG0','_R55','_min','_max','_C0I0_P0','_C0I0_P100','_C20I5_P0','_C20I5_P100','_C40I10_P100','_pop','_dose','_dpop','_sc']]).flatten())
 
 Result_data = []
 for file in file_name:
@@ -81,6 +84,8 @@ Result_data = pd.concat(Result_data, ignore_index=True)
 
 Result_data.iloc[:, 6:] = Result_data.iloc[:, 6:].applymap(lambda x: str(x).replace('D', 'E'))
 Result_data.iloc[:, 6:] = Result_data.iloc[:, 6:].apply(pd.to_numeric, errors='coerce')
+Region_indexes = pd.read_csv('../coal.labour.nexus/data/Coal_labour/Downscaling/Indexes.csv')
+
 
 #%%
 # Importing the DOSE data
@@ -162,8 +167,7 @@ def define_ternary_color_space(fig,subdivisions):
     return ax, col_bin
 
 
-def ternary_map(ax,df,t,scenario,variables,Regions,Asia,col_bin):
-
+def get_colors(df,t,scenario,variables,Regions,col_bin):
     colors = []
 
     for region in Regions:
@@ -181,6 +185,12 @@ def ternary_map(ax,df,t,scenario,variables,Regions,Asia,col_bin):
 
     Colors = pd.DataFrame(data=np.array([list(Regions), colors],dtype=object).transpose(),
                         columns=['Region_Nam', 'colors'])
+    return Colors
+
+
+def ternary_map(ax,df,t,scenario,variables,Regions,Asia,col_bin):
+
+    Colors = get_colors(df,t,scenario,variables,Regions,col_bin)
 
     Asia_Data_with_colors = Asia[Asia['CNTRY_Name'].isin(['China','India'])].merge(Colors, on='Region_Nam', how='left').fillna('lightgrey')
     Asia_Data_with_colors.plot(ax=ax, color=Asia_Data_with_colors['colors'],
@@ -214,7 +224,7 @@ ax, col_bin = define_ternary_color_space(fig,subdivisions)
 # Plot evolution of key regions on the ternary plot
 for region in ['Shanxi','Jharkhand']:
     alines = []
-    for ind_scenario, scenario in enumerate(['NPI','NPI_Pop','NPI_Dose','NPI_sc']):
+    for ind_scenario, scenario in enumerate(['NPI','NPI_pop','NPI_dose','NPI_sc']):
 
         agri =  [float(x) for x in Result_data[(Result_data['Downscaled Region']==region)&(Result_data.Variable=="Employment|Agriculture|Share|Downscaled")&(Result_data.Scenario==scenario)].values[0][6:-1]]
         indus = [float(x) for x in Result_data[(Result_data['Downscaled Region']==region)&(Result_data.Variable=="Employment|Industry|Share|Downscaled")&(Result_data.Scenario==scenario)].values[0][6:-1]]
@@ -257,7 +267,7 @@ ax.set_ylim([7,55])
 
 
 
-for ind_scenario, scenario in enumerate(['NPI','NPI_Pop','NPI_Dose','NPI_sc','NPI_dpop']):
+for ind_scenario, scenario in enumerate(['NPI','NPI_pop','NPI_dose','NPI_sc','NPI_dpop']):
     for t_index in range(len(ts)):
         ax = fig.add_axes([0.4+0.255*t_index, 0.7-0.25*ind_scenario, 0.25, 0.25])
         t = ts[t_index]
@@ -272,6 +282,103 @@ for ind_scenario, scenario in enumerate(['NPI','NPI_Pop','NPI_Dose','NPI_sc','NP
         ax.set_xlim([65,140])
         ax.set_ylim([7,55])
 
+
+
+
+#%%
+#(Heat)mapping structural change in all scenarios
+Regions = Result_data[~Result_data['Downscaled Region'].isin(['China','India','Andaman & Nicobar Islands','Puducherry'])]['Downscaled Region'].unique()
+scenario =  'NPI'
+
+fig = plt.figure(figsize=(13, 11))
+
+ts = [2050]
+
+subdivisions = 20
+ax, col_bin = define_ternary_color_space(fig,subdivisions)
+ax.text(0.02,0.96, 'b)', transform=ax.transAxes, fontsize= 14, fontweight='bold', va='top', ha='left')
+
+
+
+# Plot evolution of key regions on the ternary plot
+for region in ['Shanxi','Jharkhand']:
+    alines = []
+    for ind_scenario, scenario in enumerate(['NPI','NPI_pop','NPI_dose','NPI_sc']):
+
+        agri =  [float(x) for x in Result_data[(Result_data['Downscaled Region']==region)&(Result_data.Variable=="Employment|Agriculture|Share|Downscaled")&(Result_data.Scenario==scenario)].values[0][6:-1]]
+        indus = [float(x) for x in Result_data[(Result_data['Downscaled Region']==region)&(Result_data.Variable=="Employment|Industry|Share|Downscaled")&(Result_data.Scenario==scenario)].values[0][6:-1]]
+        serv = [float(x) for x in Result_data[(Result_data['Downscaled Region']==region)&(Result_data.Variable=="Employment|Services|Share|Downscaled")&(Result_data.Scenario==scenario)].values[0][6:-1]]
+        
+        
+        alines.append(ax.plot(agri, indus, serv,color=['k','k','grey','grey'][ind_scenario],
+                linestyle = ['-',':','-','--'][ind_scenario], label = scenario))
+        ax.scatter([agri[x] for x in [5,25,45]], 
+                    [indus[x] for x in [5,25,45]],
+                    [serv[x] for x in [5,25,45]],
+                marker='.',
+                color=['k','k','grey','grey'][ind_scenario])
+    ax.text(agri[0]+0.01, indus[0]-0.005, serv[0]-0.005,region,fontsize=8)
+
+labels = [scenario for scenario in ['NPI','NPI_pop','NPI_dose','NPI_sc']]
+handles = [aline[0] for aline in alines]
+ax.legend(handles, labels, loc='lower center', fontsize=12,
+           bbox_to_anchor=(0.4, -0.4),
+           frameon=False, ncols=2
+           )
+
+Va_Variables = {
+    "agri" :"Employment|Agriculture|Share|Downscaled",
+    'indus' : "Employment|Industry|Share|Downscaled",
+    "serv" : "Employment|Services|Share|Downscaled"
+}
+
+# Plot data    
+t = 2015
+ax = fig.add_axes([0.1,1-0.3, 0.25, 0.25])
+ax = ternary_map(ax, Result_data, t, scenario, Va_Variables, Regions, Asia,col_bin)
+ax.text(0.02,0.96, 'a)', transform=ax.transAxes, fontsize= 14, fontweight='bold', va='top', ha='left')
+
+
+ax.set_title(t)
+ax.set_xticks([])
+ax.set_yticks([])
+ax.set_xlim([65,140])
+ax.set_ylim([7,55])
+
+
+Scenarios = ['NPI','NPI_pop','NPI_dose','NPI_sc','NPI_dpop']
+
+
+for ind_country, country in enumerate(['CHN','IND']):
+    ax = fig.add_axes([0.45+0.35*ind_country, 0.4, 0.25, 0.55])
+    ax.text(0.02,0.96, ['c)','d)'][ind_country], transform=ax.transAxes, fontsize= 14, fontweight='bold', va='top', ha='left')
+    Regions = Result_data[(~Result_data['Downscaled Region'].isin(['China','India','Andaman & Nicobar Islands','Puducherry']))&(Result_data.Region==country)]['Downscaled Region'].unique()
+    Results = pd.DataFrame(index=Regions,columns=Scenarios+['employment'])
+    for ind_scenario, scenario in enumerate(['NPI','NPI_pop','NPI_dose','NPI_sc','NPI_dpop']):
+        
+        for t_index in range(len(ts)):
+            
+            t = ts[t_index]
+            Colors = get_colors(Result_data,t,scenario,Va_Variables,Regions,col_bin).set_index('Region_Nam')
+        Results[scenario] = Colors['colors']
+            # ax.imshow([[[y for y in x[0]]] for x in Colors.loc[Regions].values])
+            
+    Base_value = Result_data[(Result_data.Region==country)&(Result_data.Scenario=='NPI')&(Result_data.Variable=='Employment|Coal|Downscaled')&(~Result_data['Downscaled Region'].isin(['China','India']))].loc[:,["Downscaled Region","2015"]].set_index("Downscaled Region")
+    Results["employment"] = Base_value
+    Results = Results.sort_values(by='employment',ascending=False)
+    Results = Results.drop('employment',axis=1)
+    ax.imshow([[[y for y in z] for z in x] for x in Results.values], aspect='auto')
+    ax.set_xticks(range(len(Scenarios)))
+    ax.set_xticklabels(Scenarios)
+
+    ax.set_yticks(range(len(Regions)))
+    ax.set_yticklabels(Results.index)
+    ax.set_xticks(np.arange(Results.shape[1]+1)-.5, minor=True)
+    ax.set_yticks(np.arange(Results.shape[0]+1)-.5, minor=True)
+    ax.grid(which="minor", color="w", linestyle='-', linewidth=2)
+    ax.tick_params(which="minor", bottom=False, left=False)
+    ax.spines[:].set_visible(False)
+
 #%%
 # BARCHART DESTINATION 1 Period
 
@@ -284,39 +391,37 @@ Countries = ['China', 'India']
 nls = [6, 8]
 
 Scenarioss = [['NPI','NDC','NZ'],
-            ['NPI_Pop','NPI','NPI_Dose','NPI_sc','NPI_dpop'],
-            ['NDC_Pop','NDC','NDC_Dose','NDC_sc','NDC_dpop'],
-            ['NZ_Pop','NZ','NZ_Dose','NZ_sc','NZ_dpop']]
+            ['NPI_pop','NPI','NPI_dose','NPI_sc','NPI_dpop'],
+            ['NDC_pop','NDC','NDC_dose','NDC_sc','NDC_dpop'],
+            ['NZ_pop','NZ','NZ_dose','NZ_sc','NZ_dpop']]
+
+Scenarioss= [['NPI','NPI_pop','NPI_dose','NPI_sc','NPI_dpop'],
+             ['NDC','NDC_pop','NDC_dose','NDC_sc','NDC_dpop'],
+             ['NDC_CCS1','NDC_CCS1_pop','NDC_CCS1_dose','NDC_CCS1_sc','NDC_CCS1_dpop'],
+             ['NZ','NZ_pop','NZ_dose','NZ_sc','NZ_dpop'],
+             ['NZ_CCS1','NZ_CCS1_pop','NZ_CCS1_dose','NZ_CCS1_sc','NZ_CCS1_dpop']]
 
 
-Scenarioss_name = [['NPI','NDC','NZ'],
-            ['NPI_Pop','NPI','NPI_Dose','NPI_sc','NPI_dpop'],
-            ['NDC_Pop','NDC','NDC_Dose','NDC_sc','NDC_dpop'],
-            ['NZ_Pop','NZ','NZ_Dose','NZ_sc','NZ_dpop']]
+Scenarioss_name = [['Central','pop','dose','sc','dpop']]*5
             
 
 t0 = 2020
-t1 = 2050
+t1 = 2040
 
 Xs = [
-    list(range(len(Scenarioss[0]))), [x for x in range(len(Scenarioss[1]))],
-    [x for x in range(len(Scenarioss[2]))],
-    [x for x in range(len(Scenarioss[3]))]
+    [x for x in range(len(y))] for y in Scenarioss
 ]
 data_save = {}
 fig, axs = plt.subplots(2,
-                        4,
+                        5,
                         figsize=(29.21 / 2.54, 13.09 / 2.54),
-                        gridspec_kw={
-                            'width_ratios': [1, 5.5 / 3, 5.5 / 3, 5.5 / 3],
-                            'height_ratios': [1, 1]
-                        })
+                        )
 for c_index in [0, 1]:
     x = 0
     provinces = Provinces[c_index]
     region = ['China', 'India'][c_index]
     print(region)
-    for stype_index in range(4):
+    for stype_index in range(5):
         ax = axs[c_index][stype_index]
         if stype_index == 0:
             ax.set_ylabel(region + '\nMillion workers')
@@ -404,8 +509,8 @@ for c_index in [0, 1]:
             )
         else:
             ax.set_xticks([])
-            ax.set_title(['Central', 'NPI', 'NDC',
-                          '1.5°C'][stype_index])
+            ax.set_title(['NPI', 'NDC', 'NDC w/ CCS',
+                          '1.5°C', '1.5°C w/ CCS'][stype_index])
         if stype_index != 0:
             ax.set_yticks([])
         ax.set_ylim([-0.6, 2.38])
@@ -419,6 +524,8 @@ fig.legend(handles=alines,
            frameon=False)
 
 fig.subplots_adjust(hspace=0.02, wspace=0.02)
+
+[ax.text(0.02,0.96, label, transform=ax.transAxes, fontsize= 11, fontweight='bold', va='top', ha='left') for ax, label in zip(axs.flatten(),['a)','b)','c)','d)','e)','f)','g)','h)','i)','j)'])]
 
 
 #%%
@@ -452,7 +559,7 @@ Scenarios =  ['NPI','NDC','NZ','NPI_dose','NDC_dose','NZ_dose','NPI_sc','NDC_sc'
 
 Scenarios_names = ['NPI','NDC','1.5°C','NPI','NDC','1.5°C','NPI','NDC','1.5°C']
 
-Scenarios = ['NPI','NPI_Dose','NPI_sc','NDC','NDC_Dose','NDC_sc','NZ','NZ_Dose','NZ_sc']
+Scenarios = ['NPI','NPI_dose','NPI_sc','NDC','NDC_dose','NDC_sc','NZ','NZ_dose','NZ_sc']
 Scenarios_names = ['NPI']*3+['NDC']*3+['1.5°C']*3
 
 fig1, axs1 = plt.subplots(3,3, figsize=(18/1.6, 15.3/1.6))
@@ -642,12 +749,12 @@ Ts = [2020, 2035, 2050]
 Scenarios = ['NPI','NDC','NZ']
 Scenarios_names = ['NPI','NDC','NZ']
 
-Scenarios = ['NPI','NPI_Dose','NPI_sc','NDC','NDC_Dose','NDC_sc','NZ','NZ_Dose','NZ_sc']
+Scenarios = ['NPI','NPI_dose','NPI_sc','NDC','NDC_dose','NDC_sc','NZ','NZ_dose','NZ_sc']
 
 Scenarios = ['NPI','NDC','NZ',
-             'NPI_Dose','NDC_Dose','NZ_Dose',
+             'NPI_dose','NDC_dose','NZ_dose',
              'NPI_sc','NDC_sc','NZ_sc',
-             'NPI_Pop','NDC_Pop','NZ_Pop',
+             'NPI_pop','NDC_pop','NZ_pop',
              'NPI_dpop','NDC_dpop','NZ_dpop']
 
 Scenarios_names = Scenarios
@@ -765,7 +872,7 @@ Regions = np.unique(Result_data[~Result_data['Downscaled Region'].isin(
 # Defining the scenarios
 Scenarios =  ['NPI','NDC','NZ',
               'NPI_sc','NDC_sc','NZ_sc',
-              'NPI_Pop','NDC_Pop','NZ_Pop',]
+              'NPI_pop','NDC_pop','NZ_pop',]
 Scenarios_names = Scenarios
 
 t0 = 2019
@@ -939,5 +1046,146 @@ for ind_scenario, scenario in enumerate(['NPI','NPI_sc']):
         ax.set_xlim([65,140])
         ax.set_ylim([7,55])
 
+
+# %%
+
+
+# Alternative to maps
+t0=2020
+# - Heatmap
+
+Scenarios = ['NZ','NZ_dose','NZ_sc','NZ_dpop','NZ_pop']
+Scenarios_names = ['Central','Dose','SC','dpop','pop']
+scenario = Scenarios[0]
+var = 'Workforce'
+T1 = 2035
+Regions = np.unique(Result_data[~Result_data['Downscaled Region'].isin(
+['China', 'India', 'Rest of Asia', 'Asia without Indonesia', 'Indonesia'])]
+                ['Downscaled Region'].values)
+
+
+Region_with_cntr = [region+' ('+Region_indexes.loc[Region_indexes["Subregion_name"]==region,"Region_name"].values[0]+')' for region in Regions]
+
+zlim, norm, colormap = pf.semisymlognorm()
+Ls = []
+share_n_finding = []
+All_data = pd.DataFrame(index=Region_with_cntr,columns=['Workforce','Destruction','Country'])
+Calced_data = []
+Destruction = []
+CNTRY = [Region_indexes.loc[Region_indexes["Subregion_name"]==region,"Region_name"].values[0] for region in Regions]
+
+# Iterating over regions
+for region in list(Regions):
+    if type(T1) is str:
+        threshold = 0.8
+        t1 =pf.finding_emp_threshold_date(Result_data[(Result_data['Downscaled Region']==region)&
+                        (Result_data.Scenario==scenario)],threshold,T)
+
+    else:
+        t1=T1
+    
+    Calced_data = pf.calc_workforce(Result_data,region,Calced_data,scenario) 
+
+    y = Result_data[(Result_data['Downscaled Region'] == region)
+                    & (Result_data['Variable'] == 'Employment|Coal|Downscaled') &
+                    (Result_data['Scenario'] == scenario)]
+    Destruction.append(y.loc[:,str(t1)]-y.loc[:,str(t0)])
+
+Calced_data = pd.DataFrame(data=np.array([Region_with_cntr, Calced_data]).transpose(),
+                    columns=['Region_Nam', 'Calced_data']).set_index('Region_Nam')
+Destruction = pd.DataFrame(data=np.array([Region_with_cntr, Destruction]).transpose(),
+                    columns=['Region_Nam', 'Destruction']).set_index('Region_Nam')
+
+
+All_data['Workforce'] = Calced_data['Calced_data'].astype(float)
+All_data['Destruction'] = Destruction['Destruction'].astype(float)
+All_data['Country'] = CNTRY
+var = "Finding_new_emp"
+for T1 in [2035,2050]:
+    for ind_scenario, scenario in enumerate(Scenarios):
+        Calced_data = []
+        for region in list(Regions):
+            if type(T1) is str:
+                threshold = 0.8
+                t1 =pf.finding_emp_threshold_date(Result_data[(Result_data['Downscaled Region']==region)&
+                                (Result_data.Scenario==scenario)],threshold,T)
+
+            else:
+                t1=T1
+            Calced_data=pf.calc_share_n_finding(Result_data,region,T,t0,t1,Calced_data,scenario)
+
+        Calced_data = pd.DataFrame(data=np.array([Region_with_cntr, Calced_data]).transpose(),
+                            columns=['Region_Nam', 'Calced_data']).set_index('Region_Nam')
+
+        All_data[Scenarios_names[ind_scenario]+'\n'+str(T1)] = Calced_data['Calced_data'].astype(float)
+
+
+All_data.sort_values(['Country','Workforce'],ascending=False,inplace=True)
+All_data.drop(All_data[All_data['Workforce']==0].index,inplace=True)
+All_data.drop(['Country'],axis=1,inplace=True)
+#%%
+# Add a blank column to create a wider gap between 2030 and 2050 scenarios
+fig, ax = plt.subplots(figsize= [x*[1,2][ind] for ind,x in enumerate(pf.standard_figure_size())])
+sns.heatmap(All_data.drop(['Workforce','Destruction'],axis=1).astype('float'),vmin=0,vmax=1, linewidth = 0.5, cmap="rocket_r", ax=ax,  cbar=True, cbar_kws={"label": "Share not finding new employment" })
+
+ax.axvline(x=5,color='white',linewidth = 7)
+ax.axvline(x=1,color='white',linewidth = 2)
+ax.axvline(x=6,color='white',linewidth = 2)
+ax.axhline(y=12,color='white',linewidth = 4)
+ax.xaxis.tick_top()
+# cax2 = ax.inset_axes([1.07, 0, 0.05, 1])
+# cbar = fig.colorbar(cax=cax2, orientation='vertical')
+# cax2.spines[:].set_visible(False)
+
+
+#%%
+# - Scatter
+
+Colors = {
+    'NZ':pf.defining_waysout_colour_scheme()['NZ'],
+    'NZ_dose':sns.color_palette()[0],
+    'NZ_sc':sns.color_palette()[4],
+    'NZ_pop':sns.color_palette()[5],
+    'NZ_dpop':sns.color_palette()[8],
+}
+
+Scen_for_comparison = ['SC','Dose']
+Scenarios = ['NZ_dose','NZ_sc','NZ_dpop','NZ_pop','NZ']
+Scenarios_names = ['Dose','SC','dpop','pop','Central']
+
+T1 = 2035
+fig, ax = plt.subplots(figsize=(7, 7))
+for ind_region, region in enumerate(All_data.index):
+    for ind_scenario, scenario in enumerate(Scenarios_names):
+        if scenario == 'Central':
+            edge = 'k'
+        else:
+            edge = None
+        ax.scatter(All_data.loc[region, scenario+'\n'+str(T1)],len(All_data.index)-ind_region-1, s=-All_data.loc[region,'Destruction']/7e3, label=region, color=Colors[Scenarios[ind_scenario]],zorder=1,edgecolors=edge)
+    xs = [min([All_data.loc[region, x+'\n'+str(T1)] for x in Scen_for_comparison]),max([All_data.loc[region, x+'\n'+str(T1)] for x in Scen_for_comparison])]
+    ax.plot(xs,
+            [len(All_data.index)-ind_region-1]*2,color='gray',zorder=0,alpha=0.4)
+    ax.text(np.mean(xs),len(All_data.index)-ind_region-1,f'{(xs[1]-xs[0])*100:.0f}%',ha='center',va='center',fontsize=10)
+
+
+ax.set_yticks(range(len(All_data.index)))
+ax.set_yticklabels(All_data.index[::-1])
+ax.set_ylim([-0.5,33.5])
+ax.set_xlim([0,1])
+ax.set_xticklabels([f'{x*100:.0f}%' for x in ax.get_xticks()])
+
+
+legend_elements = [
+    plt.scatter([], [], color=Colors['NZ'], label='Central', edgecolor='k', s=100),
+    plt.scatter([], [], color=Colors['NZ_dose'], label='Dose', s=100),
+    plt.scatter([], [], color=Colors['NZ_sc'], label='SC', s=100),
+    plt.scatter([], [], color=Colors['NZ_dpop'], label='dpop', s=100),
+    plt.scatter([], [], color=Colors['NZ_pop'], label='pop', s=100),
+    plt.scatter([], [], color='gray', label='Job losses (800k)',  alpha=0.6, s=800/7),
+    plt.scatter([], [], color='gray', label='Job losses (400k)',  alpha=0.6, s=400/7),
+    plt.scatter([], [], color='gray', label='Job losses (200k)',  alpha=0.6, s=200/7),
+]
+
+ax.legend(handles=legend_elements, loc='lower center', bbox_to_anchor=(0.5, -0.15), ncol=4, frameon=False)
 
 # %%

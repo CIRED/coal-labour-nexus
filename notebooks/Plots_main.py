@@ -44,7 +44,7 @@ T = np.array(T)
 
 
 #======
-file_name = list(np.array([['../coal.labour.nexus/output/Downscaled_coal_labour_' + x + y + '.csv' for x in ['NPI','NDC','NZ','NDC_CCS1','NZ_CCS1']] for y in ['','_PG0','_R55','_min','_max','_C0I0_P0','_C0I0_P100','_C20I5_P0','_C20I5_P100','_C40I10_P100']]).flatten())
+file_name = list(np.array([['../coal.labour.nexus/output/Downscaled_coal_labour_' + x + y + '.csv' for x in ['NPI','NDC','NZ','NDC_CCS1','NZ_CCS1']] for y in ['','_tra','_PG0','_R55','_min','_max','_C0I0_P0','_C0I0_P100','_C20I5_P0','_C20I5_P100','_C40I10_P100','_pop','_dose','_dpop','_sc']]).flatten())
 
 Result_data = []
 for file in file_name:
@@ -96,6 +96,8 @@ mtoe2ej         =  mtoe2gj / exa2giga # EJ/Mtep
 Colors = pf.defining_waysout_colour_scheme()
 # ===========================================================================================================================
 
+Region_indexes = pd.read_csv('../coal.labour.nexus/data/Coal_labour/Downscaling/Indexes.csv')
+
 
 #%%
 # ===========================================================================================================================
@@ -105,7 +107,7 @@ Colors = pf.defining_waysout_colour_scheme()
 # ===========================================================================================================================
 
 
-#%% 0) Scenarios descriptions
+#%% 0) Scenarios descriptions: useful for presentations
 # ===========================================================================================================================
 import importlib
 importlib.reload(pf)
@@ -186,8 +188,8 @@ Scen_type = ['NPI','NDC','NZ','NDC_CCS1','NZ_CCS1']
 
 
 Show_uncertainty = False
-Show_alternatives = False
-
+Show_alternatives = True
+Show_supply = False
 
 if Show_alternatives:
     Alt_type = [
@@ -197,6 +199,14 @@ if Show_alternatives:
     Rlinewidth = [1, 0.75, 0.75, 0.75, 0.75, 0.75]* 5
     Rmarker = ['', '', '^', 'o', 'x','s'] * 5
     Scen_list = [0,6,12,18,24]
+elif Show_supply:
+    Alt_type = [
+    '','_tra','_PG0']
+    Ralpha = [1,1,1] * 5
+    Rlinestyle = ['-','--',':']*5
+    Rlinewidth = [1,0.75,0.75]* 5
+    Rmarker = ['','',''] * 5
+    Scen_list = [0,3,6,9,12]
 else:
     Alt_type = [
     '','_PG0']
@@ -253,7 +263,7 @@ for c_index, country in enumerate(Countries):
             S_maxy.append(maxy)
             S_miny.append(miny)
 
-        if Scenarios[j] in  ['NPI','NDC','NZ','NDC_CCS1','NZ_CCS1']:
+        if (Scenarios[j] in  ['NPI','NDC','NZ','NDC_CCS1','NZ_CCS1']) & ~(('_CCS1' in Scenarios[j])&(country=='China')):
             if COAL_emp.values[0][6:][
                     T < 2070][-1] < COAL_emp.values[0][6:][5] / 2:
                 
@@ -303,17 +313,22 @@ for c_index, country in enumerate(Countries):
                             zorder = 0)
     if Show_alternatives:
         for ind_scen_type, scen_type in enumerate(Scen_type):
-            all_scenario = [scen_type+x for x in ['','_C0I0_P0','_C0I0_P100','_C20I5_P0','_C40I10_P100']]
-            y2030 = Scen_y.loc[all_scenario,15].values
-            y2050 = Scen_y.loc[all_scenario,35].values
+            if not ((country=="China") & ('_CCS1' in scen_type)): #Not plotting CCS scenarios in China for clarity (overlap with non CCS scenario)
+            
+                all_scenario = [scen_type+x for x in ['','_C0I0_P0','_C0I0_P100','_C20I5_P0','_C40I10_P100']]
+                y2030 = Scen_y.loc[all_scenario,15].values
+                y2050 = Scen_y.loc[all_scenario,35].values
 
-            ax.add_patch(Rectangle((2070+2*ind_scen_type, min(y2030)),0.75, max(y2030)-min(y2030),
-                                facecolor= Colors[scen_type], edgecolor='none',alpha=0.55))
-            ax.add_patch(Rectangle((2071+2*ind_scen_type, min(y2050)),0.75, max(y2050)-min(y2050),
-                                facecolor= Colors[scen_type], edgecolor='none',alpha=0.55))
-            ax.plot([2070+2*ind_scen_type,2070.75+2*ind_scen_type],[y2030[0],y2030[0]],color=Colors[scen_type])
-            ax.plot([2071+2*ind_scen_type,2071.75+2*ind_scen_type],[y2050[0],y2050[0]],color=Colors[scen_type])
-
+                ax.add_patch(Rectangle((2070+2*ind_scen_type, min(y2030)),0.75, max(y2030)-min(y2030),
+                                    facecolor= Colors[scen_type], edgecolor='none',alpha=0.55))
+                ax.add_patch(Rectangle((2071+2*ind_scen_type, min(y2050)),0.75, max(y2050)-min(y2050),
+                                    facecolor= Colors[scen_type], edgecolor='none',alpha=0.55))
+                ax.plot([2070+2*ind_scen_type,2070.75+2*ind_scen_type],[y2030[0],y2030[0]],color=Colors[scen_type])
+                ax.plot([2071+2*ind_scen_type,2071.75+2*ind_scen_type],[y2050[0],y2050[0]],color=Colors[scen_type])
+                if ind_scen_type==0:
+                    ax.text(2070-0.5+2*ind_scen_type, max(y2030)+0.1, '2030', fontsize=5, color='k',rotation=45,ha='left',va='bottom')
+                    ax.text(2071+1+2*ind_scen_type, min(y2050)+0.1, '2050', fontsize=5, color='k',rotation=45,ha='right',va='top')
+                    
     # Formatting axes
     ax.set_title(country)
     ax.set_ylabel('Million workers')
@@ -399,7 +414,7 @@ if Show_uncertainty:
     alines.append(axs[0].fill_between([], [], [],
                             color='darkgrey',
                             alpha = 0.5,
-                            label='Likely range'))
+                            label='Calibration uncertainty'))
 
 [ax.text(0.02,0.96, label, transform=ax.transAxes, fontsize= 11, fontweight='bold', va='top', ha='left') for ax, label in zip(axs.flatten(),['a)','b)'])]
 
@@ -423,11 +438,17 @@ pf.save_figure(fig,'1_Employment','jpg',dpi=600)
 # ===========================================================================================================================
 
 
+Show_alternatives=True
+representation = 1
+import importlib
+importlib.reload(pf)
 for ind_country, country in enumerate(['CHN','IND']):
-    fig, axs = plt.subplots(8,[6,8][ind_country],figsize=(26,20))
+    grid_size = pf.regional_grid(representation)[2][ind_country]
+    # fig, axs = plt.subplots(8,[6,8][ind_country],figsize=(26,20))
+    fig, axs = plt.subplots(grid_size[0],grid_size[1],figsize=(26,15))#[15,15*3/5][ind_country]))
     
-    pf.Grid_Employment_Destruction(fig,axs,T,Result_data,ind_country,False)
-    pf.save_figure(fig,'2_Grid_employment_'+country,'svg')
+    pf.Grid_Employment_Destruction(fig,axs,T,Result_data,ind_country,False,Show_alternatives=Show_alternatives,grid_scale_same=False,representation=representation)
+    pf.save_figure(fig,'2_Grid_employment_'+['','alternatives_'][Show_alternatives]+country+str(representation),'svg')
 
 #%%
 
@@ -1277,7 +1298,7 @@ axn.set_ylim([0,14])
 
 [ax.text(0.02,0.96, label, transform=ax.transAxes, fontsize= 12, fontweight='bold', va='top', ha='left') for ax, label in zip([axs[0,0],axn],['a)','b)'])]
 
-#%% 1.3) Sensitivity to retirement age
+#%% 1.3) Sensitivity to Productivity scenario
 # ===========================================================================================================================
 
 Provinces = [provincesChina, provincesIndia]
@@ -1297,18 +1318,13 @@ Scenarioss_name = [["NPI","C0I0_P0", "C0I0_P100", "C20I5_P0", "C40I10_P100"],
                    ["1.5°C","C0I0_P0", "C0I0_P100", "C20I5_P0", "C40I10_P100"],
                    ["1.5°C w/ CCS","C0I0_P0", "C0I0_P100", "C20I5_P0", "C40I10_P100"]]
 
+Scenarioss_name = [["Central","No decapacity Lo prod", "No decapacity Hi prod", "Lo decapacity Lo prod", "Hi decapacity Hi prod"],
+                   ["Central", "No decapacity Lo prod", "No decapacity Hi prod", "Lo decapacity Lo prod", "Hi decapacity Hi prod"],
+                   ["Central", "No decapacity Lo prod", "No decapacity Hi prod", "Lo decapacity Lo prod", "Hi decapacity Hi prod"],
+                   ["Central","No decapacity Lo prod", "No decapacity Hi prod", "Lo decapacity Lo prod", "Hi decapacity Hi prod"],
+                   ["Central","No decapacity Lo prod", "No decapacity Hi prod", "Lo decapacity Lo prod", "Hi decapacity Hi prod"]]
 
-# Scenarioss = [['NPI',  'NPI_R55'],
-#               ['NDC', 'NDC_R55'],
-#               ['NDC_CCS1', 'NDC_CCS1_R55'],
-#               ['NZ','NZ_R55'],
-#               ['NZ_CCS1','NZ_CCS1_R55']]
 
-# Scenarioss_name = [['NPI','Retirement \n55'],
-#                    ['NDC', 'Retirement \n55'],
-#                    ['NDC w/ CCS', 'Retirement \n55'],
-#                    ['1.5°C','Retirement \n55'],
-#                    ['1.5°C w/ CCS','Retirement \n55']]
 
 t0 = 2020
 t1 = 2050
@@ -1361,7 +1377,7 @@ for c_index in [0, 1]:
         ax.set_ylim([-1, 3.8])
 
 [ax.set_yticklabels([]) for ax in axs[:,[1,2]].flatten()]
-[ax.text(0.02,0.96, label, transform=ax.transAxes, fontsize= 11, fontweight='bold', va='top', ha='left') for ax, label in zip(axs.flatten(),['a)','b)','c)','d)','e)','f)'])]
+[ax.text(0.02,0.96, label, transform=ax.transAxes, fontsize= 11, fontweight='bold', va='top', ha='left') for ax, label in zip(axs.flatten(),['a)','b)','c)','d)','e)','f)','g)','h)','i)','j)'])]
 
 
 fig.legend(handles=alines,
@@ -1374,19 +1390,19 @@ fig.legend(handles=alines,
 fig.subplots_adjust(hspace=0.02, wspace=0.02)
 
 
-ds = pd.DataFrame(data_save).T
-ds.columns = ['R', 'D', 'I', 'U', 'H']
-ch60 = ds.loc[('China','NZ',t1),'U']
-ch55= ds.loc[('China','NZ_R55',t1),'U']
+# ds = pd.DataFrame(data_save).T
+# ds.columns = ['R', 'D', 'I', 'U', 'H']
+# ch60 = ds.loc[('China','NZ',t1),'U']
+# ch55= ds.loc[('China','NZ_R55',t1),'U']
 
-lo_reduc = (1-sum(ds.loc[('China','NZ_R55',t1),['U','D','I']])/sum(ds.loc[('China','NZ',t1),['U','D','I']]))*100
+# lo_reduc = (1-sum(ds.loc[('China','NZ_R55',t1),['U','D','I']])/sum(ds.loc[('China','NZ',t1),['U','D','I']]))*100
 
-print(f'Sensitivity analysis shown in the annex where retirement age is moved from 60 to 55 show that such a policy would reduce the number of layoffs by {lo_reduc:0.1f}% and hence the number of workers leaving into unemployment from {ch60} to {ch55}.')
+# print(f'Sensitivity analysis shown in the annex where retirement age is moved from 60 to 55 show that such a policy would reduce the number of layoffs by {lo_reduc:0.1f}% and hence the number of workers leaving into unemployment from {ch60} to {ch55}.')
 
 
-lo_reduc = (1-sum(ds.loc[('China','NDC_R55',t1),['U','D','I']])/sum(ds.loc[('China','NDC',t1),['U','D','I']]))*100
-in_reduc = (1-sum(ds.loc[('India','NDC_R55',t1),['U','D','I']])/sum(ds.loc[('India','NDC',t1),['U','D','I']]))*100
-print(f'This policy is more efficient for lower ambition scenarios with {lo_reduc:0.1f}% under NDC-LTT ({in_reduc:0.1f}% in India)')
+# lo_reduc = (1-sum(ds.loc[('China','NDC_R55',t1),['U','D','I']])/sum(ds.loc[('China','NDC',t1),['U','D','I']]))*100
+# in_reduc = (1-sum(ds.loc[('India','NDC_R55',t1),['U','D','I']])/sum(ds.loc[('India','NDC',t1),['U','D','I']]))*100
+# print(f'This policy is more efficient for lower ambition scenarios with {lo_reduc:0.1f}% under NDC-LTT ({in_reduc:0.1f}% in India)')
 
 
 #%% 1.4) Sensitivity to retirement age
@@ -1486,8 +1502,91 @@ lo_reduc = (1-sum(ds.loc[('China','NDC_R55',t1),['U','D','I']])/sum(ds.loc[('Chi
 in_reduc = (1-sum(ds.loc[('India','NDC_R55',t1),['U','D','I']])/sum(ds.loc[('India','NDC',t1),['U','D','I']]))*100
 print(f'This policy is more efficient for lower ambition scenarios with {lo_reduc:0.1f}% under NDC-LTT ({in_reduc:0.1f}% in India)')
 
+
+#%% 1.4) Sensitivity to calibration
+# ===========================================================================================================================
+
+Provinces = [provincesChina, provincesIndia]
+Countries = ['China', 'India']
+nls = [6, 8]
+
+Scenarioss = [['NPI_min','NPI','NPI_max'],
+              ['NDC_min','NDC','NDC_max'],
+              ['NDC_CCS1_min','NDC_CCS1','NDC_CCS1_max'],
+              ['NZ_min','NZ','NZ_max'],
+              ['NZ_CCS1_min','NZ_CCS1','NZ_CCS1_max']]
+
+Scenarioss_name = [['Min','Central','Max']]*5
+
+t0 = 2020
+t1 = 2040
+
+Xs = [
+    [x for x in range(len(Scenarioss[0]))],
+    [x for x in range(len(Scenarioss[1]))],
+    [x for x in range(len(Scenarioss[2]))],
+    [x for x in range(len(Scenarioss[3]))],
+    [x for x in range(len(Scenarioss[4]))]
+    ]
+
+data_save = {}
+fig, axs = plt.subplots(2,
+                        5,
+                        figsize=pf.standard_figure_size(),
+      )
+
+for c_index in [0, 1]:
+    x = 0
+    provinces = Provinces[c_index]
+    region = ['China', 'India'][c_index]
+    for stype_index in range(5):
+        ax = axs[c_index][stype_index]
+        if stype_index == 0:
+            ax.set_ylabel(region + '\nMillion workers')
+        Scenarios = Scenarioss[stype_index]
+        Sc = Scenarios
+        X = Xs[stype_index]
+        for s_index, Scenario in enumerate(Scenarios):
+            data_save, alines = pf.destination_bar(Result_data, X, T, t0, t1, Scenario, ax, region, provinces, data_save, s_index)
+            x += 1
+
+        alines = [x[0] for x in alines]
+        labs = [lab.get_label() for lab in alines]
+        ax.axhline(y=0, color='k', linewidth=0.9)
+        if c_index == 1:
+            ax.set_xticks(X)
+            ax.set_xticklabels(
+                Scenarioss_name[stype_index],
+                rotation=90,
+            )
+        else:
+            ax.set_xticks([])
+            ax.set_title(['NPI', 'NDC','NDC w/CCS',
+                          '1.5°C','1.5°C w/CCS'][stype_index])
+        if stype_index != 0:
+            ax.set_yticks([])
+        ax.set_ylim([-0.6, 2.38])
+        ax.set_ylim([-1, 3.8])
+
+[ax.set_yticklabels([]) for ax in axs[:,[1,2]].flatten()]
+[ax.text(0.02,0.96, label, transform=ax.transAxes, fontsize= 11, fontweight='bold', va='top', ha='left') for ax, label in zip(axs.flatten(),['a)','b)','c)','d)','e)','f)','g)','h)','i)','j)'])]
+
+
+fig.legend(handles=alines,
+           labels=labs,
+           loc='center left',
+           ncol=1,
+           bbox_to_anchor=(0.9, 0.5),
+           frameon=False)
+
+fig.subplots_adjust(hspace=0.02, wspace=0.02)
+
+
+
 #%% 2) Decomposing coal demand
 # ===========================================================================================================================
+import importlib
+importlib.reload(pf)
 
 time_gap = 10
 
@@ -1589,6 +1688,11 @@ for ind_region, region in enumerate(Regions):
 
         ax.set_ylim([[0,220],[-20,130],[-30,53],[0,60],[-7,15],[-7,16]][ind_region])
         ax.set_xlim([2010,2090])
+        ax, ax2 = pf.double_axis(ax, region)
+        if ind_output == len(Scenarios)-1:
+            ax2.set_ylabel('Mt')
+        else:
+            ax2.set_yticklabels([])
 
 
 [ax.set_yticklabels([]) for ax in axs[:,1:].flatten()]
@@ -1600,8 +1704,8 @@ fig.legend(handles=handles,
            ncol=4,
            bbox_to_anchor=(0.5, -0),# +0.01),
            frameon=False)
-fig.suptitle('Use of primary energy from coal', y=1.05, fontsize=16)
-
+# fig.suptitle('Use of primary energy from coal', y=1.05, fontsize=16)
+pf.save_figure(fig,'ED2_Use_primary_energy','svg')
 
 #%%
 # ===========================================================================================================================
@@ -1623,7 +1727,7 @@ variables_ar6 = ['Primary Energy|Coal','Trade|Primary Energy|Coal|Volume',
              'Final Energy|Industry|Solids|Coal','Emissions|CO2|Energy and Industrial Processes',
              'Carbon Sequestration|CCS|Biomass','Secondary Energy|Electricity|Coal',
              'Primary Energy|Oil','Primary Energy|Gas','Unemployment|Rate','Employment|Industry|Mining',
-             "Investment|Energy Supply|Extraction|Coal"]
+             "Investment|Energy Supply|Extraction|Coal",'Capacity|Electricity|Coal']
 df = pyam.read_iiasa( 'ar6-public', region=regions_ar6, variable=variables_ar6)
 
 df.add('Primary Energy|Coal','Trade|Primary Energy|Coal|Volume',"Output|Coal",
@@ -1664,6 +1768,8 @@ var = 'Emissions|CO2|Energy and Industrial Processes'
 pf.plotting_with_AR6_range(var,var,regions_ar6,categories,df,cols,Imaclim_data,T,False)
 
 #%% 3.2) Coal production
+import importlib
+importlib.reload(pf)
 var = 'Output|Coal'
 pf.plotting_with_AR6_range(var,var,regions_ar6,categories,df,cols,Imaclim_data,T,True)
 
@@ -1672,171 +1778,11 @@ pf.plotting_with_AR6_range(var,var,regions_ar6,categories,df,cols,Imaclim_data,T
 # %% 3.2.b
 import importlib
 importlib.reload(pf)
-def plot_threshold_range(tq,q25,q50,q75,cols,cat,ax):
-    #Thresholds
-    for ind_box, q in enumerate([0.5,0.05]):
-        t9_l = tq[(q25<=q*q25[tq==2020])&(tq>2020)]
-        t9_m = q50.columns[(q50.values[0]<=q*q50.values[0][q50.columns==2020])&(q50.columns>2020)]
-        t9_h = tq[(q75<=q*q75[tq==2020])&(tq>2020)]
 
-        t9_l = t9_l[0] if len(t9_l)>0 else 2106
-        t9_m = t9_m[0] if len(t9_m)>0 else 2106
-        t9_h = t9_h[0] if len(t9_h)>0 else 2106
-
-
-        ax.bxp(
-            [{'med': t9_m,'q1': t9_l,'q3': t9_h,
-                'whislo': t9_l,'whishi': t9_h }],
-            vert=False,patch_artist=True,boxprops=dict(facecolor=cols[cat], linewidth=0),
-            medianprops=dict(color='k'),showfliers = False, showcaps = False, positions = [[0.2,0.1][ind_box]], widths = [0.075]
-        )
-
-
-def plot_AR6_range_production(var,var_imaclim,regions_ar6,categories,df,cols,Imaclim_data,T,compare_thresholds):
-    """
-    This function overlays own trajectory with those from the AR6 database (Byers et al 2022) for comparable emissions pathways
-    The compare_thresholds boolean enables the function to plot the time-range at which pathways in the dataset reach certain thresholds and compare that with the pathways studied here
-    For certain variables, additional reference scenarios can also be plotted
-    """
-
-    # Special case to convert unit incompatibility between AR6 results and Imaclim results
-    exa2giga        =                 1e9 # G / E
-    tep2gj          =              41.855 # GJ/tep
-    mtoe2gj         =        1e6 * tep2gj # GJ/Mtep
-    mtoe2ej         =  mtoe2gj / exa2giga # EJ/Mtep
-    Imaclim_unit_convert = 1 if var!='Output|Coal' else mtoe2ej
-
-
-    # Creating plot
-    fig, axs = plt.subplots(len(regions_ar6),len(categories))
-
-    if compare_thresholds:
-        cax= [[0,0,0],[0,0,0],[0,0,0]]
-        for i_r, reg in enumerate(regions_ar6):
-            for i_c, cat in enumerate(categories):
-                ax = axs[i_r, i_c]
-                cax[i_r][i_c] = ax.inset_axes([0, -0.12, 1, 0.1])
-
-
-    for i_r, reg in enumerate(regions_ar6):
-        for i_c, cat in enumerate(categories):
-            ax = axs[i_r, i_c]            
-            ax.axhline(y=0, color='k', linewidth=0.75)
-            ax.axvline(2020, color='k', linestyle='--')
-            
-            # Plotting AR6 data
-            # (
-            #     df.filter(variable=var, region=reg, Category=cat).plot.line(
-            #         color="Category", ax=ax,
-            #         alpha=0, fill_between=True 
-            #     )
-            # )
-
-            tq = df.filter(variable=var, region=reg, Category=cat).compute.quantiles([0.25,0.75]).timeseries().columns
-            q25 = df.filter(variable=var, region=reg, Category=cat).compute.quantiles([0.25,0.75]).timeseries().values[0]
-            q75 = df.filter(variable=var, region=reg, Category=cat).compute.quantiles([0.25,0.75]).timeseries().values[1]
-            q50 = df.filter(variable=var, region=reg, Category=cat).compute.quantiles([0.5]).timeseries()
-
-            filter=(~np.isnan(q75))&(~np.isnan(q25))
-            tq = tq[filter]
-            q25 = q25[filter]
-            q75 = q75[filter]
-
-
-            # ax.fill_between(tq, q25, q75, color=cols[cat], alpha=0.5)
-            df.filter(variable=var, region=reg, Category=cat).plot.line(
-                    color="Category", ax=ax,
-                    alpha=0.5,linewidth=0.2, fill_between=False, rasterized = True 
-                )
-            ax.plot(q50.columns, q50.values[0], color=cols[cat])
-
-            n= len(df.filter(variable=var, region=reg, Category=cat)['scenario'])
-            ax.text(2098,0, f'n={n}', fontsize=8, ha='right')
-
-            # Plotting Imaclim results
-            Region = ['World','CHN','IND'][i_r]
-            Outputs = [['WO-15C-ElecIndus-CCS0','WO-15C-ElecIndus-CCS1'],['WO-NDCLTT-ElecIndus-CCS0','WO-NDCLTT-ElecIndus-CCS1'],['WO-NPi-ElecIndus-CCS0']][i_c]
-            for Output in Outputs:
-                y = Imaclim_data[(Imaclim_data['Region'] == Region)&(Imaclim_data['Scenario'] == Output)&(Imaclim_data['Variables'] == var_imaclim)].values[0][5:]*Imaclim_unit_convert
-                
-                ax.plot(T[::5], y[::5], color=pf.defining_waysout_colour_scheme()[Output],linewidth=1.5)
-
-            if compare_thresholds:
-                ax2 = cax[i_r][i_c]
-                pf.plot_max_range(tq,q25,q50,q75,cols,cat,ax2)
-                plot_threshold_range(tq,q25,q50,q75,cols,cat,ax2)
-
-                for Output in Outputs:
-                    y = Imaclim_data[(Imaclim_data['Region'] == Region)&(Imaclim_data['Scenario'] == Output)&(Imaclim_data['Variables'] == var_imaclim)].values[0][5:]*Imaclim_unit_convert
-                    
-                    # Max
-                    t_m = T[y==max(y)]
-                    t_m = t_m[0] if len(t_m)>0 else 2106
-                    ax2.scatter(t_m, 0.3, color=pf.defining_waysout_colour_scheme()[Output], marker='x', s=6, zorder=5)
-                    [cax[i_r][ni_c].scatter(t_m, 0.3, color='k', alpha=0.3, marker='x', s=6, zorder=5) for ni_c in range(3) if ni_c != i_c]
-
-                    # Threshold
-                    for ind_box, q in enumerate([0.5,0.05]):
-                        t_m = T[y<=q*y[T==2020]]
-                        t_m = t_m[0] if len(t_m)>0 else 2106
-                        ax2.scatter(t_m, [0.2,0.1][ind_box], color=pf.defining_waysout_colour_scheme()[Output], marker=['o','^'][ind_box], s=6, zorder=5)
-                        [cax[i_r][ni_c].scatter(t_m, [0.2,0.1][ind_box], color='k', alpha=0.3, marker=['o','^'][ind_box], s=6, zorder=5) for ni_c in range(3) if ni_c != i_c]
-
-
-
-                # Spetial formatting
-                ax2.set_ylim([0, 0.4])
-                ax2.set_xlim([2010,2105])
-                ax2.set_yticks([])
-                ax2.set_xticks([])
-
-                        
-
-            
-            
-
-            # Formatting the graph
-            ax.set_title("")
-            ax.set_ylim(pf.get_ylim(ax,var,Region))
-            ax.set_xlim([2010,2105])
-            ax.legend().remove()
-            
-
-            unit = df.filter(variable=var, region=reg, Category=cat).unit[0]
-            if i_r ==0:
-                ax.set_title(['1.5°C','NDC LTT','NPI'][i_c]+' - '+cat)
-
-            if (i_r==2):
-                if compare_thresholds:
-                    ax2.set_xticks(ax.get_xticks())
-                    ax2.set_xlim([2010,2105])
-                    ax2.set_ylim([0, 0.4])
-                    ax2.set_xlabel('Year')
-                
-                    ax.set_xticks([])
-                    ax.set_xlabel('')
-                else:
-                    ax.set_xlabel('Year')
-            else:
-                ax.set_xlabel('')
-                ax.set_xticklabels([])
-            
-            if i_c == 0:
-                ax.set_ylabel(["World","China","India"][i_r]+'\n'+unit)
-            else:
-                ax.set_ylabel('')
-                ax.set_yticklabels([])
-
-
-    # Adding extra reference trajectories if they are available for the given variable
-    pf.add_coaloutput_comparisons(axs,regions_ar6,categories) 
-
-
-    fig.suptitle(var)
 
 var = 'Output|Coal'
-plot_AR6_range_production(var,var,regions_ar6,categories,df,cols,Imaclim_data,T,True)
-
+fig = pf.plot_AR6_range_production(var,var,regions_ar6,categories,df,cols,Imaclim_data,T,True)
+pf.save_figure(fig,'ED1_Coal_Production','png',dpi=1200)
 
 #%% 3.3) Electricity from coal
 var = 'Secondary Energy|Electricity|Coal'
@@ -1849,11 +1795,18 @@ pf.plotting_with_AR6_range(var,var,regions_ar6,categories,df,cols,Imaclim_data,T
 var = "Investment|Energy Supply|Extraction|Coal"
 pf.plotting_with_AR6_range(var,var,regions_ar6,categories,df,cols,Imaclim_data,T,True)
 
-#%% 3.4) Investment in coal supply
+#%% 3.5) Investment in coal supply
 var = 'Carbon Sequestration|CCS|Biomass'
 var_im = 'Carbon Capture|Storage|Biomass'
 regions = regions_ar6[1:3]
 categories = categories[0:2]
+pf.plotting_with_AR6_range(var,var_im,regions,categories,df,cols,Imaclim_data,T,False)
+
+#%% 3.6) Investment in coal supply
+var = 'Capacity|Electricity|Coal'
+var_im = 'Capacity|Electricity|Coal'
+regions = regions_ar6
+categories = categories
 pf.plotting_with_AR6_range(var,var_im,regions,categories,df,cols,Imaclim_data,T,False)
 
 
@@ -2021,4 +1974,400 @@ for ind_region, region in enumerate(regions):
 import matplotlib.patches as mpatches
 legend_handles = [mpatches.Patch(color=color_dict[var], label=var, alpha=0.5) for var in df_plot.columns.get_level_values("Variable")]
 ax.legend(handles=legend_handles, loc='lower left', bbox_to_anchor=(1, 1))
+
+
+# %% 3) Mapping exposisition under demand-driven scenarios
+
+Scenarios = ['NDC_CCS1_tra','NZ_CCS1_tra','NPI_tra','NDC_tra','NZ_tra']
+Scenarios_names = ['NDC-LTT w/CCS','1.5°C w/CCS','NPi','NDC-LTT','1.5°C']
+
+T1 = 2035
+fig, axs = plt.subplots(2,3,
+                        figsize=(20/2.54,15/2.54))
+fig.suptitle('Demand-driven scenarios')
+Data_Chn = []
+Data_Ind = []
+var = 'share_destruction'
+
+cax2 = axs[0,2].inset_axes([1.15, -1.3, 0.1, 2.3])
+
+t0=2020
+
+zlim, norm, colormap = pf.semisymlognorm()
+
+ax = axs[0,0]
+ax.set_title('2015 Workforce')
+ax = pf.monovariate_map('Workforce',t0,T1,ax,cax2,zlim,colormap,Result_data,'NPI',Asia,norm)
+for s_index, scenario in enumerate(Scenarios):
+    ax = axs.flatten()[1+s_index]
+    ax = pf.monovariate_map(var,t0,T1,ax,cax2,zlim,colormap,Result_data,scenario,Asia,norm)
+
+[ax.set_title(Scenarios_names[s_index]) for ax,s_index in zip(axs.flatten()[1:],range(5))]
+
+
+# Defining the colobar legend
+cbar = fig.colorbar(plt.cm.ScalarMappable(norm=norm, cmap=colormap), cax=cax2, orientation='vertical')
+cax2.set_yscale('linear')
+cax2.set_yticks([-0.004,0,0.02,0.04])
+cax2.set_yticklabels(['-0.4%','0%','2%','4%'])
+fig.subplots_adjust(hspace=-0.4)
+
+
+pf.save_figure(fig,'SI_Map_demand_drive','svg')
+
+
+#%% SI-demand 4) Boxplot supply-driven
+# %% 4) Boxplot of share not finding per scenario
+
+import importlib
+importlib.reload(pf)
+import matplotlib.patches as mpatches
+
+all_region_names = False
+
+region_indices = pf.def_region_indices()
+destination_variables = [x for x in Result_data.Variable.unique() if 'Coal Worker Destination' in x if 'Retire' not in x and 'Hire' not in x]
+
+Countries = ["CHN",'IND']
+exclude_downscaled_regions = ['China','India']
+
+Scenarios = [
+            'NPI_tra',
+            'NPI',
+            'NDC_CCS1_tra',
+            'NDC_CCS1',
+            'NDC_tra',
+            'NDC',
+            'NZ_CCS1_tra',
+            'NZ_CCS1',
+            'NZ_tra',
+            'NZ',
+            ][::-1]
+
+
+loc = {"Shanxi":(0.75,-0.1),
+       "Jharkhand":(0.7,1.4),
+       "Odisha":(0.85,0.8),
+       'Chhattisgarh':(0.1,1)}
+
+
+
+t0s = [2020, 2020]
+t1s = [2030,2050] 
+
+for_abstract = True
+if for_abstract:
+    t0s = [2020, 2020]
+    t1s = [2035,2050]
+
+fig, axs = plt.subplots(2,2,figsize=(16/2.54,9/2.54))
+
+
+
+for ind_t,(t0,t1) in enumerate(zip(t0s,t1s)):
+    
+    x=0
+    
+    
+    for ind_country, country in enumerate(Countries):
+        for ind_scenario, scenario in enumerate(Scenarios):
+            if "_tra" in scenario:
+                alpha = 0.75
+            else:
+                alpha = 0.3
+
+            if type(t1) is str:
+                threshold = 0.8
+                T1 = pf.finding_emp_threshold_date(Result_data[(Result_data['Downscaled Region']==exclude_downscaled_regions[ind_country])&(Result_data.Scenario==scenario)],threshold,T)
+
+            else:
+                T1 = t1
+
+            Share_U, Share_R, TotDestination = pf.destination_share(Result_data,country,scenario,t0,T1)
+
+            if (scenario == "NZ") & (t1==2030):
+
+                u_national = sum((TotDestination*Share_U).dropna())/sum(TotDestination.dropna())
+                r_national = ((TotDestination*Share_R/(1-Share_R))).dropna()
+                r_national = sum(r_national.dropna())/(sum(r_national.dropna())+sum(TotDestination.dropna()))
+                print(f'Under {scenario}, between {t0}-{t1} in {country}, the share of workers leaving into unemployment is {u_national:0.2f} ({min(Share_U):0.2f}-{max(Share_U):0.2f}), that\'s {sum((TotDestination*Share_U).dropna()):0.0f} workers' )
+                print(f'Under {scenario}, between {t0}-{t1} in {country}, the share of workers leaving into retirement is {r_national:0.2f} ({min(Share_R):0.2f}-{max(Share_R):0.2f})' )
+            elif (scenario=="NZ") & (t1==2050):
+                region = ['Shanxi','Jharkhand'][ind_country]
+                su = Share_U[region]
+                tu = (TotDestination*Share_U)[region]
+                print(f'Under {scenario} in {region}, {su:0.2f}% (ie {tu:0.0f} workers) may not find employment')
+            if (scenario=="NZ") & (t1==2050):
+                u_national = sum((TotDestination*Share_U).dropna())/sum(TotDestination.dropna())
+                r_national = ((TotDestination*Share_R/(1-Share_R))).dropna()
+                r_national = sum(r_national.dropna())/(sum(r_national.dropna())+sum(TotDestination.dropna()))
+                print(f'Under {scenario}, between {t0}-{t1} in {country}, the share of workers leaving into unemployment is {u_national:0.2f} ({min(Share_U):0.2f}-{max(Share_U):0.2f}), that\'s {sum((TotDestination*Share_U).dropna()):0.0f} workers' )
+                print(f'Under {scenario}, between {t0}-{t1} in {country}, the share of workers leaving into retirement is {r_national:0.2f} ({min(Share_R):0.2f}-{max(Share_R):0.2f})' )
+                region = ['Shanxi','Jharkhand'][ind_country]
+                su = Share_U[region]
+                tu = (TotDestination*Share_U)[region]
+                print(f'Under {scenario} in {region}, between {t0}-{t1}, {su:0.2f}% (ie {tu:0.0f} workers) may not find employment')
+            
+
+            # pos = x+[-0.35,-0.17,0,0.17,0.35][ind_scenario]
+            pos = x+[-0.87,-0.7,-0.52,-0.35,-0.17,0,0.17,0.35,0.52,0.7,0.87][ind_scenario]/2
+
+            for ind_var, var in enumerate([Share_U,Share_R]):
+                
+                ax = axs[ind_t,ind_var]
+                # ax = axs[ind_var]
+
+                if ind_var==0:
+                    ax.arrow(0.8,0.5,0.1,0,head_width=0.03,color='k')
+                    ax.text(0.85,0.24,"increased\n vulnerability",fontsize=5,fontweight='normal')
+                else:
+                    ax.arrow(0.2,0.5,-0.1,0,head_width=0.03,color='k')
+                    ax.text(0.11,0.24,"increased\n vulnerability",fontsize=5,fontweight='normal')
+
+
+                bxplot=ax.boxplot(var,
+                        positions=[pos],
+                        vert=False,
+                        patch_artist=True,
+                        showfliers=False,
+                        whiskerprops={'linestyle': 'none'},
+                        capprops={'linestyle':'none'},
+                        zorder=1,
+                        widths=0.09/2 )
+                
+                # Customizing the appearance
+                for box in bxplot['boxes']:
+                    box.set_facecolor(pf.defining_waysout_colour_scheme()[scenario.split('_tra')[0]])
+                    box.set_alpha(alpha)  
+                    box.set_edgecolor('black')
+                    box.set_linewidth(0.5)  # Set the edge linewidth here
+                    
+                # Set the median line color to black
+                for median in bxplot['medians']:
+                    median.set_color('black')
+
+
+                ax.scatter(np.mean(var),pos,s=3,color='k',zorder=2)
+                # Data points
+                for ind in var.index:
+                    y = var.loc[ind]
+                    xs = np.random.normal(pos, 0.05/2, size=1)
+                    ax.scatter(y,xs,s=4.5e-5*TotDestination[ind]/2,color=pf.defining_waysout_colour_scheme()[scenario.split('_tra')[0]],alpha=alpha)
+                    if ind in ['Shanxi','Odisha','Jharkhand','Chhattisgarh'] and ind_scenario==0:
+                        ax.text(y,xs,region_indices.loc[region_indices.Subregion_name==ind,'Subregion_iso'].values[0],fontsize=5,verticalalignment='center_baseline')
+                    elif all_region_names:
+                        ax.text(y,xs,region_indices.loc[region_indices.Subregion_name==ind,'Subregion_iso'].values[0].split('-')[1],fontsize=4,verticalalignment='center_baseline')
+                
+
+        x+=1
+    for ind_var in [0,1]:
+        ax = axs[ind_t,ind_var]
+        ax.set_yticks([0,1])
+        ax.set_yticklabels(['China','India'])
+        ax.axhline(y=0.5, color='k', linestyle=':',linewidth = 0.5)
+        ax.set_ylim([-0.5,1.5])
+        ax.set_title(str(t0)+' - '+str(t1))
+        ax.set_xlim([0,1])
+
+if np.size(axs[0])>1:
+    [ax.set_xticklabels([]) for ax in axs[0,:]]
+    axs[1,0].set_xlabel('Share layoffs not finding employment')
+    axs[1,1].set_xlabel('Share destruction in retirement')
+else:
+    axs[0].set_xlabel('Share layoffs not finding employment')
+    axs[1].set_xlabel('Share destruction in retirement')
+
+
+
+[ax.text(0.02,0.92, label, transform=ax.transAxes, fontsize= 11, fontweight='bold', va='top', ha='left') for ax, label in zip(axs.flatten(),['a)','b)','c)','d)'])]
+
+#Legend
+alines = []
+for ind,ind_scenario in enumerate(range(8,-1,-2)):
+    scenario = Scenarios[ind_scenario]
+    alines.append(ax.scatter([],[],
+                             color=pf.defining_waysout_colour_scheme()[scenario],
+                             label=['NPi','NDC-LTT','NDC-LTT w/CCS','1.5°C','1.5°C w/CCS'][ind]))
+    
+alines.append(ax.scatter([],[],s=0,label='Number of Workers'))
+for size in [5000,50000,500000]:
+    alines.append(ax.scatter([],[],s=4.5e-5*size,color='grey',label=size))
+alines.append(mpatches.Patch(color='grey', alpha=1, label='Demand-driven'))
+alines.append(mpatches.Patch(color='grey', alpha=0.5, label='Supply-driven'))
+labels = [la.get_label() for la in alines]
+handles = [label for label in alines]
+
+fig.legend(handles=alines,
+           labels=labels,
+            loc='center left',
+           bbox_to_anchor=(1, 0.5),
+           frameon=False)
+
+
+
+fig.set_tight_layout('tight')
+pf.save_figure(fig,'SI4_Boxplot_presentation','jpg',dpi=700)
+
+# =====================================================================================================================
+# =====================================================================================================================
+# %%====================================================================================================================
+# Alternative to maps
+t0=2020
+# - Heatmap
+
+Scenarios = ['NPI','NDC','NDC_CCS1','NZ','NZ_CCS1']
+Scenarios_names = ['NPi','NDC-LTT','NDC-LTT w/CCS','1.5°C','1.5°C w/CCS']
+scenario = Scenarios[0]
+var = 'Workforce'
+T1 = 2035
+Regions = np.unique(Result_data[~Result_data['Downscaled Region'].isin(
+['China', 'India', 'Rest of Asia', 'Asia without Indonesia', 'Indonesia'])]
+                ['Downscaled Region'].values)
+
+CNTRY = [Region_indexes.loc[Region_indexes["Subregion_name"]==region,"Region_name"].values[0] for region in Regions]
+Region_with_cntr = [region+' ('+Region_indexes.loc[Region_indexes["Subregion_name"]==region,"Region_name"].values[0]+')' for region in Regions]
+
+zlim, norm, colormap = pf.semisymlognorm()
+Ls = []
+share_n_finding = []
+All_data = pd.DataFrame(index=Region_with_cntr,columns=['country','Workforce'])
+Calced_data = []
+# Iterating over regions
+for region in list(Regions):
+    if type(T1) is str:
+        threshold = 0.8
+        t1 =pf.finding_emp_threshold_date(Result_data[(Result_data['Downscaled Region']==region)&
+                        (Result_data.Scenario==scenario)],threshold,T)
+
+    else:
+        t1=T1
+    if var == "share_destruction":
+        Ls, y = pf.calc_share_destruction(Result_data,region,T,t0,t1,Ls,scenario)
+        y = pf.pseudo_log(y)
+        Calced_data.append(y)
+    elif var == "Finding_new_emp":
+        Calced_data=pf.calc_share_n_finding(Result_data,region,T,t0,t1,Calced_data,scenario)
+        # Calced_data.append(share_n_finding)
+    elif var== 'Workforce':
+        Calced_data = pf.calc_workforce(Result_data,region,Calced_data,scenario) 
+    else:
+        # return 
+        print('unknown')
+
+Calced_data = pd.DataFrame(data=np.array([Region_with_cntr, Calced_data]).transpose(),
+                    columns=['Region_Nam', 'Calced_data']).set_index('Region_Nam')
+
+
+All_data['Workforce'] = Calced_data['Calced_data'].astype(float)
+All_data['country'] = CNTRY
+
+var = "share_destruction"
+for T1 in [2035,2050]:
+    for ind_scenario, scenario in enumerate(Scenarios):
+        Calced_data = []
+        for region in list(Regions):
+            if type(T1) is str:
+                threshold = 0.8
+                t1 =pf.finding_emp_threshold_date(Result_data[(Result_data['Downscaled Region']==region)&
+                                (Result_data.Scenario==scenario)],threshold,T)
+
+            else:
+                t1=T1
+            if var == "share_destruction":
+                Ls, y = pf.calc_share_destruction(Result_data,region,T,t0,t1,Ls,scenario)
+                y = pf.pseudo_log(y)
+                Calced_data.append(y)
+            elif var == "Finding_new_emp":
+                Calced_data=pf.calc_share_n_finding(Result_data,region,T,t0,t1,Calced_data,scenario)
+                # Calced_data.append(share_n_finding)
+            elif var== 'Workforce':
+                Calced_data = pf.calc_workforce(Result_data,region,Calced_data,scenario) 
+            else:
+                # return 
+                print('unknown')
+
+        Calced_data = pd.DataFrame(data=np.array([Region_with_cntr, Calced_data]).transpose(),
+                            columns=['Region_Nam', 'Calced_data']).set_index('Region_Nam')
+
+        All_data[Scenarios_names[ind_scenario]+'\n'+str(T1)] = Calced_data['Calced_data'].astype(float)
+
+
+
+
+All_data.sort_values(['country','Workforce'],ascending=False,inplace=True)
+All_data.drop(All_data[All_data['Workforce']==0].index,inplace=True)
+All_data.drop(['country'],axis=1,inplace=True)
+
+# Add a blank column to create a wider gap between 2030 and 2050 scenarios
+fig, ax = plt.subplots(figsize=(10, 10))
+sns.heatmap(All_data.astype('float'), linewidth = 0.5, cmap=colormap, ax=ax,  norm=norm, cbar=False)
+
+ax.axvline(x=1,color='white',linewidth = 5)
+ax.axvline(x=6,color='white',linewidth = 5)
+
+cax2 = ax.inset_axes([1.07, 0, 0.05, 1])
+cbar = fig.colorbar(plt.cm.ScalarMappable(norm=norm, cmap=colormap), cax=cax2, orientation='vertical')
+cax2.set_yscale('linear')
+cax2.set_yticks([-0.004,0,0.02,0.04])
+cax2.set_yticklabels(['-0.4%','0%','2%','4%'])
+cax2.spines[:].set_visible(False)
+cax2.set_ylabel('Share of labour force')
+
+
+#%%
+# - Scatter
+T1 = 2035
+fig, (ax, ax2) = plt.subplots(1,2,figsize=(7,6),width_ratios=[1, 0.15])
+ax.axvline(x=0, color='k', linestyle='-',linewidth = 0.5,zorder=0)
+for ind_region, region in enumerate(All_data.index):
+    ax.scatter(All_data.loc[region, 'Workforce'],len(All_data.index)-ind_region-1, s=25,color='k', label=region)
+    ax2.scatter(All_data.loc[region, 'Workforce'],len(All_data.index)-ind_region-1, s=25,color='k', label=region)
+    for ind_scenario, scenario in enumerate(Scenarios_names):
+        ax.scatter(All_data.loc[region, scenario+'\n'+str(T1)],len(All_data.index)-ind_region-1, s=25, label=region, color=pf.defining_waysout_colour_scheme()[Scenarios[ind_scenario]])
+    ax.plot([min([All_data.loc[region, x+'\n'+str(T1)] for x in Scenarios_names]),max([All_data.loc[region, x+'\n'+str(T1)] for x in Scenarios_names])],
+            [len(All_data.index)-ind_region-1]*2,color='gray',zorder=0,alpha=0.4,linewidth=3.75)
+
+
+ax.set_yticks(range(len(All_data.index)))
+ax.set_yticklabels(All_data.index[::-1])
+ax.set_ylim([-0.5,33.5])
+ax.set_xticklabels([f'{x*100:.0f}%' for x in ax.get_xticks()])
+ax.set_xlim([ax.get_xticks()[0],4.9e-2])
+ax2.set_xlim([5.1e-2,8e-2])
+ax2.set_xticklabels([f'{x*100:.0f}%' for x in ax2.get_xticks()])
+
+ax.spines.right.set_visible(False)
+ax2.spines.left.set_visible(False)
+# ax.yaxis.tick_right()
+ax.tick_params(labelright=False)  # don't put tick labels at the top
+ax2.set_yticks([])
+
+d = .5  # proportion of vertical to horizontal extent of the slanted line
+kwargs = dict(marker=[(-1, -d), (1, d)], markersize=12,
+              linestyle="none", color='k', mec='k', mew=1, clip_on=False)
+ax.plot([1, 1], [0, 1], transform=ax.transAxes, **kwargs)
+ax2.plot([0, 0], [0, 1], transform=ax2.transAxes, **kwargs)
+
+
+ax.set_xlabel('Share of labour force')
+
+alines = []
+alines.append(ax.scatter([],[],color='k',label='Share of labour force in coal workforce'))
+for ind_scenario, scenario in enumerate(Scenarios):
+    # scenario = Scenarios[ind_scenario]
+    alines.append(ax.scatter([],[],
+                             color=pf.defining_waysout_colour_scheme()[scenario],
+                             label=['NPi','NDC-LTT','NDC-LTT w/CCS','1.5°C','1.5°C w/CCS'][ind_scenario]))
+
+labels = [la.get_label() for la in alines]
+handles = [label for label in alines]
+
+fig.legend(handles=alines,
+              labels=labels,
+                loc='upper center',
+              bbox_to_anchor=(0.5, 0.05),
+              frameon=False,
+              ncol=2)
+
+pf.save_figure(fig,'Fig3_Scatter','svg')
 # %%

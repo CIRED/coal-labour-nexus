@@ -423,68 +423,124 @@ def defining_province_grid():
     This function gives approximate relative coordinates of each province/state 
     this enable grid plotting of results 
     """
-    provincesChina = {
-        'Heilongjiang': (0, 5),
-        'Xinjiang': (1, 0),
-        'Qinghai': (1, 1),
-        'Ningxia': (1, 2),
-        'Inner Mongolia': (1, 3),
+    non_Producing = False
+    if non_Producing:
+        provincesChina = {
+            'Heilongjiang': (0, 5),
+            'Xinjiang': (1, 0),
+            'Qinghai': (1, 1),
+            'Ningxia': (1, 2),
+            'Inner Mongolia': (1, 3),
+            'Liaoning': (1, 4),
+            'Jilin': (1, 5),
+            'Tibet': (2, 0),
+            'Gansu': (2, 1),
+            'Shaanxi': (2, 2),
+            'Shanxi': (2, 3),
+            'Hebei': (2, 4),
+            'Sichuan': (3, 1),
+            'Chongqing': (3, 2),
+            'Hubei': (3, 3),
+            'Henan': (3, 4),
+            'Shandong': (3, 5),
+            'Yunnan': (4, 1),
+            'Guizhou': (4, 2),
+            'Hunan': (4, 3),
+            'Anhui': (4, 4),
+            'Jiangsu': (4, 5),
+            'Guangxi': (5, 2),
+            'Jiangxi': (5, 3),
+            'Zhejiang': (5, 4),
+            'Shanghai': (5, 5),
+            'Guangdong': (6, 3),
+            'Fujian': (6, 4),
+            'Hainan': (7, 4)
+        }
+
+        provincesIndia = {
+            'Jammu & Kashmir': (0, 2),
+            'Punjab': (1, 2),
+            'Himachal Pradesh': (1, 3),
+            'Uttarakhand': (1, 4),
+            'Nagaland': (1, 7),
+            'Rajasthan': (2, 1),
+            'Haryana': (2, 2),
+            'Uttar Pradesh': (2, 3),
+            'Bihar': (2, 4),
+            'Sikkim': (2, 5),
+            'Assam': (2, 6),
+            'Manipur': (2, 7),
+            'Gujarat': (3, 0),
+            'Madhya Pradesh': (3, 1),
+            'Delhi': (3, 2),
+            'Chhattisgarh': (3, 3),
+            'Jharkhand': (3, 4),
+            'Meghalaya': (3, 5),
+            'Tripura': (3, 6),
+            'Maharashtra': (4, 1),
+            'Telangana': (4, 2),
+            'Odisha': (4, 3),
+            'West Bengal': (4, 4),
+            'Goa': (5, 1),
+            'Karnataka': (5, 2),
+            'Andhra Pradesh': (5, 3),
+            'Kerala': (6, 2),
+            'Puducherry': (6, 3),
+            'Tamil Nadu': (7, 3)
+        }
+    else:
+        provincesChina = {
+        'Heilongjiang': (0, 4),
+        'Xinjiang': (0, 0),
+        'Qinghai': (1, 0),
+        'Ningxia': (1, 1),
+        'Inner Mongolia': (1, 2),
         'Liaoning': (1, 4),
-        'Jilin': (1, 5),
-        'Tibet': (2, 0),
-        'Gansu': (2, 1),
-        'Shaanxi': (2, 2),
-        'Shanxi': (2, 3),
-        'Hebei': (2, 4),
-        'Sichuan': (3, 1),
-        'Chongqing': (3, 2),
-        'Hubei': (3, 3),
-        'Henan': (3, 4),
-        'Shandong': (3, 5),
-        'Yunnan': (4, 1),
-        'Guizhou': (4, 2),
-        'Hunan': (4, 3),
-        'Anhui': (4, 4),
-        'Jiangsu': (4, 5),
-        'Guangxi': (5, 2),
-        'Jiangxi': (5, 3),
-        'Zhejiang': (5, 4),
-        'Shanghai': (5, 5),
-        'Guangdong': (6, 3),
-        'Fujian': (6, 4),
-        'Hainan': (7, 4)
+        'Jilin': (0, 3),
+        'Gansu': (2, 0),
+        'Shaanxi': (2, 1),
+        'Shanxi': (2, 2),
+        'Hebei': (1, 3),
+        'Sichuan': (3, 0),
+        'Henan': (2, 3),
+        'Shandong': (2, 4),
+        'Yunnan': (4, 0),
+        'Guizhou': (3, 1),
+        'Hunan': (3, 2),
+        'Anhui': (3, 3),
+        'Jiangsu': (3, 4),
+        'Guangxi': (4, 1),
+        'Jiangxi': (4, 2),
+        'Fujian': (4, 3)
     }
 
     provincesIndia = {
-        'Jammu & Kashmir': (0, 2),
-        'Punjab': (1, 2),
-        'Himachal Pradesh': (1, 3),
-        'Uttarakhand': (1, 4),
-        'Nagaland': (1, 7),
-        'Rajasthan': (2, 1),
-        'Haryana': (2, 2),
-        'Uttar Pradesh': (2, 3),
-        'Bihar': (2, 4),
-        'Sikkim': (2, 5),
-        'Assam': (2, 6),
-        'Manipur': (2, 7),
-        'Gujarat': (3, 0),
-        'Madhya Pradesh': (3, 1),
-        'Delhi': (3, 2),
-        'Chhattisgarh': (3, 3),
-        'Jharkhand': (3, 4),
-        'Meghalaya': (3, 5),
-        'Tripura': (3, 6),
-        'Maharashtra': (4, 1),
-        'Telangana': (4, 2),
-        'Odisha': (4, 3),
-        'West Bengal': (4, 4),
-        'Goa': (5, 1),
-        'Karnataka': (5, 2),
-        'Andhra Pradesh': (5, 3),
-        'Kerala': (6, 2),
-        'Puducherry': (6, 3),
-        'Tamil Nadu': (7, 3)
+        'Rajasthan': (0, 0),
+        'Uttar Pradesh': (1, 1),
+        'Assam': (0, 4),
+        'Gujarat': (1, 0),
+        'Madhya Pradesh': (2, 0),
+        'Chhattisgarh': (1, 2),
+        'Jharkhand': (1, 3),
+        'Maharashtra': (3, 0),
+        'Telangana': (2, 1),
+        'Odisha': (2, 3),
+        'West Bengal': (1, 4),
+        'Tamil Nadu': (3, 2)
+    }
+    provincesIndia = {
+        'Rajasthan': (0, 0),
+        'Uttar Pradesh': (0, 1),
+        'Assam': (0, 4),
+        'Gujarat': (1, 0),
+        'Madhya Pradesh': (1, 1),
+        'Chhattisgarh': (1, 2),
+        'Jharkhand': (1, 3),
+        'Maharashtra': (2, 0),
+        'Telangana': (2, 1),
+        'Odisha': (2, 3),
+        'West Bengal': (1, 4),
+        'Tamil Nadu': (2, 2)
     }
     return provincesChina,provincesIndia
 
@@ -623,7 +679,6 @@ def plotting_with_AR6_range(var,var_imaclim,regions_ar6,categories,df,cols,Imacl
     mtoe2ej         =  mtoe2gj / exa2giga # EJ/Mtep
     Imaclim_unit_convert = 1 if var!='Output|Coal' else mtoe2ej
 
-
     # Creating plot
     fig, axs = plt.subplots(len(regions_ar6),len(categories))
 
@@ -709,6 +764,8 @@ def plotting_with_AR6_range(var,var_imaclim,regions_ar6,categories,df,cols,Imacl
             ax.set_ylim(get_ylim(ax,var,Region))
             ax.set_xlim([2010,2105])
             ax.legend().remove()
+
+            
             
 
             unit = df.filter(variable=var, region=reg, Category=cat).unit[0]
@@ -1033,20 +1090,42 @@ def grid_scale_treatment(region,ax,ax2,ind_country):
 
 
 
-def Grid_Employment_Destruction(fig,axs,T,Result_data,ind_country,U):
-    grid_scale_same = True
-    Step = 1
-    [ax.axis('off') for ax in axs.flatten()]
-    axs[0,0].text(0.05,0.5,['a)','b)'][ind_country],transform=axs[0,0].transAxes, fontsize= 40, fontweight='bold')
-    regions = defining_province_grid()[ind_country]
+def regional_grid(representation):
+    if representation<2:
+        provincesChina, provincesIndia = defining_province_grid()
+    else:
+        provincesChina = {
+            'Shanxi':(0,0),
+            'Inner Mongolia':(0,1),
+            'Shaanxi':(1,0),
+            'Shandong':(1,1),
+        }
+        provincesIndia = {
+            'Chhattisgarh':(0,0),
+            'Jharkhand':(0,1),
+            'Odisha':(1,0),
+            'West Bengal':(1,1),
+        }
+    grid_size = [[[8,6],[8,8]],
+                 [[5,5],[3,5]],
+                 [[2,2],[2,2]]][representation]
+    return provincesChina,provincesIndia, grid_size
 
+
+def Grid_Employment_Destruction(fig,axs,T,Result_data,ind_country,U,Show_alternatives=False,grid_scale_same = True,representation=1):
+    
+    Step = 5
+    [ax.axis('off') for ax in axs.flatten()]
+    if not Show_alternatives:
+        axs[0,0].text(0.05,0.75,['a)','b)'][ind_country],transform=axs[0,0].transAxes, fontsize= 40, fontweight='bold')
+    regions = regional_grid(representation)[ind_country]
+    grid_size = regional_grid(representation)[2][ind_country]
     Scenarios = ['NZ','NDC','NPI','NZ_CCS1','NDC_CCS1']
 
     t0 = 2020
     t1 = 2060
 
     for region, position in regions.items():
-
         ax = axs[position]
         ax.axis('on')
         if U:
@@ -1104,14 +1183,28 @@ def Grid_Employment_Destruction(fig,axs,T,Result_data,ind_country,U):
                     (Result_data.Scenario==scenario+'_PG0')&
                     (Result_data.Variable==variable)
                 ].apply(pd.to_numeric,errors='coerce')*1e-3
-
                 ax2.plot(
                     T[(t0<=T)&(T<=t1)][0:-1:Step],
                     y.values[0][6:][(t0<=T)&(T<=t1)][0:-1:Step],
-                    color=defining_waysout_colour_scheme()[scenario.split('_')[0]],
-                    linestyle = (0,(1,3)),
+                    color=defining_waysout_colour_scheme()[scenario],
+                    linestyle = ':',
                     linewidth=3
                 )
+
+                if Show_alternatives: # If show_Alternative is True, we also plot the alternative demand-driven scenario
+                    y = Result_data[
+                        (Result_data['Downscaled Region']==region)&
+                        (Result_data.Scenario==scenario+'_tra')&
+                        (Result_data.Variable==variable)
+                    ].apply(pd.to_numeric,errors='coerce')*1e-3
+
+                    ax2.plot(
+                        T[(t0<=T)&(T<=t1)][0:-1:Step],
+                        y.values[0][6:][(t0<=T)&(T<=t1)][0:-1:Step],
+                        color=defining_waysout_colour_scheme()[scenario.split('_')[0]],
+                        linestyle = '--',
+                        linewidth=3
+                    )
 
                 if grid_scale_same:
                     grid_scale_treatment(region, ax, ax2, ind_country)
@@ -1122,12 +1215,19 @@ def Grid_Employment_Destruction(fig,axs,T,Result_data,ind_country,U):
         
     
     # Legend in bottom right corner
-    ax = axs[-1,[2,-2][ind_country]]
-    alines = []
-    for ind_scenario, scenario in enumerate(Scenarios[:5]):
-        alines.append(ax.plot([],[],linewidth=3,color=defining_waysout_colour_scheme()[scenario.split('_PG0')[0]], label=['1.5°C','NDC-LTT','NPi','1.5°C-CCS','NDC-LTT-CCS'][ind_scenario]))
-    alines.append(ax.plot([],[], color='k', linestyle=':',label='No productivity growth'))
-    ax.legend(fontsize=25,ncol=2)
+    if ((ind_country == 1) | (Show_alternatives)):
+        print('Adding legend')
+        ax = axs[-1,grid_size[1]//2]#[2,-2][ind_country]]
+        alines = []
+        for ind_scenario, scenario in enumerate(Scenarios[:5]):
+            alines.append(ax.plot([],[],linewidth=5,color=defining_waysout_colour_scheme()[scenario.split('_PG0')[0]], label=['1.5°C','NDC-LTT','NPi','1.5°C-CCS','NDC-LTT-CCS'][ind_scenario]))
+        alines.append(ax.plot([],[], color='k',linewidth=5, linestyle=':',label='No productivity growth'))
+        if Show_alternatives:
+            alines.append(ax.plot([],[], color='k',linewidth=5, linestyle='--',label='Demand-driven scenario'))
+        
+        ax.legend(fontsize=25,ncol=3,
+            loc='upper center',
+            bbox_to_anchor=(0.5, 0))
     
     return fig
 
@@ -1206,3 +1306,196 @@ def destination_share(Result_data,country,scenario,t0,T1):
     Share_R = R/(R+TotDestination)
     Share_R=Share_R.dropna()
     return Share_U, Share_R, TotDestination
+
+
+
+def plot_threshold_range(tq,q25,q50,q75,cols,cat,ax):
+    #Thresholds
+    for ind_box, q in enumerate([0.5,0.05]):
+        t9_l = tq[(q25<=q*q25[tq==2020])&(tq>2020)]
+        t9_m = q50.columns[(q50.values[0]<=q*q50.values[0][q50.columns==2020])&(q50.columns>2020)]
+        t9_h = tq[(q75<=q*q75[tq==2020])&(tq>2020)]
+
+        t9_l = t9_l[0] if len(t9_l)>0 else 2106
+        t9_m = t9_m[0] if len(t9_m)>0 else 2106
+        t9_h = t9_h[0] if len(t9_h)>0 else 2106
+
+
+        ax.bxp(
+            [{'med': t9_m,'q1': t9_l,'q3': t9_h,
+                'whislo': t9_l,'whishi': t9_h }],
+            vert=False,patch_artist=True,boxprops=dict(facecolor=cols[cat], linewidth=0),
+            medianprops=dict(color='k'),showfliers = False, showcaps = False, positions = [[0.2,0.1][ind_box]], widths = [0.075]
+        )
+
+
+def double_axis(ax, region):
+
+    
+    JEJ={
+        'World':174.09/8821.3,
+        'CHN':91.32/4558.6,
+        'IND':15.05/910.8,
+        'USA':12.07/539,
+        'AFR':6.15/257.2,
+        'EUR':5.92/552.6
+    }
+
+    ax3 = ax.twinx()
+    ax3.set_ylim([lim/JEJ[region] for lim in ax.get_ylim()])
+    
+
+    return ax,ax3
+
+def plot_AR6_range_production(var,var_imaclim,regions_ar6,categories,df,cols,Imaclim_data,T,compare_thresholds):
+    """
+    This function overlays own trajectory with those from the AR6 database (Byers et al 2022) for comparable emissions pathways
+    The compare_thresholds boolean enables the function to plot the time-range at which pathways in the dataset reach certain thresholds and compare that with the pathways studied here
+    For certain variables, additional reference scenarios can also be plotted
+    """
+
+    # Special case to convert unit incompatibility between AR6 results and Imaclim results
+    exa2giga        =                 1e9 # G / E
+    tep2gj          =              41.855 # GJ/tep
+    mtoe2gj         =        1e6 * tep2gj # GJ/Mtep
+    mtoe2ej         =  mtoe2gj / exa2giga # EJ/Mtep
+    Imaclim_unit_convert = 1 if var!='Output|Coal' else mtoe2ej
+    if var_imaclim == 'Output|Coal':
+        JEJ_w = 174.09/8821.3
+        JEJ_c = 91.32/4558.6
+        JEJ_i = 15.05/910.8
+
+
+    # Creating plot
+    fig, axs = plt.subplots(len(regions_ar6),len(categories))
+
+    if compare_thresholds:
+        cax= [[0,0,0],[0,0,0],[0,0,0]]
+        for i_r, reg in enumerate(regions_ar6):
+            for i_c, cat in enumerate(categories):
+                ax = axs[i_r, i_c]
+                cax[i_r][i_c] = ax.inset_axes([0, -0.12, 1, 0.1])
+
+
+    for i_r, reg in enumerate(regions_ar6):
+        for i_c, cat in enumerate(categories):
+            ax = axs[i_r, i_c]            
+            ax.axhline(y=0, color='k', linewidth=0.75)
+            ax.axvline(2020, color='k', linestyle='--')
+            
+            # Plotting AR6 data
+            # (
+            #     df.filter(variable=var, region=reg, Category=cat).plot.line(
+            #         color="Category", ax=ax,
+            #         alpha=0, fill_between=True 
+            #     )
+            # )
+
+            tq = df.filter(variable=var, region=reg, Category=cat).compute.quantiles([0.25,0.75]).timeseries().columns
+            q25 = df.filter(variable=var, region=reg, Category=cat).compute.quantiles([0.25,0.75]).timeseries().values[0]
+            q75 = df.filter(variable=var, region=reg, Category=cat).compute.quantiles([0.25,0.75]).timeseries().values[1]
+            q50 = df.filter(variable=var, region=reg, Category=cat).compute.quantiles([0.5]).timeseries()
+
+            filter=(~np.isnan(q75))&(~np.isnan(q25))
+            tq = tq[filter]
+            q25 = q25[filter]
+            q75 = q75[filter]
+
+
+            # ax.fill_between(tq, q25, q75, color=cols[cat], alpha=0.5)
+            df.filter(variable=var, region=reg, Category=cat).plot.line(
+                    color="Category", ax=ax,
+                    alpha=0.5,linewidth=0.2, fill_between=False, rasterized = True 
+                )
+            ax.plot(q50.columns, q50.values[0], color=cols[cat])
+
+            n= len(df.filter(variable=var, region=reg, Category=cat)['scenario'])
+            ax.text(2098,0, f'n={n}', fontsize=8, ha='right')
+
+            # Plotting Imaclim results
+            Region = ['World','CHN','IND'][i_r]
+            Outputs = [['WO-15C-ElecIndus-CCS0','WO-15C-ElecIndus-CCS1'],['WO-NDCLTT-ElecIndus-CCS0','WO-NDCLTT-ElecIndus-CCS1'],['WO-NPi-ElecIndus-CCS0']][i_c]
+            for Output in Outputs:
+                y = Imaclim_data[(Imaclim_data['Region'] == Region)&(Imaclim_data['Scenario'] == Output)&(Imaclim_data['Variables'] == var_imaclim)].values[0][5:]*Imaclim_unit_convert
+                
+                ax.plot(T[::5], y[::5], color=defining_waysout_colour_scheme()[Output],linewidth=1.5)
+
+            if compare_thresholds:
+                ax2 = cax[i_r][i_c]
+                plot_max_range(tq,q25,q50,q75,cols,cat,ax2)
+                plot_threshold_range(tq,q25,q50,q75,cols,cat,ax2)
+
+                for Output in Outputs:
+                    y = Imaclim_data[(Imaclim_data['Region'] == Region)&(Imaclim_data['Scenario'] == Output)&(Imaclim_data['Variables'] == var_imaclim)].values[0][5:]*Imaclim_unit_convert
+                    
+                    # Max
+                    t_m = T[y==max(y)]
+                    t_m = t_m[0] if len(t_m)>0 else 2106
+                    ax2.scatter(t_m, 0.3, color=defining_waysout_colour_scheme()[Output], marker='x', s=6, zorder=5)
+                    [cax[i_r][ni_c].scatter(t_m, 0.3, color='k', alpha=0.3, marker='x', s=6, zorder=5) for ni_c in range(3) if ni_c != i_c]
+
+                    # Threshold
+                    for ind_box, q in enumerate([0.5,0.05]):
+                        t_m = T[y<=q*y[T==2020]]
+                        t_m = t_m[0] if len(t_m)>0 else 2106
+                        ax2.scatter(t_m, [0.2,0.1][ind_box], color=defining_waysout_colour_scheme()[Output], marker=['o','^'][ind_box], s=6, zorder=5)
+                        [cax[i_r][ni_c].scatter(t_m, [0.2,0.1][ind_box], color='k', alpha=0.3, marker=['o','^'][ind_box], s=6, zorder=5) for ni_c in range(3) if ni_c != i_c]
+
+
+
+                # Spetial formatting
+                ax2.set_ylim([0, 0.4])
+                ax2.set_xlim([2010,2105])
+                ax2.set_yticks([])
+                ax2.set_xticks([])
+
+            
+
+            
+            
+
+            # Formatting the graph
+            ax.set_title("")
+            ax.set_ylim(get_ylim(ax,var,Region))
+            ax.set_xlim([2010,2105])
+            ax.legend().remove()
+            
+
+            unit = df.filter(variable=var, region=reg, Category=cat).unit[0]
+            if i_r ==0:
+                ax.set_title(['1.5°C','NDC LTT','NPI'][i_c]+' - '+cat)
+
+            if (i_r==2):
+                if compare_thresholds:
+                    ax2.set_xticks(ax.get_xticks())
+                    ax2.set_xlim([2010,2105])
+                    ax2.set_ylim([0, 0.4])
+                    ax2.set_xlabel('Year')
+                
+                    ax.set_xticks([])
+                    ax.set_xlabel('')
+                else:
+                    ax.set_xlabel('Year')
+            else:
+                ax.set_xlabel('')
+                ax.set_xticklabels([])
+            
+            if i_c == 0:
+                ax.set_ylabel(["World","China","India"][i_r]+'\n'+unit)
+            else:
+                ax.set_ylabel('')
+                ax.set_yticklabels([])
+
+            ax, ax3 = double_axis(ax, Region)
+            if i_c != len(categories)-1:
+                ax3.set_yticklabels([])
+            else:
+                ax3.set_ylabel('Mt') 
+
+
+    # Adding extra reference trajectories if they are available for the given variable
+    add_coaloutput_comparisons(axs,regions_ar6,categories) 
+
+
+    # fig.suptitle(var)
+    return fig

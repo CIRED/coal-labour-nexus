@@ -27,7 +27,7 @@ matplotlib.rcParams['font.family'] = 'Arial'
 T = range(2015, 2101)
 T = np.array(T)
 
-scenarios = list(np.array([[ x + y  for x in ['WO-NPi-ElecIndus','WO-NDCLTT-ElecIndus','WO-15C-ElecIndus']] for y in ['']]).flatten())
+scenarios = list(np.array([[ x + y  for x in ['WO-NPi-ElecIndus-CCS0','WO-NDCLTT-ElecIndus-CCS0','WO-15C-ElecIndus-CCS0','WO-NDCLTT-ElecIndus-CCS1','WO-15C-ElecIndus-CCS1']] for y in ['']]).flatten())
 
 Imaclim_data = []
 for scenario in scenarios:
@@ -90,10 +90,10 @@ NDOSE['ln_gdp'] = np.log(NDOSE.grp_pc_usd_2015)
 #%%# Evaluating the economic and population growth from 2016:
 evol={}
 pevol={}
-Colors = ['#F18872','#A7C682','#97CEE4']
+Colors = ['#F18872','#A7C682','#97CEE4','grey','black']
 fig, axs = plt.subplots(1,2,figsize=(10,4))
 for ind_country, country in enumerate(['CHN','IND']):
-    for ind_scenario, scenario in enumerate(['WO-NPi-ElecIndus', 'WO-NDCLTT-ElecIndus', 'WO-15C-ElecIndus']):
+    for ind_scenario, scenario in enumerate(['WO-NPi-ElecIndus-CCS0', 'WO-NDCLTT-ElecIndus-CCS0', 'WO-15C-ElecIndus-CCS0', 'WO-NDCLTT-ElecIndus-CCS1', 'WO-15C-ElecIndus-CCS1']):
         ax = axs[ind_country]
         evol[(country,ind_scenario)] = Imaclim_data[(Imaclim_data.Region==country)&
                                                     (Imaclim_data.Variables=='GDP|PPP')&
@@ -149,7 +149,7 @@ for ind_country, country in enumerate(['China','India']):
     coef_a_s = coef_a_ss[ind_country]
     coef_s_s = coef_s_ss[ind_country]
     for ind_region, region in enumerate(DOSE[(DOSE.country==country) & (DOSE.year == year_base)]['region'].unique()):
-        for ind_scenario, scenario in enumerate(['WO-NPi-ElecIndus', 'WO-NDCLTT-ElecIndus', 'WO-15C-ElecIndus']):
+        for ind_scenario, scenario in enumerate(['WO-NPi-ElecIndus-CCS0', 'WO-NDCLTT-ElecIndus-CCS0', 'WO-15C-ElecIndus-CCS0', 'WO-NDCLTT-ElecIndus-CCS1', 'WO-15C-ElecIndus-CCS1']):
             # print(region)
             y = float(DOSE[(DOSE.region == region) & (DOSE.year == year_base)].ln_gdp.iloc[0])+np.array([np.log(x) for x in evol[(cntry,ind_scenario)]])
             dy  = [y[i+1]-y[i] for i in range(len(y)-1)]
@@ -177,11 +177,11 @@ for ind_country, country in enumerate(['China','India']):
 
 #%%
 # Plotting regional production
-fig, axs = plt.subplots(3,3,figsize=(10,6))
+fig, axs = plt.subplots(3,5,figsize=(10,6))
 
 for ind_var, variable in enumerate(['agriculture','industry','services']):
     output = [xa,xm,xs][ind_var]
-    for ind_scenario, scenario in enumerate(['WO-NPi-ElecIndus', 'WO-NDCLTT-ElecIndus', 'WO-15C-ElecIndus']):
+    for ind_scenario, scenario in enumerate(['WO-NPi-ElecIndus-CCS0', 'WO-NDCLTT-ElecIndus-CCS0', 'WO-15C-ElecIndus-CCS0', 'WO-NDCLTT-ElecIndus-CCS1', 'WO-15C-ElecIndus-CCS1']):
         ax = axs[ind_var,ind_scenario]
         for ind_country, country in enumerate(['China','India']):
             regions = DOSE[(DOSE.country==country) & (DOSE.year == year_base)]['region'].unique()
@@ -197,7 +197,7 @@ for ind_var, variable in enumerate(['agriculture','industry','services']):
 #%%
 # Plotting regional structural change
 fig, axs = plt.subplots(2,3,figsize=(10,6))
-scenario = 'WO-NPi-ElecIndus'
+scenario = 'WO-NPi-ElecIndus-CCS0'
 variables = ['agriculture','industry','services']
 for ind_var, variable in enumerate(variables):
     output = [xa,xm,xs][ind_var]
@@ -231,7 +231,7 @@ for ind_country, country in enumerate(['China','India']):
     cntry = ['CHN','IND'][ind_country]
     regions = [Cregion,Iregion][ind_country]
     for ind_region, region in enumerate(regions):
-        for ind_scenario, scenario in enumerate(['WO-NPi-ElecIndus', 'WO-NDCLTT-ElecIndus', 'WO-15C-ElecIndus']):
+        for ind_scenario, scenario in enumerate(['WO-NPi-ElecIndus-CCS0', 'WO-NDCLTT-ElecIndus-CCS0', 'WO-15C-ElecIndus-CCS0', 'WO-NDCLTT-ElecIndus-CCS1', 'WO-15C-ElecIndus-CCS1']):
             contriba[region,ind_scenario] = tota[region,ind_scenario] / np.array([tota[x,ind_scenario] for x in regions]).sum(axis=0)
             contribm[region,ind_scenario] = totm[region,ind_scenario] / np.array([totm[x,ind_scenario] for x in regions]).sum(axis=0)
             contribs[region,ind_scenario] = tots[region,ind_scenario] / np.array([tots[x,ind_scenario] for x in regions]).sum(axis=0)
@@ -245,24 +245,24 @@ fig, axs = plt.subplots(1,3,figsize=(10,6))
 
 for ind_var, variable in enumerate(['agriculture','industry','services']):
     output = [contribm,contribm,contribs][ind_var]
-    # for ind_scenario, scenario in enumerate(['WO-NPi-ElecIndus', 'WO-NDCLTT-ElecIndus', 'WO-15C-ElecIndus']):
+    # for ind_scenario, scenario in enumerate(['WO-NPi-ElecIndus-CCS0', 'WO-NDCLTT-ElecIndus-CCS0', 'WO-15C-ElecIndus-CCS0', 'WO-NDCLTT-ElecIndus-CCS1', 'WO-15C-ElecIndus-CCS1']):
     ind_scenario = 0
-    scenario = 'WO-NPi-ElecIndus'
+    scenario = 'WO-NPi-ElecIndus-CCS0'
     scen_name = ['NPI','NDC','NZ'][ind_scenario]
     ax = axs[ind_var]
     for ind_country, country in enumerate(['China','India']):
         regions = DOSE[(DOSE.country==country) & (DOSE.year == year_base)]['region'].unique()
 
-        for ind_region, region in enumerate([x for x in regions[((regions!='Shanxi')|(regions!='Jharkhand')).any()][0]]+['Shanxi','Jharkhand']):
+        for ind_region, region in enumerate(regions):#[x for x in regions[((regions!='Shanxi')|(regions!='Jharkhand')).any()][0]]+['Shanxi','Jharkhand']):
             if region in ['Shanxi','Jharkhand']:
                 code = 'CN-SX' if region == "Shanxi" else 'IN-JH'
 
                 linewidth = 1.5
                 ax.text(T[-1],output[region,ind_scenario][-1]/output[region,ind_scenario][0],code,ha='left',va= 'center',fontsize=8)
-                ax.plot(T,output[region,ind_scenario]/output[region,ind_scenario][0],color='k',linewidth=1.25)
+                ax.plot(T,output[region,ind_scenario]/output[region,ind_scenario][0],color=sns.color_palette()[ind_country*5],linewidth=3,zorder=2)
             else:
                 linewidth = 0.75
-                ax.plot(T,output[region,ind_scenario]/output[region,ind_scenario][0],color=[sns.color_palette('Reds',n_colors=20),sns.color_palette('Oranges',n_colors=20)][ind_country][random.randint([15,5][ind_country],[19,15][ind_country])],linewidth=0.75)
+                ax.plot(T,output[region,ind_scenario]/output[region,ind_scenario][0],color=sns.color_palette()[ind_country*5],linewidth=0.5,zorder=0,alpha=0.5)
             # ax.text(T[0],output[region,ind_scenario][0],region)
     # if ind_var == 0:
     ax.set_title(variable.capitalize())
@@ -290,7 +290,7 @@ ind_agr = ['agric'+ str(x) for x in T]
 ind_ser = ['servi'+ str(x) for x in T]
 ind_gdp = ['gdp'+ str(x) for x in T]
 
-for ind_scenario, scenario in enumerate(['NPI','NDC','NZ']):
+for ind_scenario, scenario in enumerate(['NPI','NDC_CCS0','NZ_CCS0','NDC_CCS1','NZ_CCS1']):
 
     Econ_structure1 = Econ_structure0.copy()
     Econ_structure1.loc[Econ_structure1["Subregion_name"]=="Chhattisgarh",'Subregion_name'] = 'Chattisgarh'
