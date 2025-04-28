@@ -2106,3 +2106,107 @@ fig.subplots_adjust(hspace=-0.4)
 
 pf.save_figure(fig,'SI_Map_demand_drive','svg')
 
+#%%
+
+
+
+#%%
+# ===========================================================================================================================
+#                                              Comparing to AR6 database
+# ===========================================================================================================================
+"""
+
+Here we benchmark the WO scenarios with scenarios from the AR6 database
+This requires pulling scenarios from the IIASA database using pyam
+
+"""
+#%%  Importing AR6 database
+chn_name = 'Countries of centrally-planned Asia; primarily China'
+ind_name = 'Countries of South Asia; primarily India'
+regions_ar6 = ['World', chn_name, ind_name]
+
+variables_ar6 = ['Primary Energy|Coal','Trade|Primary Energy|Coal|Volume',
+             'Final Energy|Industry|Solids|Coal','Emissions|CO2|Energy and Industrial Processes',
+             'Carbon Sequestration|CCS|Biomass','Secondary Energy|Electricity|Coal',
+             'Primary Energy|Oil','Primary Energy|Gas','Unemployment|Rate','Employment|Industry|Mining',
+             "Investment|Energy Supply|Extraction|Coal",'Capacity|Electricity|Coal']
+df = pyam.read_iiasa( 'ar6-public', region=regions_ar6, variable=variables_ar6)
+
+df.add('Primary Energy|Coal','Trade|Primary Energy|Coal|Volume',"Output|Coal",
+        append=True,)
+
+
+
+color_map = {
+    "C1": "AR6-C1",
+    "C2": "AR6-C2",
+    "C3": "AR6-C3",
+    "C4": "AR6-C4",
+    "C5": "AR6-C5",
+    "C6": "AR6-C6",
+    "C7": "AR6-C7",
+    "C8": "AR6-C8",
+}
+
+cols = {
+    "C1": "#97CEE4",
+    "C2": "#778663",
+    "C3": "#6F7899",
+    "C4": "#A7C682",
+    "C5": "#8CA7D0",
+    "C6": "#FAC182",
+    "C7": "#F18872",
+    "C8": "#BD7161",
+}
+
+pyam.run_control().update({"color": {"Category": color_map}})
+categories = ['C1','C3','C6']
+
+#%% 3.1) Emissions
+import importlib
+importlib.reload(pf)
+var = 'Emissions|CO2|Energy and Industrial Processes'
+pf.plotting_with_AR6_range(var,var,regions_ar6,categories,df,cols,Imaclim_data,T,False)
+
+#%% 3.2) Coal production
+import importlib
+importlib.reload(pf)
+var = 'Output|Coal'
+pf.plotting_with_AR6_range(var,var,regions_ar6,categories,df,cols,Imaclim_data,T,True)
+
+
+
+
+#%% 3.3) Electricity from coal
+var = 'Secondary Energy|Electricity|Coal'
+pf.plotting_with_AR6_range(var,var,regions_ar6,categories,df,cols,Imaclim_data,T,True)
+
+# pf.plotting_with_AR6_range(var,var,regions_ar6,categories,df,cols,Imaclim_data,T,True)
+
+
+#%% 3.4) Investment in coal supply
+var = "Investment|Energy Supply|Extraction|Coal"
+pf.plotting_with_AR6_range(var,var,regions_ar6,categories,df,cols,Imaclim_data,T,True)
+
+#%% 3.5) Investment in coal supply
+var = 'Carbon Sequestration|CCS|Biomass'
+var_im = 'Carbon Capture|Storage|Biomass'
+regions = regions_ar6[1:3]
+categories = categories[0:2]
+pf.plotting_with_AR6_range(var,var_im,regions,categories,df,cols,Imaclim_data,T,False)
+
+#%% 3.6) Investment in coal supply
+var = 'Capacity|Electricity|Coal'
+var_im = 'Capacity|Electricity|Coal'
+regions = regions_ar6
+categories = categories
+pf.plotting_with_AR6_range(var,var_im,regions,categories,df,cols,Imaclim_data,T,False)
+
+
+#=========================================================================================================================================================================
+#=========================================================================================================================================================================
+
+#%% =======================================================================================================
+
+
+
