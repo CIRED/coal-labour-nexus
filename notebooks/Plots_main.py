@@ -112,37 +112,40 @@ Region_indexes = pd.read_csv('../coal.labour.nexus/data/Coal_labour/Downscaling/
 # ===========================================================================================================================
 #%% Main 1-  National employment trajectories
 # ===========================================================================================================================
+
 def M1():
     Step = 5
     Show_uncertainty = False
     Show_alternatives = False
     Show_supply = False
     fig = pf.plot_national_employment_trajectories(T,Result_data,Historical_data,Step,Show_alternatives,Show_supply,Show_uncertainty)
-    pf.save_figure(fig,'M1_employment_trajectories','svg',dpi=600)
-
+    pf.save_figure(fig,'M1_employment_trajectories','svg')
 
 #%% Main 2 - Subnational employment trajectories
 # ===========================================================================================================================
 def M2():
     Show_alternatives=False
-    representation = 1
-    for ind_country, country in enumerate(['CHN','IND']):
-        grid_size = pf.regional_grid(representation)[2][ind_country]
+    representation = 2
+    grid_size_chn = pf.regional_grid(representation)[2][0]
+    grid_size_ind = pf.regional_grid(representation)[2][1]
         
-        fig, axs = plt.subplots(grid_size[0],grid_size[1],figsize=(26,15))
-        
-        pf.Grid_Employment_Destruction(fig,axs,T,Result_data,ind_country,False,Show_alternatives=Show_alternatives,grid_scale_same=False,representation=representation)
-        
-        pf.save_figure(fig,'M2_Grid_employment_'+['','alternatives_'][Show_alternatives]+country+str(representation),'svg')
+    fig, axs = plt.subplots(grid_size_chn[0]+grid_size_ind[0],grid_size_chn[1],figsize=pf.standard_figure_size())
 
+    fig=pf.Grid_Employment_Destruction(fig,axs[:grid_size_chn[0],:],T,Result_data,0,False,Show_alternatives=Show_alternatives,grid_scale_same=True,representation=representation,remove_splin=True)
+    fig=pf.Grid_Employment_Destruction(fig,axs[grid_size_chn[0]:,:],T,Result_data,1,False,Show_alternatives=Show_alternatives,grid_scale_same=True,representation=representation,remove_splin=True)
+        
+    pf.save_figure(fig,'M2_Grid_employment_'+['','alternatives_'][Show_alternatives]+str(representation),'svg')
 
     pf.print_subnational_employment_results(T,Result_data)
+
+
 
 #%% Main 3 - Exposure of regions to coal transition
 # ===========================================================================================================================
 def M3():
-    fig = pf.exposure_scatter(T,Result_data)
+    fig = pf.exposure_scatter(T,Result_data,shade=True)
     pf.save_figure(fig,'M3_Exposure_scatter','svg')
+
 
 #%% Main 4 - Boxplot of share not finding per scenario
 # ===========================================================================================================================
@@ -184,6 +187,20 @@ def ED3():
 
 
 
+#%% ED5 - Full grid of subnational employment trajectories
+# ===========================================================================================================================
+def ED5():
+    Show_alternatives=False
+    representation = 1
+    grid_size_chn = pf.regional_grid(representation)[2][0]
+    grid_size_ind = pf.regional_grid(representation)[2][1]
+        
+    fig, axs = plt.subplots(grid_size_chn[0]+grid_size_ind[0],grid_size_chn[1],figsize=(26/1.45,20/1.45))
+
+    fig=pf.Grid_Employment_Destruction(fig,axs[:grid_size_chn[0],:],T,Result_data,0,False,Show_alternatives=Show_alternatives,grid_scale_same=True,representation=representation)
+    fig=pf.Grid_Employment_Destruction(fig,axs[grid_size_chn[0]:,:],T,Result_data,1,False,Show_alternatives=Show_alternatives,grid_scale_same=True,representation=representation)
+        
+    pf.save_figure(fig,'ED5_Grid_employment_'+['','alternatives_'][Show_alternatives]+str(representation),'svg')
 
 
 
@@ -266,6 +283,11 @@ def SI11():
     fig = pf.boxplot_share_not_finding_demand(Result_data, T)
     pf.save_figure(fig,'SI4_Boxplot_presentation','jpg',dpi=700)
 
+
+#%%
+
+
+
 #%% PRESENTATIONS ============================================================================= 
 #%% P1 - Scenarios descriptions
 # ===========================================================================================================================
@@ -291,6 +313,7 @@ if __name__ == "__main__":
         ED1()
         ED2()
         ED3()
+        ED5()
     if plot_supplementary:
         print('Plotting supplementary information figures')
         SI3()

@@ -271,7 +271,7 @@ def plot_national_employment_trajectories(T,Result_data,Historical_data,Step=5,S
                         Scen_y.loc[scenario].values[T < 2070][0:-1:Step],
                         color=Colors[split_by_any_substring(scenario, Alt_type[1:])],
                         linestyle=Rlinestyle[Scen_type_ind],
-                        linewidth=Rlinewidth[Scen_type_ind],
+                        linewidth=2.2*Rlinewidth[Scen_type_ind],
                         alpha=Ralpha[Scen_type_ind],
                         marker= Rmarker[Scen_type_ind],
                         markersize = 3,
@@ -333,7 +333,7 @@ def plot_national_employment_trajectories(T,Result_data,Historical_data,Step=5,S
         alines.append(axs[0].plot([], [],
                                 color=Colors[scenario.split('_PG0')[0]],
                                 label=['1.5°C','NDC-LTT','NPi','1.5°C-CCS','NDC-LTT-CCS'][ind],
-                    linewidth=Rlinewidth[Scen_type_ind],
+                    linewidth=2.2*Rlinewidth[Scen_type_ind],
                     alpha=Ralpha[Scen_type_ind] )[0])
         
     alines.append(axs[0].plot([],[],color='k',linestyle='-',label='Productivity growth')[0])
@@ -560,7 +560,17 @@ def plot_vulnerability_bivariate(scenario, ax, Regions, Result_data, T, t0, T1, 
     return Asia_Data,key_data,cmap_zip
 
 
+def destination_colors():
 
+    colors = {
+        'Retirement':sns.color_palette("pastel")[1],
+        'Instantaneous matches':sns.color_palette("pastel")[2],
+        'Delayed matches':sns.color_palette("pastel")[4],
+        'Unemployed':sns.color_palette("pastel")[3],
+        'Hire':sns.color_palette("pastel")[6],
+    }
+
+    return colors
 
 #=========================================================================================================
 def destination_bar(Result_data, X, T, t0, t1, Scenario, ax, region, provinces, data_save, s_index):
@@ -649,13 +659,14 @@ def destination_bar(Result_data, X, T, t0, t1, Scenario, ax, region, provinces, 
         'Retirement', "Instantaneous \nmatches", "Delayed \nmatches",
         'Unemployed', 'Hire'
     ]
+    clrs = [destination_colors()[x.replace('\n','')] for x in labelz]
     for i in np.arange(0, data_shape[0]):
         alines.append([
             ax.bar(X[s_index],
                     data[i],
                     bottom=data_stack[i],
                     width=0.8,
-                    alpha=0.6,
+                    # alpha=0.6,
                     color=clrs[i],
                     label=labelz[i])
         ])
@@ -971,6 +982,11 @@ def plotting_with_AR6_range(var,var_imaclim,regions_ar6,categories,df,cols,Imacl
             y = Imaclim_data[(Imaclim_data['Region'] == Region)&(Imaclim_data['Scenario'] == Output)&(Imaclim_data['Variables'] == var_imaclim)].values[0][5:]*Imaclim_unit_convert
             
             ax.plot(T, y, color='k',linewidth=0.75)
+            if i_c <= 1:
+                y = Imaclim_data[(Imaclim_data['Region'] == Region)&(Imaclim_data['Scenario'] == Output.replace("CCS0",'CCS1'))&(Imaclim_data['Variables'] == var_imaclim)].values[0][5:]*Imaclim_unit_convert
+            
+                ax.plot(T, y, color='k',linestyle='--',linewidth=0.75)
+
             ax.text(2098,0, f'n={n}', fontsize=8, ha='right')
 
             if compare_thresholds:
@@ -1037,6 +1053,8 @@ def plotting_with_AR6_range(var,var_imaclim,regions_ar6,categories,df,cols,Imacl
             else:
                 ax.set_ylabel('')
                 ax.set_yticklabels([])
+            if var == "Capacity|Electricity|Coal":
+                ax.set_ylim([0,[3000,1500,500][i_r]])
 
 
     # Adding extra reference trajectories if they are available for the given variable
@@ -1320,17 +1338,19 @@ def Grid_Unemployment_Destruction(fig,axs,T,Result_data,ind_country):
 
 
 
-def grid_scale_treatment(region,ax,ax2,ind_country):
+def grid_scale_treatment(region,ax,ax2,ind_country,remove_splin=False):
     if region == 'Shanxi':
         ax2.set_ylim([-20,900])
-        ax2.spines['left'].set_color('red') 
-        ax.tick_params(axis='y', colors='red')
+        if not remove_splin:
+            ax2.spines['left'].set_color('red') 
+            ax.tick_params(axis='y', colors='red')
     elif region =='Jharkhand':
         ax2.set_ylim([-7,375])
-        ax2.spines['left'].set_color('red') 
-        ax.tick_params(axis='y', colors='red')
+        if not remove_splin:
+            ax2.spines['left'].set_color('red') 
+            ax.tick_params(axis='y', colors='red')
     else:
-        ax2.set_ylim([[-20,350],[-7,200]][ind_country])
+        ax2.set_ylim([[-10,350],[-7,200]][ind_country])
     return region, ax, ax2
 
 
@@ -1341,34 +1361,44 @@ def regional_grid(representation):
     else:
         provincesChina = {
             'Shanxi':(0,0),
-            'Inner Mongolia':(0,1),
-            'Shaanxi':(1,0),
-            'Shandong':(1,1),
+            'Inner Mongolia':(0,2),
+            # 'Shaanxi':(1,0),
+            'Shandong':(0,1),
         }
         provincesIndia = {
-            'Chhattisgarh':(0,0),
-            'Jharkhand':(0,1),
-            'Odisha':(1,0),
-            'West Bengal':(1,1),
+            # 'Chhattisgarh':(0,0),
+            'Jharkhand':(0,0),
+            'Odisha':(0,1),
+            'West Bengal':(0,2),
         }
     grid_size = [[[8,6],[8,8]],
                  [[5,5],[3,5]],
-                 [[2,2],[2,2]]][representation]
+                 [[1,3],[1,3]]][representation]
     return provincesChina,provincesIndia, grid_size
 
 
-def Grid_Employment_Destruction(fig,axs,T,Result_data,ind_country,U,Show_alternatives=False,grid_scale_same = True,representation=1):
-    
+def Grid_Employment_Destruction(fig,axs,T,Result_data,ind_country,U,Show_alternatives=False,grid_scale_same = True,representation=1,remove_splin=False):
+    fig_width = fig.get_figwidth()
+    fig_scale = fig_width/26
     Step = 5
     [ax.axis('off') for ax in axs.flatten()]
     if not Show_alternatives:
-        axs[0,0].text(0.05,0.75,['a)','b)'][ind_country],transform=axs[0,0].transAxes, fontsize= 40, fontweight='bold')
+        axs[0,0].text(0.05,0.8,['a)','b)'][ind_country],transform=axs[0,0].transAxes, fontsize= 40*fig_scale, fontweight='bold')
     regions = regional_grid(representation)[ind_country]
     grid_size = regional_grid(representation)[2][ind_country]
-    Scenarios = ['NZ','NDC','NPI','NZ_CCS1','NDC_CCS1']
+    Scenarios = ['NZ_CCS1','NDC_CCS1','NZ','NDC','NPI']
 
     t0 = 2020
     t1 = 2060
+
+    # Remove splin
+    if remove_splin:
+        [ax.axhline(y=100,color='k',linewidth=0.25,zorder=-1) for ax in axs.flatten()]
+        [ax.spines['top'].set_visible(False) for ax in axs.flatten()]
+        [ax.spines['right'].set_visible(False) for ax in axs.flatten()]
+        axs.flatten()[-1].spines['left'].set_visible(False)
+        axs.flatten()[-1].tick_params(left=False,  labelleft=False)
+    
 
     for region, position in regions.items():
         ax = axs[position]
@@ -1418,7 +1448,7 @@ def Grid_Employment_Destruction(fig,axs,T,Result_data,ind_country,U,Show_alterna
                     T[(t0<=T)&(T<=t1)][0:-1:Step],
                     y.values[0][6:][(t0<=T)&(T<=t1)][0:-1:Step],
                     color=defining_waysout_colour_scheme()[scenario.split('_PG0')[0]],
-                    linewidth=3,
+                    linewidth=6*fig_scale,
                 )
 
                 # Only for regions that have coal labour in the first place we also plot without productivity growth
@@ -1433,7 +1463,7 @@ def Grid_Employment_Destruction(fig,axs,T,Result_data,ind_country,U,Show_alterna
                     y.values[0][6:][(t0<=T)&(T<=t1)][0:-1:Step],
                     color=defining_waysout_colour_scheme()[scenario],
                     linestyle = ':',
-                    linewidth=3
+                    linewidth=6*fig_scale
                 )
 
                 if Show_alternatives: # If show_Alternative is True, we also plot the alternative demand-driven scenario
@@ -1448,16 +1478,18 @@ def Grid_Employment_Destruction(fig,axs,T,Result_data,ind_country,U,Show_alterna
                         y.values[0][6:][(t0<=T)&(T<=t1)][0:-1:Step],
                         color=defining_waysout_colour_scheme()[scenario.split('_')[0]],
                         linestyle = '--',
-                        linewidth=3
+                        linewidth=6*fig_scale
                     )
 
                 if grid_scale_same:
-                    grid_scale_treatment(region, ax, ax2, ind_country)
+                    grid_scale_treatment(region, ax, ax2, ind_country, remove_splin)
 
-
+                
         
-        ax2.text(0.05,0.05,region,transform=ax.transAxes, fontsize= 17, fontweight='bold')
-        
+        ax2.text(0.05,0.05,region,transform=ax.transAxes, fontsize= 11, fontweight='bold')
+    
+    if representation == 2:
+        [ax.set_ylabel('Thousand workers') for ax in axs[:,0]]
     
     # Legend in bottom right corner
     if ((ind_country == 1) | (Show_alternatives)):
@@ -1465,15 +1497,16 @@ def Grid_Employment_Destruction(fig,axs,T,Result_data,ind_country,U,Show_alterna
         ax = axs[-1,grid_size[1]//2]#[2,-2][ind_country]]
         alines = []
         for ind_scenario, scenario in enumerate(Scenarios[:5]):
-            alines.append(ax.plot([],[],linewidth=5,color=defining_waysout_colour_scheme()[scenario.split('_PG0')[0]], label=['1.5°C','NDC-LTT','NPi','1.5°C-CCS','NDC-LTT-CCS'][ind_scenario]))
-        alines.append(ax.plot([],[], color='k',linewidth=5, linestyle=':',label='No productivity growth'))
+            alines.append(ax.plot([],[],linewidth=10*fig_scale,color=defining_waysout_colour_scheme()[scenario.split('_PG0')[0]], label=['1.5°C-CCS','NDC-LTT-CCS','1.5°C','NDC-LTT','NPi'][ind_scenario]))
+        alines.append(ax.plot([],[], color='k',linewidth=10*fig_scale, linestyle=':',label='No productivity growth'))
         if Show_alternatives:
-            alines.append(ax.plot([],[], color='k',linewidth=5, linestyle='--',label='Demand-driven scenario'))
+            alines.append(ax.plot([],[], color='k',linewidth=10*fig_scale, linestyle='--',label='Demand-driven scenario'))
         
-        ax.legend(fontsize=25,ncol=3,
+        ax.legend(fontsize=25*fig_scale,ncol=3,
             loc='upper center',
-            bbox_to_anchor=(0.5, 0))
-    
+            bbox_to_anchor=(0.5, -0.25))
+        
+
     return fig
 
 
@@ -1757,7 +1790,7 @@ def split_by_any_substring(string, substrings):
     return split_list[0]
 
 
-def find_destination_data(T,Result_data):
+def find_destination_data(T,Result_data,with_cntry=True):
     t0=2020
     # - Heatmap
 
@@ -1771,8 +1804,10 @@ def find_destination_data(T,Result_data):
                     ['Downscaled Region'].values)
 
     CNTRY = [Region_indexes.loc[Region_indexes["Subregion_name"]==region,"Region_name"].values[0] for region in Regions]
-    Region_with_cntr = [region+' ('+Region_indexes.loc[Region_indexes["Subregion_name"]==region,"Region_name"].values[0]+')' for region in Regions]
-
+    if with_cntry:
+        Region_with_cntr = [region+' ('+Region_indexes.loc[Region_indexes["Subregion_name"]==region,"Region_name"].values[0]+')' for region in Regions]
+    else:   
+        Region_with_cntr = Regions
     zlim, norm, colormap = semisymlognorm()
     Ls = []
     share_n_finding = []
@@ -1901,13 +1936,13 @@ def print_subnational_employment_results(T,Result_data):
             print(f'{scenario} a near total phase-out by {t95} in {region} ')
 
 #%% Main 3 - Exposure of regions to coal transition
-def exposure_scatter(T,Result_data):
+def exposure_scatter(T,Result_data,shade=False):
     Scenarios = ['WO-15C-ElecIndus-CCS0', 'WO-NDCLTT-ElecIndus-CCS0','WO-NPi-ElecIndus-CCS0',
         'WO-15C-ElecIndus-CCS1','WO-NDCLTT-ElecIndus-CCS1']
 
 
     Scenarios_names = ['1.5°C','NDC-LTT','NPi','1.5°C-CCS','NDC-LTT-CCS']
-    All_data = find_destination_data(T,Result_data)
+    All_data = find_destination_data(T,Result_data,with_cntry=False)
     T1 = 2035
     fig, (ax, ax2) = plt.subplots(1,2,figsize=(7,6),width_ratios=[1, 0.15])
     ax.axvline(x=0, color='k', linestyle='-',linewidth = 0.5,zorder=0)
@@ -1923,6 +1958,7 @@ def exposure_scatter(T,Result_data):
     ax.set_yticks(range(len(All_data.index)))
     ax.set_yticklabels(All_data.index[::-1])
     ax.set_ylim([-0.5,33.5])
+    ax2.set_ylim([-0.5,33.5])
     ax.set_xticklabels([f'{x*100:.0f}%' for x in ax.get_xticks()])
     ax.set_xlim([ax.get_xticks()[0],4.9e-2])
     ax2.set_xlim([5.1e-2,8e-2])
@@ -1951,7 +1987,12 @@ def exposure_scatter(T,Result_data):
                                 label=['NPi','NDC-LTT','NDC-LTT w/CCS','1.5°C','1.5°C w/CCS'][ind_scenario]))
 
     labels = [la.get_label() for la in alines]
-    handles = [label for label in alines]
+    
+    if shade:
+        ax.fill_between( [ax.get_xticks()[0],4.9e-2], [-1,-1], [21.5, 21.5], color='gray', edgecolor=None, alpha=0.2, zorder=-1)
+        ax2.fill_between([5.1e-2,8e-2],               [-1,-1], [21.5, 21.5], color='gray', edgecolor=None, alpha=0.2, zorder=-1)
+        ax.text(0.03,10,'China',fontsize=14,fontweight='bold')
+        ax.text(0.03,25,'India',fontsize=14,fontweight='bold')
 
     fig.legend(handles=alines,
                 labels=labels,
@@ -2133,7 +2174,7 @@ def initiate_ar6():
                 'Final Energy|Industry|Solids|Coal','Emissions|CO2|Energy and Industrial Processes',
                 'Carbon Sequestration|CCS|Biomass','Secondary Energy|Electricity|Coal',
                 'Primary Energy|Oil','Primary Energy|Gas','Unemployment|Rate','Employment|Industry|Mining',
-                "Investment|Energy Supply|Extraction|Coal",'Capacity|Electricity|Coal']
+                "Investment|Energy Supply|Extraction|Coal",'Capacity|Electricity|Coal','Capacity|Electricity|Coal']
     df = pyam.read_iiasa( 'ar6-public', region=regions_ar6, variable=variables_ar6)
 
     df.add('Primary Energy|Coal','Trade|Primary Energy|Coal|Volume',"Output|Coal",
@@ -2378,7 +2419,7 @@ def main_regions_destination_bars(provincesChina, provincesIndia, Result_data, T
     [ax.set_ylim([-0.3, 1]) for ax in axs[2:,:].flatten()]
 
     [ax.set_yticklabels([]) for ax in axs[:,[1,2]].flatten()]
-    [ax.text(0.02,0.96, label, transform=ax.transAxes, fontsize= 11, fontweight='bold', va='top', ha='left') for ax, label in zip(axs.flatten(),letters)]
+    [ax.text(0.02,0.96, label, transform=ax.transAxes, fontsize= 11, fontweight='bold', va='top', ha='left') for ax, label in zip(axs.flatten(),letters[1:])]
 
     fig.legend(handles=alines,
             labels=labs,
