@@ -11,7 +11,6 @@ Productivity = zeros(size(Prod_coal,1),TimeHorizon);
 Emp_coal = zeros(size(Prod_coal,1),TimeHorizon);
 
 
-
 Emp_coal(:,1) = Emp_2015_2021(2:67,4+ind_workforce);
 
 
@@ -36,11 +35,11 @@ Lev = 0.5;
 lambda = 5/100;
 
 
+
 for Country = [6, 7]
     Regions = find(Emp_struct(:, 1) == Country);
     for i = 1:length(Regions)
         Region = Regions(i)-1;
-        
         for l = 2:6  // Forcing 5.8% growth rate until 2023
             if Country == 6 // In China, 2015-2022 productivity is exogeneous and equal to the observed CAGR to allow for better fit with real world data
                 Productivity(Region,l)=Productivity(Region,l-1)*(1+10.78/100); 

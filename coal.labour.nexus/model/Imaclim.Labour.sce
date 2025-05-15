@@ -69,7 +69,6 @@ for k =1:n_downscaled_countries
     // Downscaling coal production
     Regions = find(Emp_struct(:, 1) == downscaled_countries(k));
     Regions = find(Pr_regi_c == downscaled_countries(k) & Pr_variabs=="CoalOutputYear_reg" & scenario_type==Pr_scenario & productivity_scenario==Pr_prscenario);
-    
     Country = Regions(1);
     national_prod = Produ(Country,:);
     // We assume that national 2015-2021 coal production is distributed similarly to 2021 in the GEM database

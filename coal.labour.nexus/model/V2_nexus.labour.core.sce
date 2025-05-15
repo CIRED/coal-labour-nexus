@@ -29,10 +29,14 @@ elseif (ind_struct==3|ind_struct==4) then
 
     if length(strindex(runname,"NPI"))~=0  then
         Emp_struct_chnge = csvRead('../data/Coal_labour/Downscaling/Econ_structural_change_NPI.csv');
+    elseif length(strindex(runname,"NDC_CCS1"))~=0  then
+        Emp_struct_chnge = csvRead('../data/Coal_labour/Downscaling/Econ_structural_change_NDC_CCS1.csv');
+    elseif length(strindex(runname,"NZ_CCS1"))~=0  then
+        Emp_struct_chnge = csvRead('../data/Coal_labour/Downscaling/Econ_structural_change_NZ_CCS1.csv');
     elseif length(strindex(runname,"NDC"))~=0  then
-        Emp_struct_chnge = csvRead('../data/Coal_labour/Downscaling/Econ_structural_change_NDC.csv');
+        Emp_struct_chnge = csvRead('../data/Coal_labour/Downscaling/Econ_structural_change_NDC_CCS0.csv');
     elseif length(strindex(runname,"NZ"))~=0  then
-        Emp_struct_chnge = csvRead('../data/Coal_labour/Downscaling/Econ_structural_change_NZ.csv');
+        Emp_struct_chnge = csvRead('../data/Coal_labour/Downscaling/Econ_structural_change_NZ_CCS0.csv');
     else
         Emp_struct_chnge = csvRead('../data/Coal_labour/Downscaling/Econ_structural_change.csv');
     end
