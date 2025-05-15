@@ -123,6 +123,8 @@ def M1():
 
 #%% Main 2 - Subnational employment trajectories
 # ===========================================================================================================================
+
+
 def M2():
     Show_alternatives=False
     representation = 2
@@ -137,7 +139,6 @@ def M2():
     pf.save_figure(fig,'M2_Grid_employment_'+['','alternatives_'][Show_alternatives]+str(representation),'svg')
 
     pf.print_subnational_employment_results(T,Result_data)
-
 
 
 #%% Main 3 - Exposure of regions to coal transition
@@ -281,7 +282,7 @@ def SI10():
 # ===========================================================================================================================
 def SI11():
     fig = pf.boxplot_share_not_finding_demand(Result_data, T)
-    pf.save_figure(fig,'SI4_Boxplot_presentation','jpg',dpi=700)
+    pf.save_figure(fig,'SI11_Boxplot_presentation','svg',dpi=700)
 
 
 #%%

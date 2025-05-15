@@ -1340,12 +1340,12 @@ def Grid_Unemployment_Destruction(fig,axs,T,Result_data,ind_country):
 
 def grid_scale_treatment(region,ax,ax2,ind_country,remove_splin=False):
     if region == 'Shanxi':
-        ax2.set_ylim([-20,900])
+        ax2.set_ylim([-20,1100])
         if not remove_splin:
             ax2.spines['left'].set_color('red') 
             ax.tick_params(axis='y', colors='red')
     elif region =='Jharkhand':
-        ax2.set_ylim([-7,375])
+        ax2.set_ylim([-7,550])
         if not remove_splin:
             ax2.spines['left'].set_color('red') 
             ax.tick_params(axis='y', colors='red')
@@ -1368,8 +1368,8 @@ def regional_grid(representation):
         provincesIndia = {
             # 'Chhattisgarh':(0,0),
             'Jharkhand':(0,0),
-            'Odisha':(0,1),
-            'West Bengal':(0,2),
+            'Odisha':(0,2),
+            'West Bengal':(0,1),
         }
     grid_size = [[[8,6],[8,8]],
                  [[5,5],[3,5]],
@@ -1382,7 +1382,9 @@ def Grid_Employment_Destruction(fig,axs,T,Result_data,ind_country,U,Show_alterna
     fig_scale = fig_width/26
     Step = 5
     [ax.axis('off') for ax in axs.flatten()]
-    if not Show_alternatives:
+    if representation == 2:
+        axs[0,0].text(0.05,0.87,['a) China','b) India'][ind_country],transform=axs[0,0].transAxes, fontsize= 40*fig_scale, fontweight='bold')
+    elif not Show_alternatives:
         axs[0,0].text(0.05,0.8,['a)','b)'][ind_country],transform=axs[0,0].transAxes, fontsize= 40*fig_scale, fontweight='bold')
     regions = regional_grid(representation)[ind_country]
     grid_size = regional_grid(representation)[2][ind_country]
