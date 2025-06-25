@@ -146,16 +146,16 @@ def M3():
     fig = pf.plot_productivity_wedge(T,Result_data)
     pf.save_figure(fig,'M3_Job_cut_driver_wedges','svg')
 
-#%% Main 3 - Exposure of regions to coal transition
+#%% Main 4 - Exposure of regions to coal transition
 # ===========================================================================================================================
-def M3():
+def M4():
     fig = pf.exposure_scatter(T,Result_data,shade=True)
     pf.save_figure(fig,'M4_Exposure_scatter','svg')
 
 
-#%% Main 4 - Boxplot of share not finding per scenario
+#%% Main 5 - Boxplot of share not finding per scenario
 # ===========================================================================================================================
-def M4():
+def M5():
     fig = pf.boxplot_share_not_finding(Result_data,T)
     pf.save_figure(fig,'M5_Vulnerability_Boxplot','jpg',dpi=700)
 
@@ -310,6 +310,7 @@ if __name__ == "__main__":
         M2()
         M3()
         M4()
+        M5()
     if plot_extended:
         print('Plotting extended data figures')
         ED1()
