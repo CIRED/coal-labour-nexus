@@ -141,18 +141,23 @@ def M2():
     pf.print_subnational_employment_results(T,Result_data)
 
 
+#%% Main 3 - Drivers of job cuts
+def M3():
+    fig = pf.plot_productivity_wedge(T,Result_data)
+    pf.save_figure(fig,'M3_Job_cut_driver_wedges','svg')
+
 #%% Main 3 - Exposure of regions to coal transition
 # ===========================================================================================================================
 def M3():
     fig = pf.exposure_scatter(T,Result_data,shade=True)
-    pf.save_figure(fig,'M3_Exposure_scatter','svg')
+    pf.save_figure(fig,'M4_Exposure_scatter','svg')
 
 
 #%% Main 4 - Boxplot of share not finding per scenario
 # ===========================================================================================================================
 def M4():
     fig = pf.boxplot_share_not_finding(Result_data,T)
-    pf.save_figure(fig,'M4_Vulnerability_Boxplot','jpg',dpi=700)
+    pf.save_figure(fig,'M5_Vulnerability_Boxplot','jpg',dpi=700)
 
 #%% EXTENDED DATA =============================================================================
 # ===========================================================================================================================
@@ -181,10 +186,6 @@ def ED3():
     fig, data_save = pf.main_regions_destination_bars(provincesChina, provincesIndia, Result_data, T)
     pf.print_destination_results(data_save)
     pf.save_figure(fig,'ED3_Mobility_laid_off_workers','svg',dpi=600)
-
-#%% ED4 - Drivers of job cuts 
-# ===========================================================================================================================
-# This code is outdated : proper graph was not commited and needs to be redone
 
 
 

@@ -3117,3 +3117,144 @@ def plot_scenario_description(Imaclim_data, T, Step=5):
 
     fig.set_tight_layout('tight')
     return fig
+
+
+
+#%% Wedge 
+
+def plot_productivity_contribution(L,L0,T,ax,start,stop_date,step):
+    """"
+    Calculating and plotting the contribution of productivity increase to job destruction from 2020.
+    """
+    productivity_share = (L0-L)/L0[5]
+    ax2 = ax.twinx()
+    ax2.plot(T[start:stop_date:step],
+             productivity_share[start:stop_date:step],
+            color='k',
+            linestyle='--',
+            linewidth=0.7)
+
+    return ax2
+
+
+
+
+
+def wedge_legend(ax,fig):
+    alines = []
+    alines.append(ax.fill_between([],[],[],color=sns.color_palette('Set2')[1],alpha=0.7,label='Impact of production change'))
+    alines.append(ax.fill_between([],[],[],color=sns.color_palette('Set2')[2],alpha=0.7,label='Impact of productivity change occuring in the NPi trajectory'))
+    alines.append(ax.fill_between([],[],[],color=sns.color_palette('Set2')[3],alpha=0.7,label='Productivity decrease from NPi to mitigation scenarios'))
+    alines.append(ax.fill_between([],[],[],color=sns.color_palette('Set2')[4],alpha=0.7,label='Productivity increase from NPi to mitigation scenarios'))
+    alines.append(ax.plot([],[],color='k',label='Net destruction'))
+    alines.append(ax.plot([],[],color='k',linestyle=':',label='Baseline with no productivity growth'))
+    alines.append(ax.plot([],[],color='k',linestyle='--',label='Net contribution of productivity (right axis)'))
+
+
+
+    labels = [la.get_label() for la in alines[:4]]+[la[0].get_label() for la in alines[4:]]
+    handles = [label for label in alines[:4]]+[label[0] for label in alines[4:]]
+
+    fig.legend(handles=handles,
+            labels=labels,
+            loc='lower center',
+            ncol=2,
+            bbox_to_anchor=(0.5, -0.15),
+            fontsize=9,
+            frameon=False)
+    return fig
+
+
+def plot_productivity_wedge(T,Result_data,step=5,threshold_percentage=95):
+
+    Scenarios = [ 'NPI','NDC','NZ'] 
+    Regions   = ['China','India','Shanxi','Jharkhand','Inner Mongolia','Henan']
+
+    region_ylim = {
+        'China': [-7e2,3.5e3],
+        'India':[-7e2,3.5e3],
+        'Shanxi': [-2e2,1e3],
+        'Jharkhand': [-2e2,0.7e3],
+    }
+
+    end = 2080-2101
+    start = 2015-2101
+
+    fig, axs = plt.subplots(len(Regions),len(Scenarios),figsize=(20/2.54,12/2.54))
+
+    for ind_region, region in enumerate(Regions):
+        for ind_scenario, scenario in enumerate(Scenarios):
+            ax = axs[ind_region,ind_scenario]
+            
+            # Get trajectories
+            L_NPI = Result_data.loc[(Result_data.Scenario == 'NPI')&(Result_data['Downscaled Region'] == region)&(Result_data.Variable=='Employment|Coal|Downscaled'),[str(x) for x in T]].values[0].astype(float)*1e-3
+            L_NPI0= Result_data.loc[(Result_data.Scenario == 'NPI_PG0')&(Result_data['Downscaled Region'] == region)&(Result_data.Variable=='Employment|Coal|Downscaled'),[str(x) for x in T]].values[0].astype(float)*1e-3
+            L     = Result_data.loc[(Result_data.Scenario == scenario)&(Result_data['Downscaled Region'] == region)&(Result_data.Variable=='Employment|Coal|Downscaled'),[str(x) for x in T]].values[0].astype(float)*1e-3
+            L0    = Result_data.loc[(Result_data.Scenario == scenario+'_PG0')&(Result_data['Downscaled Region'] == region)&(Result_data.Variable=='Employment|Coal|Downscaled'),[str(x) for x in T]].values[0].astype(float)*1e-3
+
+            # Calculate the stop date of the wedges based on when coal labour "phase out" is achieved
+            threshold = (100-threshold_percentage)/100
+            if len(T[L<L[5]*threshold])>0:
+                stop_date = T[L<L[5]*threshold][0]-2101
+            else:
+                stop_date = 2080-2101
+
+            # Caluclate the wedges
+            productivityNPI = L_NPI0-L_NPI
+            production      = L_NPI0-L0
+            addiproductivity=  L_NPI-L_NPI0-L+L0
+            # ... Split positive and negative additional productivity in mitigation scenario wrt NPi
+            addiproductivity_positive = addiproductivity.copy()
+            addiproductivity_positive[addiproductivity_positive<0]=0
+            
+            addiproductivity_negative = addiproductivity.copy()
+            addiproductivity_negative[addiproductivity_negative>0]=0
+
+            # PLOT
+            ax.fill_between(T[start:stop_date:step],
+                            (L_NPI0)[start:stop_date:step],
+                            (L_NPI0-production)[start:stop_date:step],
+                            color=sns.color_palette('Set2')[1],alpha=0.7,edgecolor=None)
+            ax.fill_between(T[start:stop_date:step],
+                            (L_NPI0-production)[start:stop_date:step],
+                            (L_NPI0-production-productivityNPI)[start:stop_date:step],
+                            color=sns.color_palette('Set2')[2],alpha=0.7,edgecolor=None)
+            ax.fill_between(T[start:stop_date:step],
+                            L_NPI0[start:stop_date:step],
+                            (L_NPI0-addiproductivity_negative)[start:stop_date:step],
+                            color=sns.color_palette('Set2')[3],alpha=0.7,edgecolor=None)
+            ax.fill_between(T[start:stop_date:step],
+                            (L_NPI0-production-productivityNPI)[start:stop_date:step],
+                            (L_NPI0-production-productivityNPI-addiproductivity_positive)[start:stop_date:step],
+                            color=sns.color_palette('Set2')[4],alpha=0.7,edgecolor=None)
+            
+            ax.plot(T[start:end:step],L[start:end:step],color='k')
+            ax.plot(T[start:stop_date:step],L_NPI0[start:stop_date:step],color='k',linestyle=':',linewidth=0.75)
+            
+            ax2 = plot_productivity_contribution(L,L0,T,ax,start,stop_date,step)
+            
+            # Format 
+            if region in region_ylim.keys():
+                ax.set_ylim(region_ylim[region])
+            elif ind_scenario !=0: # If no ylim is specified force the entire row to have same lim as first column
+                ax.set_ylim(axs[ind_region,0].get_ylim())
+
+            ax.axhline(y=0,color='k')
+            ax.set_xlim([2015,2070])
+
+            ax2.set_ylim(ax.get_ylim()/ax.get_ylim()[1])
+
+            if scenario != "NZ":
+                ax2.set_yticklabels([])
+
+    # Format
+    [ax.set_yticklabels([]) for ax in axs[:,1:].flatten()]
+    [ax.set_xticklabels([]) for ax in axs[:-1,:].flatten()]
+
+    [ax.set_ylabel(x+'\n [thousand\n workers]',fontsize=6) for x, ax in zip(Regions,axs[:,0])]
+    [ax.set_title(scenario) for scenario, ax in zip(['NPi','NDC-LTT','1.5°C'],axs[0,:])]
+
+    fig = wedge_legend(ax,fig)
+
+    return fig
+
