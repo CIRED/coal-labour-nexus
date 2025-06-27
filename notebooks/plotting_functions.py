@@ -1222,12 +1222,22 @@ def monovariate_map(var,t0,T1,ax,cax,zlim,colormap,Result_data,scenario,Asia,nor
             # Calced_data.append(share_n_finding)
         elif var== 'Workforce':
             Calced_data = calc_workforce(Result_data,region,Calced_data,scenario) 
+        elif var == 'Employment|Coal|Downscaled':
+            Calced_data.append(Result_data.loc[
+                (Result_data['Downscaled Region']==region)&
+                (Result_data.Scenario==scenario)&
+                (Result_data.Variable==var),
+                str(t1)
+            ].values[0])
         else:
             # return 
             print('unknown')
 
-    Calced_data = pd.DataFrame(data=np.array([list(Regions), Calced_data]).transpose(),
-                        columns=['Region_Nam', 'Calced_data'])
+
+    Calced_data =pd.DataFrame({
+        'Region_Nam': list(Regions), 
+        'Calced_data': Calced_data,
+    })
 
     Asia_Data = Asia.merge(Calced_data, on='Region_Nam')
 
@@ -2073,11 +2083,11 @@ def boxplot_share_not_finding(Result_data,T):
                     # ax = axs[ind_var]
 
                     if ind_var==0:
-                        ax.arrow(0.8,0.5,0.1,0,head_width=0.03,color='k')
-                        ax.text(0.85,0.34,"increased\n vulnerability",fontsize=4,fontweight='normal')
+                        ax.arrow(0.8,0.5,0.1,0,head_width=0.04,color='k')
+                        ax.text(0.82,0.25,"increased\n vulnerability",fontsize=5,fontweight='normal')
                     else:
-                        ax.arrow(0.2,0.5,-0.1,0,head_width=0.03,color='k')
-                        ax.text(0.11,0.34,"increased\n vulnerability",fontsize=4,fontweight='normal')
+                        ax.arrow(0.2,0.5,-0.1,0,head_width=0.04,color='k')
+                        ax.text(0.11,0.25,"increased\n vulnerability",fontsize=5,fontweight='normal')
 
 
                     bxplot=ax.boxplot(var,
@@ -2142,7 +2152,7 @@ def boxplot_share_not_finding(Result_data,T):
         scenario = Scenarios[ind_scenario]
         alines.append(ax.scatter([],[],
                                 color=defining_waysout_colour_scheme()[scenario],
-                                label=['NPi','NDC-LTT','NDC-LTT w/CCS','1.5°C','1.5°C w/CCS'][ind_scenario]))
+                                label=['NPi','NDC-LTT','NDC-LTT w/CCS','1.5°C','1.5°C w/CCS'][::-1][ind_scenario]))
         
     alines.append(ax.scatter([],[],s=0,label='Number of Workers'))
     for size in [5000,50000,500000]:
@@ -2510,6 +2520,8 @@ def fix_xticks(ax,indices):
     ax.set_xticks(tick_positions)
     ax.set_xticklabels(tick_labels, rotation=45)  # Rotate for readability
     return ax
+
+
 
 def plot_drivers_destruction(Result_data):
     # Plotting the drivers of destruction in China and India
