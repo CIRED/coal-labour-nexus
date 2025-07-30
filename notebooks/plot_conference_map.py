@@ -1,13 +1,13 @@
 # ===========================================================================================================================
 # ===========================================================================================================================  
 # Regional employment vulnerability to rapid coal transition in China and India, an integrated and downscaled assessment
-#                                                    Additional graphs
+#                                                    Conference graphs
 # ===========================================================================================================================
 # ===========================================================================================================================
 """
 
 This file is a companion to `Plots.ipynb` aimed at plotting additional graphs 
-not necessarily meant to be published but still useful for scenario analysis.
+not meant to be published but useful for presentation with bigger format and maps to help audience identify key regions.
 
 """
 
@@ -111,9 +111,7 @@ GEM = GEM.dropna(subset=['Longitude', 'Latitude'])
 GEM['geometry'] = GEM.apply(lambda row: Point(row['Longitude'], row['Latitude']), axis=1)
 GEM = gpd.GeoDataFrame(GEM, geometry=GEM.geometry, crs="EPSG:4326")
 
-#%%
 GEM['Capacity (Mtpa)'] = pd.to_numeric(GEM['Capacity (Mtpa)'], errors='coerce')
-
 
 #%%
 
@@ -144,16 +142,16 @@ def format_side_axis(ax,region,remove_splin=True):
         ax.spines['top'].set_visible(False) 
         ax.spines['right'].set_visible(False)
     
+    lims = {
+        'China': [-200,4000],
+        'Shanxi': [-50, 1260],
+        'India': [-150,1900],
+        'Jharkhand': [-40, 750]
+    }
     if region in ['West Bengal', 'Odisha','Shandong','Inner Mongolia']:
         ax.set_ylim(-50,325)
-    else:
-        lims = {
-            'China': [-200,4000],
-            'Shanxi': [-50, 1260],
-            'India': [-150,1900],
-            'Jharkhand': [-40, 750]
-        }[region]
-        ax.set_ylim(lims)
+    elif region in lims.keys():
+        ax.set_ylim(lims[region])
 
     # Make remaining spines thicker
     ax.spines['left'].set_linewidth(3)
@@ -163,14 +161,14 @@ def format_side_axis(ax,region,remove_splin=True):
     ax.tick_params(axis='both', which='both', labelsize=24)
     ax.set_ylabel('[Thousand workers]',fontsize=24)
     
-    ax.text(0.85,0.87,region,transform=ax.transAxes, fontsize= 40, fontweight='bold', ha='right')
+    ax.text(0.95,0.87,region,transform=ax.transAxes, fontsize= 40, fontweight='bold', ha='right')
     return ax
 
 
-def plot_labour_wedges(ax,region,scenario,threshold_percentage=99):
+def plot_labour_wedges(ax,region,scenario,threshold_percentage=95,step=5):
     T = np.array(range(2015,2101))
     start = 2015-2015
-    step = 5
+    
     end = 2070-2015
     # Get trajectories
     L_NPI = Result_data.loc[(Result_data.Scenario == 'NPI')&(Result_data['Downscaled Region'] == region)&(Result_data.Variable=='Employment|Coal|Downscaled'),[str(x) for x in T]].values[0].astype(float)*1e-3
@@ -251,6 +249,56 @@ def plot_labour_graph(ax,region,Scenarios):
     return ax
 
 
+def plot_productivity_graph(ax,region,Scenarios,normalise=True,remove_splin=True):
+    country = {
+        'CHN':'China',
+        'IND':'India'
+    }[Result_data[Result_data['Downscaled Region']==region].Region.values[0]]
+    for scenario in Scenarios:
+        t = range(2015,2070,5)
+
+        
+        y = Result_data.loc[
+            (Result_data.Scenario==scenario)&
+            (Result_data.Variable=='Labour Productivity|Coal|Downscaled')&
+            (Result_data['Downscaled Region']==region),
+            [str(x) for x in t]
+        ].values[0]*1e3
+
+        if normalise:
+            denom = Result_data.loc[
+                (Result_data.Scenario==scenario)&
+                (Result_data.Variable=='Labour Productivity|Coal|Downscaled')&
+                (Result_data['Downscaled Region']==country),
+                str(t[0])
+            ].values[0]*1e3
+            y = y/denom
+
+        ax.plot(t,y,
+                color = defining_waysout_colour_scheme()[scenario],
+                linewidth = 5)
+
+    
+    ax.axhline(y=0,color='k',linewidth=2,zorder=-1) 
+    # Make remaining spines thicker
+    ax.spines['left'].set_linewidth(3)
+    ax.spines['bottom'].set_linewidth(3)
+    if remove_splin:
+        ax.spines['top'].set_visible(False) 
+        ax.spines['right'].set_visible(False)
+
+    # Set tick label size
+    ax.tick_params(axis='both', which='both', labelsize=24)
+    ax.set_ylabel('[EJ/Yr/Thousand workers]',fontsize=24)
+    # ax.set_ylim([-0.01,0.07527])
+
+    if normalise:
+        ax.set_ylim([0,11])
+        ax.axhline(y=1,color='k',linewidth=1,)
+    
+    ax.text(0.85,0.87,region,transform=ax.transAxes, fontsize= 40, fontweight='bold', ha='right')
+    return ax
+
 
 
 def map_employment(ax,var,t1,scenario,zlim,colormap,highlight_regions,crs,norm):
@@ -305,7 +353,8 @@ def map_employment(ax,var,t1,scenario,zlim,colormap,highlight_regions,crs,norm):
     highlighted = Asia_Data[Asia_Data['Region_Nam'].isin(highlight_regions)].to_crs(crs_proj4)
     others = Asia_Data[~Asia_Data['Region_Nam'].isin(highlight_regions)].to_crs(crs_proj4)
     # Plot all regions with thin grey borders
-    others.plot(ax=ax, color='none', edgecolor='grey', linewidth=0.5)
+    others.plot(ax=ax, color='none', edgecolor='grey', linewidth=0.5,
+                        rasterized=True)
 
     # Plot the 3 highlighted regions with thick black borders
 
@@ -323,14 +372,16 @@ def map_employment(ax,var,t1,scenario,zlim,colormap,highlight_regions,crs,norm):
         transform=crs,                  # projection matches map
         color='dimgrey',
         s=GEM_proj['Capacity (Mtpa)']*0.75,  # scale size (adjust multiplier as needed)
-        alpha=0.7
+        alpha=0.7,
+        rasterized=True
     )
     
 
     for ind, buffer_size in enumerate([-4,-2,0]):
         region_buffer = highlighted.buffer(buffer_size*1e4)  # adjust as needed
         buffer_gdf = gpd.GeoDataFrame(geometry=region_buffer, crs=crs_proj4)
-        ax.add_geometries(buffer_gdf.geometry, crs=crs, facecolor='none',  edgecolor='black',linewidth=(ind+1)/4)
+        ax.add_geometries(buffer_gdf.geometry, crs=crs, facecolor='none',  edgecolor='black',linewidth=(ind+1)/4,
+                        rasterized=True)
 
 
     Coordinates = {
@@ -379,7 +430,7 @@ color_dict = {
 }
 
 
-def plot_mines_capacity(region,ax,color_dict=color_dict):
+def plot_mines_capacity(region,ax,color_dict=color_dict,dropna=True,xlabel=True):
 
     status = ['Operating', 'Proposed']
     types = ['Underground', 'Surface', 'Underground & Surface']
@@ -398,7 +449,10 @@ def plot_mines_capacity(region,ax,color_dict=color_dict):
     # Clean and bin the R/P ratio
     local_mines['Reserve to Production Ratio (R/P)'] = 5 * (pd.to_numeric(local_mines['Reserve to Production Ratio (R/P)'], errors='coerce') // 5)
     local_mines.loc[local_mines['Reserve to Production Ratio (R/P)'] > 20, 'Reserve to Production Ratio (R/P)'] = '25+'
-    local_mines['Reserve to Production Ratio (R/P)'] = local_mines['Reserve to Production Ratio (R/P)'].fillna('Unknown')
+    if dropna:
+        local_mines = local_mines.dropna(subset=['Reserve to Production Ratio (R/P)'])
+    else:
+        local_mines['Reserve to Production Ratio (R/P)'] = local_mines['Reserve to Production Ratio (R/P)'].fillna('Unknown')
     local_mines.loc[local_mines.Status=='Proposed','Reserve to Production Ratio (R/P)' ]='Proposed'
 
     # Group and pivot
@@ -409,6 +463,24 @@ def plot_mines_capacity(region,ax,color_dict=color_dict):
         .reset_index()
         .pivot(index='Mine Type', columns=['Status', 'Reserve to Production Ratio (R/P)'], values='Capacity (Mtpa)')
     )
+    
+    def rp_sort_key(rp):
+        try:
+            # Try to convert to float
+            return float(rp)
+        except ValueError:
+            # Place '25+' just after 25, 'unknown' last
+            if rp == '25+':
+                return 25.1
+            elif rp == 'unknown':
+                return float('inf')
+            else:
+                return float('inf')  # Fallback for any unexpected strings
+
+    
+    local_mines = local_mines[sorted(local_mines.columns, key=lambda col: col[0])]
+    local_mines = local_mines[sorted(local_mines.columns, key=lambda col: rp_sort_key(col[1]))]
+
 
     # Reindex to include all desired types and keep order
     local_mines = local_mines.reindex(types)
@@ -432,10 +504,13 @@ def plot_mines_capacity(region,ax,color_dict=color_dict):
     ax.tick_params(axis='both', which='both', labelsize=16)
     ax.set_ylabel('Capacity\n[Mtpa]',fontsize=20)
     ax.set_xlabel('')
+    if not xlabel:
+        ax.set_xticklabels('')
+
     return ax
 
 #%%
-def plot_main(plot_type,country,scenario='NPI',ind='0',plot_capacity=True,savefig=True):
+def plot_main(plot_type,country,scenario='NPI',ind='0',plot_capacity=True,savefig=True,show_uncertainty=False):
     Scenarios = ['NDC_CCS1','NZ_CCS1','NPI','NDC','NZ']
     Scenarios_names = ['NDC-LTT w/CCS','1.5°C w/CCS','NPi','NDC-LTT','1.5°C']
 
@@ -505,26 +580,39 @@ def plot_main(plot_type,country,scenario='NPI',ind='0',plot_capacity=True,savefi
             axis = plot_labour_graph(axis,region,Scenarios)
         elif plot_type == 'Wedge':
             axis = plot_labour_wedges(axis,region,scenario)
+        if plot_type == 'Productivity':
+            axis = plot_productivity_graph(axis,region,Scenarios)
 
     if plot_capacity:
         c_axes = [c_axis1,c_axis2,c_axis3,c_axis4]
-        for axis, region in zip(c_axes,side_reg):
-            axis = plot_mines_capacity(region,axis)
+        xlabels = [False,True,False,True]
+        for axis, region,xlabel in zip(c_axes,side_reg,xlabels):
+            axis = plot_mines_capacity(region,axis,xlabel=xlabel)
 
+    if show_uncertainty:
+        bound_2023 = {'China':[1.87e3,2.80e3],
+                      'India':[0.47e3,1e3]}[country]
+        r_axis1.plot([2020,2020],bound_2023,color='grey',alpha=0.5,linewidth=10,zorder=-1)
 
     if savefig:
-        fig.savefig(f'figures\P{ind}_Map_{plot_type}_{country}_{scenario}.svg', bbox_inches='tight')
+        fig.savefig(f'figures\P{ind}_Map_{plot_type}_{country}_{scenario}.svg', bbox_inches='tight',dpi=150)
 
     return ax
 
-plot_main('Line','China',ind='1')
-plot_main('Line','India',ind='2')
 
-plot_main('Wedge','China',scenario='NPI',ind='3')
-plot_main('Wedge','India',scenario='NPI',ind='4')
+#%%
 
-plot_main('Wedge','China',scenario='NZ',ind='5')
-plot_main('Wedge','India',scenario='NZ',ind='6')
-plot_main('Wedge','India',scenario='NZ_CCS1',ind='7')
+if __name__ == "__main__":
+
+    plot_main('Line','China',ind='1')
+    plot_main('Line','India',ind='2')
+
+    plot_main('Wedge','China',scenario='NPI',ind='3')
+    plot_main('Wedge','India',scenario='NPI',ind='4')
+
+    plot_main('Wedge','China',scenario='NZ',ind='5')
+    plot_main('Wedge','India',scenario='NZ',ind='6')
+    plot_main('Wedge','India',scenario='NZ_CCS1',ind='7')
+
 
 # %%

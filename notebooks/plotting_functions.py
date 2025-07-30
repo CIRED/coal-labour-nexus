@@ -29,7 +29,7 @@ def standard_figure_size():
 
 #=========================================================================================================
 # Save figure
-def save_figure(fig,name,format,dpi=400):
+def save_figure(fig,name,format,dpi=100):
     figure_path = os.path.join('figures')
 
     if not os.path.exists(figure_path):
@@ -156,7 +156,7 @@ def get_cumulated_array(data, **kwargs):
 #==================================================================================================================================================================================================================
 
 
-def plot_national_employment_trajectories(T,Result_data,Historical_data,Step=5,Show_alternatives=False,Show_supply=False,Show_uncertainty=False):
+def plot_national_employment_trajectories(T,Result_data,Historical_data,Step=5,Show_alternatives=False,Show_supply=False,Show_uncertainty=False,hide_spline=False):
     Colors = defining_waysout_colour_scheme()
     Countries = ['China','India']
     Regions = [
@@ -192,7 +192,11 @@ def plot_national_employment_trajectories(T,Result_data,Historical_data,Step=5,S
     Scenarios = [x + y for x in Scen_type for y in Alt_type]
 
     Variable = "Employment|Coal|Downscaled"
-    fig, axs = plt.subplots(1, 2, figsize=standard_figure_size())
+    if hide_spline:
+        figsize = (25/2.54,9/2.54)
+    else:
+        figsize = standard_figure_size()
+    fig, axs = plt.subplots(1, 2, figsize=figsize)
     for c_index, country in enumerate(Countries):
         
         ax = axs[c_index]
@@ -237,7 +241,7 @@ def plot_national_employment_trajectories(T,Result_data,Historical_data,Step=5,S
                 S_maxy.append(maxy)
                 S_miny.append(miny)
 
-            if (Scenarios[j] in  ['NPI','NDC','NZ','NDC_CCS1','NZ_CCS1']) & ~(('_CCS1' in Scenarios[j])&(country=='China')):
+            if (Scenarios[j] in  ['NPI','NDC','NZ','NDC_CCS1','NZ_CCS1']) & ~(('_CCS1' in Scenarios[j])&(country=='China')):               
                 if COAL_emp.values[0][6:][
                         T < 2070][-1] < COAL_emp.values[0][6:][5] / 2:
                     
@@ -259,8 +263,7 @@ def plot_national_employment_trajectories(T,Result_data,Historical_data,Step=5,S
                         # Outputing some results for text
                         if Scenarios[j] in ['NPI','NDC','NZ']:
                             print(f'In {country} under {Scenarios[j]}, 95% of jobs disappear by {t95} \n')
-                        
-
+                
         Scen_y = pd.DataFrame(Scen_y, index=Scenarios)
         S_maxy = pd.DataFrame(S_maxy, index=Scen_type)
         S_miny = pd.DataFrame(S_miny, index=Scen_type)
@@ -304,7 +307,10 @@ def plot_national_employment_trajectories(T,Result_data,Historical_data,Step=5,S
                         ax.text(2071+1+2*ind_scen_type, min(y2050)+0.1, '2050', fontsize=5, color='k',rotation=45,ha='right',va='top')
                         
         # Formatting axes
-        ax.set_title(country)
+        if hide_spline:
+            ax.text(0.94,0.94,country, transform=ax.transAxes, fontsize= 20, fontweight='bold',  ha='right')
+        else:
+            ax.set_title(country)
         ax.set_ylabel('Million workers')
         ax.set_ylim([-0.25, 5])
         ax.axvline(x=2020, color='k', linestyle='--', linewidth=0.8)
@@ -384,7 +390,15 @@ def plot_national_employment_trajectories(T,Result_data,Historical_data,Step=5,S
                                 alpha = 0.5,
                                 label='Calibration uncertainty'))
 
-    [ax.text(0.02,0.96, label, transform=ax.transAxes, fontsize= 11, fontweight='bold', va='top', ha='left') for ax, label in zip(axs.flatten(),['a)','b)'])]
+    if hide_spline:
+        for ax in axs:
+            ax.spines['left'].set_linewidth(2)
+            ax.spines['bottom'].set_linewidth(2)
+            ax.spines['top'].set_visible(False) 
+            ax.spines['right'].set_visible(False)
+    else:
+    
+        [ax.text(0.02,0.96, label, transform=ax.transAxes, fontsize= 11, fontweight='bold', va='top', ha='left') for ax, label in zip(axs.flatten(),['a)','b)'])]
 
     #plot legend
     labels = [la.get_label() for la in alines]
@@ -869,7 +883,7 @@ def get_ylim(ax,var,Region):
     return [ymin,ymax]
 
 
-def add_coaloutput_comparisons(axs,regions_ar6,categories):
+def add_coaloutput_comparisons(axs,regions_ar6,categories,linewidth = 1):
     
     # Loading data
 
@@ -883,10 +897,10 @@ def add_coaloutput_comparisons(axs,regions_ar6,categories):
     for i_r, reg in enumerate(regions_ar6):
         for i_c, cat in enumerate(categories):
             ax = axs[i_r][i_c]
-            ax.plot(Q_WEB['t'], [float(x) for x in Q_WEB[['World','China','India'][i_r]]], color='k', alpha=1, linestyle='-', linewidth=1.2)
+            ax.plot(Q_WEB['t'], [float(x) for x in Q_WEB[['World','China','India'][i_r]]], color='k', alpha=1, linestyle='-', linewidth = linewidth)
 
             if i_r != 1:
-                ax.plot(SEI['t'][1:], [float(x) for x in SEI[['GPP','CHN_GPP','IND_GPP'][i_r]][1:]], color='red', alpha=1, linestyle='-', linewidth=1.2)
+                ax.plot(SEI['t'][1:], [float(x) for x in SEI[['GPP','CHN_GPP','IND_GPP'][i_r]][1:]], color='sienna', alpha=1, linestyle='-', linewidth = linewidth)
 
 
 def add_emissions_comparisons(axs,regions_ar6,categories):
@@ -2015,7 +2029,7 @@ def exposure_scatter(T,Result_data,shade=False):
     return fig
 #%% Main 4 - Boxplot of share not finding per scenario
 
-def boxplot_share_not_finding(Result_data,T):
+def boxplot_share_not_finding(Result_data,T,t0s = [2020, 2020],t1s = [2030,2050]):
     all_region_names = False
 
     region_indices = def_region_indices()
@@ -2039,8 +2053,8 @@ def boxplot_share_not_finding(Result_data,T):
         'Chhattisgarh':(0.1,1)}
 
 
-    t0s = [2020, 2020]
-    t1s = [2030,2050] 
+    
+     
     fig, axs = plt.subplots(2,2,figsize=(16/2.54,9/2.54))
 
 
@@ -3079,7 +3093,10 @@ def boxplot_share_not_finding_demand(Result_data, T):
 # ===========================================================================================================================
 
 
-def plot_scenario_description(Imaclim_data, T, Step=5):
+def plot_scenario_description(Imaclim_data, T, Step=5, hide_spine = True, linewidth=2.5):    
+    
+    edgar_data = pd.read_csv('data/EDGAR_CO2_emissions.csv',index_col=0)
+    
     Colors = defining_waysout_colour_scheme()
     Countries = ['World','CHN','IND']
     Scenarios = ['WO-15C-ElecIndus-CCS0', 'WO-NDCLTT-ElecIndus-CCS0','WO-NPi-ElecIndus-CCS0',
@@ -3090,7 +3107,7 @@ def plot_scenario_description(Imaclim_data, T, Step=5):
     Variables = ['Emissions|CO2|Energy and Industrial Processes',
                 'Resource|Extraction|Coal',]
 
-    fig, axs = plt.subplots(len(Variables),len(Countries),figsize=standard_figure_size())
+    fig, axs = plt.subplots(len(Variables),len(Countries),figsize=(9,3.54))
 
     for ind_country, country in enumerate(Countries):
         for ind_var, variable in enumerate(Variables):
@@ -3103,19 +3120,31 @@ def plot_scenario_description(Imaclim_data, T, Step=5):
                                 (Imaclim_data.Region   == country)].values[0][5:]
                 
                 ax.axhline(y=0,color='k',linewidth=0.75)
-                alines.append(ax.plot(T[0:-1:Step],y[0:-1:Step],label=Scenarios_names[ind_scen],color=Colors[scenario])[0])
-
+                alines.append(ax.plot(T[0:-1:Step],y[0:-1:Step],label=Scenarios_names[ind_scen],color=Colors[scenario],
+                                      linewidth = linewidth)[0])
+        axs[0,ind_country].plot(range(2005,2024),edgar_data.loc[country,[str(x) for x in range(2005,2024)]].values*1e-3,
+                label='Historical data',
+                color='k',
+                linewidth = linewidth,
+                zorder=-1)
+        
+        ax, ax2=double_axis(axs[1,ind_country], country)
+        ax2.spines['top'].set_visible(False)
+        ax2.spines['right'].set_position(('outward', 10))
+        ax2.spines['right'].set_linewidth(1.1)
+        if ind_country == 2:
+            ax2.set_ylabel('Mt',fontsize=10)
             
 
-    add_coaloutput_comparisons([[axs[1,0]],[axs[1,1]],[axs[1,2]]],Countries,[0])
+    add_coaloutput_comparisons([[axs[1,0]],[axs[1,1]],[axs[1,2]]],Countries,[0],linewidth = linewidth)
 
     [ax.set_xticks([]) for ax in axs[:-1,:].flatten()]
     [ax.set_ylabel(unit) for ax, unit in zip(axs[:,0],['Emissions\n MtCO2/yr','Coal extraction\n EJ/yr','Power from\n coal\n EJ/yr'])]
     [ax.set_title(country) for ax, country in zip(axs[0,:],['World','China','India'])]
     [ax.set_xlim([2005,2100]) for ax in axs.flatten()]
 
-    alines.append(ax.plot([],[],color='k',label='Historical data')[0])
-    alines.append(ax.plot([],[],color='red',linestyle='--',label='Planned production')[0])
+    alines.append(ax.plot([],[],color='k',label='Historical data',linewidth = linewidth)[0])
+    alines.append(ax.plot([],[],color='sienna',linestyle='-',label='Planned production',linewidth = linewidth)[0])
 
     labels = [la.get_label() for la in alines]
     handles = [label for label in alines]
@@ -3128,6 +3157,14 @@ def plot_scenario_description(Imaclim_data, T, Step=5):
             frameon=False)
 
     fig.set_tight_layout('tight')
+
+    if hide_spine:
+        for ax in axs.flatten():
+            ax.spines['top'].set_visible(False)
+            ax.spines['right'].set_visible(False)
+            ax.spines['left'].set_linewidth(1.5)
+            ax.spines['bottom'].set_linewidth(1.5)
+        
     return fig
 
 
@@ -3139,12 +3176,14 @@ def plot_productivity_contribution(L,L0,T,ax,start,stop_date,step):
     Calculating and plotting the contribution of productivity increase to job destruction from 2020.
     """
     productivity_share = (L0-L)/L0[5]
+    print(f' ... Productivity share 2040 {productivity_share[25]}')
     ax2 = ax.twinx()
     ax2.plot(T[start:stop_date:step],
              productivity_share[start:stop_date:step],
             color='k',
             linestyle='--',
             linewidth=0.7)
+    
 
     return ax2
 
@@ -3156,8 +3195,8 @@ def wedge_legend(ax,fig):
     alines = []
     alines.append(ax.fill_between([],[],[],color=sns.color_palette('Set2')[1],alpha=0.7,label='Impact of production change'))
     alines.append(ax.fill_between([],[],[],color=sns.color_palette('Set2')[2],alpha=0.7,label='Impact of productivity change occuring in the NPi trajectory'))
-    alines.append(ax.fill_between([],[],[],color=sns.color_palette('Set2')[3],alpha=0.7,label='Productivity decrease from NPi to mitigation scenarios'))
-    alines.append(ax.fill_between([],[],[],color=sns.color_palette('Set2')[4],alpha=0.7,label='Productivity increase from NPi to mitigation scenarios'))
+    alines.append(ax.fill_between([],[],[],color=sns.color_palette('Set2')[3],alpha=0.7,label='Reduced productivity-led cuts'))
+    alines.append(ax.fill_between([],[],[],color=sns.color_palette('Set2')[4],alpha=0.7,label='Additional productivity-led cuts'))
     alines.append(ax.plot([],[],color='k',label='Net destruction'))
     alines.append(ax.plot([],[],color='k',linestyle=':',label='Baseline with no productivity growth'))
     alines.append(ax.plot([],[],color='k',linestyle='--',label='Net contribution of productivity (right axis)'))
@@ -3242,7 +3281,7 @@ def plot_productivity_wedge(T,Result_data,step=5,threshold_percentage=95):
             
             ax.plot(T[start:end:step],L[start:end:step],color='k')
             ax.plot(T[start:stop_date:step],L_NPI0[start:stop_date:step],color='k',linestyle=':',linewidth=0.75)
-            
+            print(f'{region}  {scenario}')
             ax2 = plot_productivity_contribution(L,L0,T,ax,start,stop_date,step)
             
             # Format 
@@ -3258,6 +3297,7 @@ def plot_productivity_wedge(T,Result_data,step=5,threshold_percentage=95):
 
             if scenario != "NZ":
                 ax2.set_yticklabels([])
+            ax2.axhline(y=0.5,color='k',linewidth=0.5,linestyle=':')
 
     # Format
     [ax.set_yticklabels([]) for ax in axs[:,1:].flatten()]

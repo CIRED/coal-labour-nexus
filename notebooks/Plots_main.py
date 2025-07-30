@@ -119,7 +119,7 @@ def M1():
     Show_alternatives = False
     Show_supply = False
     fig = pf.plot_national_employment_trajectories(T,Result_data,Historical_data,Step,Show_alternatives,Show_supply,Show_uncertainty)
-    pf.save_figure(fig,'M1_employment_trajectories','svg')
+    pf.save_figure(fig,'M1_employment_trajectories','png')
 
 #%% Main 2 - Subnational employment trajectories
 # ===========================================================================================================================
@@ -136,7 +136,7 @@ def M2():
     fig=pf.Grid_Employment_Destruction(fig,axs[:grid_size_chn[0],:],T,Result_data,0,False,Show_alternatives=Show_alternatives,grid_scale_same=True,representation=representation,remove_splin=True)
     fig=pf.Grid_Employment_Destruction(fig,axs[grid_size_chn[0]:,:],T,Result_data,1,False,Show_alternatives=Show_alternatives,grid_scale_same=True,representation=representation,remove_splin=True)
         
-    pf.save_figure(fig,'M2_Grid_employment_'+['','alternatives_'][Show_alternatives]+str(representation),'svg')
+    pf.save_figure(fig,'M2_Grid_employment_'+['','alternatives_'][Show_alternatives]+str(representation),'png')
 
     pf.print_subnational_employment_results(T,Result_data)
 
@@ -144,13 +144,12 @@ def M2():
 #%% Main 3 - Drivers of job cuts
 def M3():
     fig = pf.plot_productivity_wedge(T,Result_data)
-    pf.save_figure(fig,'M3_Job_cut_driver_wedges','svg')
-
+    pf.save_figure(fig,'M3_Job_cut_driver_wedges','png')
 #%% Main 4 - Exposure of regions to coal transition
 # ===========================================================================================================================
 def M4():
     fig = pf.exposure_scatter(T,Result_data,shade=True)
-    pf.save_figure(fig,'M4_Exposure_scatter','svg')
+    pf.save_figure(fig,'M4_Exposure_scatter','png')
 
 
 #%% Main 5 - Boxplot of share not finding per scenario
@@ -176,7 +175,7 @@ def ED1():
 # ===========================================================================================================================
 def ED2():
     fig = pf.Stacked_decomposition_coal_demand(Imaclim_data, T, Result_data, mtoe2ej)
-    pf.save_figure(fig,'ED2_Use_primary_energy','svg')
+    pf.save_figure(fig,'ED2_Use_primary_energy','png')
     
 
 
@@ -185,7 +184,7 @@ def ED2():
 def ED3():
     fig, data_save = pf.main_regions_destination_bars(provincesChina, provincesIndia, Result_data, T)
     pf.print_destination_results(data_save)
-    pf.save_figure(fig,'ED3_Mobility_laid_off_workers','svg',dpi=600)
+    pf.save_figure(fig,'ED3_Mobility_laid_off_workers','png',dpi=600)
 
 
 
@@ -202,7 +201,7 @@ def ED5():
     fig=pf.Grid_Employment_Destruction(fig,axs[:grid_size_chn[0],:],T,Result_data,0,False,Show_alternatives=Show_alternatives,grid_scale_same=True,representation=representation)
     fig=pf.Grid_Employment_Destruction(fig,axs[grid_size_chn[0]:,:],T,Result_data,1,False,Show_alternatives=Show_alternatives,grid_scale_same=True,representation=representation)
         
-    pf.save_figure(fig,'ED5_Grid_employment_'+['','alternatives_'][Show_alternatives]+str(representation),'svg')
+    pf.save_figure(fig,'ED5_Grid_employment_'+['','alternatives_'][Show_alternatives]+str(representation),'png')
 
 
 
@@ -219,13 +218,13 @@ def SI3():
     Show_alternatives = False
     Show_supply = False
     fig = pf.plot_national_employment_trajectories(T,Result_data,Historical_data,Step,Show_alternatives,Show_supply,Show_uncertainty)
-    pf.save_figure(fig,'SI3_employment_trajectories_calibration_uncertainty','svg',dpi=600)
+    pf.save_figure(fig,'SI3_employment_trajectories_calibration_uncertainty','png',dpi=600)
 
 #%% SI4 - Labour sectoral mobility: calibration uncertainty
 # ===========================================================================================================================
 def SI4():
     fig, data_save = pf.bar_calibration(Result_data, T, provincesChina, provincesIndia)
-    pf.save_figure(fig,'SI4_Mobility_calibration_uncertainty','svg')
+    pf.save_figure(fig,'SI4_Mobility_calibration_uncertainty','png')
 
 
 
@@ -234,7 +233,7 @@ def SI4():
 def SI5():
     fig, data_save = pf.bar_retirement_age(Result_data, T, provincesChina, provincesIndia)
     pf.print_destination_results_retirement(data_save,t1=2050)
-    pf.save_figure(fig,'SI5_Mobility_retirement_age_sensitivity','svg')
+    pf.save_figure(fig,'SI5_Mobility_retirement_age_sensitivity','png')
     
 
 #%% SI6 - Employment trajectories: productivity growth sensitivity
@@ -245,14 +244,14 @@ def SI6():
     Show_alternatives = True
     Show_supply = False
     fig = pf.plot_national_employment_trajectories(T,Result_data,Historical_data,Step,Show_alternatives,Show_supply,Show_uncertainty)
-    pf.save_figure(fig,'SI6_employment_productivity_sensitivity','svg',dpi=600)
+    pf.save_figure(fig,'SI6_employment_productivity_sensitivity','png',dpi=600)
 
 
 #%% SI7 - Labour sectoral mobility: productivity growth sensitivity
 # ===========================================================================================================================
 def SI7():
     fig, data_save = pf.bar_productivity(Result_data, T, provincesChina, provincesIndia)
-    pf.save_figure(fig,'SI7_Mobility_productivity_sensitivity','svg')
+    pf.save_figure(fig,'SI7_Mobility_productivity_sensitivity','png')
 
 #%% SI9 - National employment trajectories: supply vs demand-driven sensitivity
 # ===========================================================================================================================
@@ -262,7 +261,7 @@ def SI9():
     Show_alternatives = False
     Show_supply = True
     fig = pf.plot_national_employment_trajectories(T,Result_data,Historical_data,Step,Show_alternatives,Show_supply,Show_uncertainty)
-    pf.save_figure(fig,'SI9_employment_trajectories_demanddrivenscenarios','svg',dpi=600)
+    pf.save_figure(fig,'SI9_employment_trajectories_demanddrivenscenarios','png',dpi=600)
 
 #%% SI10 - Subnational employment trajectories: supply vs demand-driven sensitivity
 # ===========================================================================================================================
@@ -277,13 +276,13 @@ def SI10():
     fig, axs = plt.subplots(grid_size[0],grid_size[1],figsize=(26,15))
 
     pf.Grid_Employment_Destruction(fig,axs,T,Result_data,ind_country,False,Show_alternatives=Show_alternatives,grid_scale_same=False,representation=representation)
-    pf.save_figure(fig,'S10_Grid_employment_'+['','alternatives_'][Show_alternatives]+country+str(representation),'svg')
+    pf.save_figure(fig,'S10_Grid_employment_'+['','alternatives_'][Show_alternatives]+country+str(representation),'png')
 
 #%% SI11 - Vulnerability of regions to coal transition: supply vs demand-driven sensitivity
 # ===========================================================================================================================
 def SI11():
     fig = pf.boxplot_share_not_finding_demand(Result_data, T)
-    pf.save_figure(fig,'SI11_Boxplot_presentation','svg',dpi=700)
+    pf.save_figure(fig,'SI11_Boxplot_presentation','png',dpi=700)
 
 
 #%%
@@ -296,6 +295,17 @@ def SI11():
 def P1():
     fig = pf.plot_scenario_description(Imaclim_data, T)
     pf.save_figure(fig,'P0_scenario','svg',dpi=600)
+
+#%% P2 - Employment trajectories: productivity growth sensitivity
+
+def P2():
+    Step = 5
+    Show_uncertainty = False
+    Show_alternatives = False
+    Show_supply = False
+    fig = pf.plot_national_employment_trajectories(T,Result_data,Historical_data,Step,Show_alternatives,Show_supply,Show_uncertainty,hide_spline=True)
+    pf.save_figure(fig,'P2_employment_trajectories','svg')
+
 
 #%% MAIN ====================================================================================
 if __name__ == "__main__":
