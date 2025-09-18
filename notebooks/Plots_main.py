@@ -119,7 +119,7 @@ def M1():
     Show_alternatives = False
     Show_supply = False
     fig = pf.plot_national_employment_trajectories(T,Result_data,Historical_data,Step,Show_alternatives,Show_supply,Show_uncertainty)
-    pf.save_figure(fig,'M1_employment_trajectories','png')
+    pf.save_figure(fig,'M2_employment_trajectories','pdf')
 
 #%% Main 2 - Subnational employment trajectories
 # ===========================================================================================================================
@@ -136,7 +136,7 @@ def M2():
     fig=pf.Grid_Employment_Destruction(fig,axs[:grid_size_chn[0],:],T,Result_data,0,False,Show_alternatives=Show_alternatives,grid_scale_same=True,representation=representation,remove_splin=True)
     fig=pf.Grid_Employment_Destruction(fig,axs[grid_size_chn[0]:,:],T,Result_data,1,False,Show_alternatives=Show_alternatives,grid_scale_same=True,representation=representation,remove_splin=True)
         
-    pf.save_figure(fig,'M2_Grid_employment_'+['','alternatives_'][Show_alternatives]+str(representation),'png')
+    pf.save_figure(fig,'M3_Grid_employment_'+['','alternatives_'][Show_alternatives]+str(representation),'pdf')
 
     pf.print_subnational_employment_results(T,Result_data)
 
@@ -144,19 +144,19 @@ def M2():
 #%% Main 3 - Drivers of job cuts
 def M3():
     fig = pf.plot_productivity_wedge(T,Result_data)
-    pf.save_figure(fig,'M3_Job_cut_driver_wedges','png')
+    pf.save_figure(fig,'M4_Job_cut_driver_wedges','pdf')
 #%% Main 4 - Exposure of regions to coal transition
 # ===========================================================================================================================
 def M4():
     fig = pf.exposure_scatter(T,Result_data,shade=True)
-    pf.save_figure(fig,'M4_Exposure_scatter','png')
+    pf.save_figure(fig,'M5_Exposure_scatter','pdf')
 
 
 #%% Main 5 - Boxplot of share not finding per scenario
 # ===========================================================================================================================
 def M5():
     fig = pf.boxplot_share_not_finding(Result_data,T)
-    pf.save_figure(fig,'M5_Vulnerability_Boxplot','jpg',dpi=700)
+    pf.save_figure(fig,'M6_Vulnerability_Boxplot','pdf',dpi=700)
 
 #%% EXTENDED DATA =============================================================================
 # ===========================================================================================================================
@@ -310,8 +310,8 @@ def P2():
 #%% MAIN ====================================================================================
 if __name__ == "__main__":
     plot_main = True
-    plot_extended = True
-    plot_supplementary = True
+    plot_extended = False
+    plot_supplementary = False
     plot_presentation = False
 
     if plot_main:

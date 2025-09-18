@@ -133,7 +133,7 @@ def defining_waysout_colour_scheme():
     return Colors
 region = 'Shanxi'
 
-def format_side_axis(ax,region,remove_splin=True):
+def format_side_axis(ax,region,remove_splin=True,position='right'):
 
 
     ax.axhline(y=100,color='k',linewidth=2,zorder=-1) 
@@ -160,12 +160,14 @@ def format_side_axis(ax,region,remove_splin=True):
     # Set tick label size
     ax.tick_params(axis='both', which='both', labelsize=24)
     ax.set_ylabel('[Thousand workers]',fontsize=24)
-    
-    ax.text(0.95,0.87,region,transform=ax.transAxes, fontsize= 40, fontweight='bold', ha='right')
+    if position == 'right':
+        ax.text(0.95,0.87,region,transform=ax.transAxes, fontsize= 40, fontweight='bold', ha='right')
+    elif position == 'left':
+        ax.text(0.1,0.87,region,transform=ax.transAxes, fontsize= 40, fontweight='bold', ha='left')
     return ax
 
 
-def plot_labour_wedges(ax,region,scenario,threshold_percentage=95,step=5):
+def plot_labour_wedges(ax,region,scenario,threshold_percentage=95,step=5,position='right',T1=None):
     T = np.array(range(2015,2101))
     start = 2015-2015
     
@@ -178,7 +180,9 @@ def plot_labour_wedges(ax,region,scenario,threshold_percentage=95,step=5):
     print(f'L is there {np.shape(L)}')
     # Calculate the stop date of the wedges based on when coal labour "phase out" is achieved
     threshold = (100-threshold_percentage)/100
-    if len(T[L<L[5]*threshold])>0:
+    if T1:
+        stop_date = T1-2015+1 
+    elif len(T[L<L[5]*threshold])>0:
         stop_date = min(T[L<L[5]*threshold][0]-2015,end)
     else:
         stop_date = end
@@ -216,7 +220,22 @@ def plot_labour_wedges(ax,region,scenario,threshold_percentage=95,step=5):
     ax.plot(T[start:end:step],L[start:end:step],color='k',linewidth=5)
     ax.plot(T[start:stop_date:step],L_NPI0[start:stop_date:step],color='k',linestyle=':',linewidth=2)
 
-    ax = format_side_axis(ax,region)
+
+    if T1:
+        print(f'T1 is {T1}')
+        ax.plot([2020,T1+20],[L[5],L[5]],color='grey',linewidth=2,linestyle='--')
+        ax.plot([T1,T1+20],[L[stop_date],L[stop_date]],color='grey',linewidth=2,linestyle='--')
+        # ax.plot([T1+5,T1+5],[L[5],L[end]],color='lightgrey',linewidth=20)
+        ax.add_patch(matplotlib.patches.Rectangle(
+            (T1+20, L[stop_date]),  # (x, y) position
+            5,             # width
+            L[5] - L[stop_date],   # height
+            color='grey',
+            alpha=0.5,
+            zorder=-1
+        ))
+
+    ax = format_side_axis(ax,region,position=position)
     return ax 
 
 
@@ -301,7 +320,13 @@ def plot_productivity_graph(ax,region,Scenarios,normalise=True,remove_splin=True
 
 
 
-def map_employment(ax,var,t1,scenario,zlim,colormap,highlight_regions,crs,norm):
+def map_employment(ax,var,t1,scenario,zlim,colormap,crs,norm,highlight_regions=[]):
+
+    clean_layout = True
+    if clean_layout:
+        row_width = 0
+    else:
+        row_width = 0.75
 
     # Define bounding box in degrees
     bbox = box(60, 3, 140, 53)  # lon_min, lat_min, lon_max, lat_max
@@ -334,11 +359,21 @@ def map_employment(ax,var,t1,scenario,zlim,colormap,highlight_regions,crs,norm):
     
     color_not_plotted = '#EAEAEA'
 
+    if clean_layout:
+        threshold = 2
+        empty_regions = Asia_Data[Asia_Data['Calced_data']<threshold]
+        Asia_Data = Asia_Data[Asia_Data['Calced_data']>threshold]
+        empty_regions.plot(ax=ax, color=color_not_plotted, edgecolor='none', linewidth=row_width, rasterized=True)
+        edgecolor = 'grey'
+    else:
+        edgecolor = 'none'
+
+
     cbar = Asia_Data.plot(column='Calced_data',
                         cmap=colormap,
                         legend=False,
                         ax=ax,
-                        edgecolor='none',
+                        edgecolor=edgecolor,
                         missing_kwds={
                             "color": color_not_plotted,
                             "label": "Missing values",
@@ -353,15 +388,16 @@ def map_employment(ax,var,t1,scenario,zlim,colormap,highlight_regions,crs,norm):
     highlighted = Asia_Data[Asia_Data['Region_Nam'].isin(highlight_regions)].to_crs(crs_proj4)
     others = Asia_Data[~Asia_Data['Region_Nam'].isin(highlight_regions)].to_crs(crs_proj4)
     # Plot all regions with thin grey borders
-    others.plot(ax=ax, color='none', edgecolor='grey', linewidth=0.5,
+    if not clean_layout:
+        others.plot(ax=ax, color='none', edgecolor='grey', linewidth=0.5,
                         rasterized=True)
 
     # Plot the 3 highlighted regions with thick black borders
 
     rest_Asia =  gpd.clip(Asia[Asia['region']=='Asia'], gdf_bbox).to_crs(crs_proj4)
 
-    rest_Asia.plot(ax=ax, color=color_not_plotted, edgecolor='grey',linewidth=0.5,rasterized=True)
-    Asia[Asia['region']=='Disputed'].to_crs(crs_proj4).plot(ax=ax, color=color_not_plotted, edgecolor='grey', linestyle='--',linewidth=0.5,rasterized=True)
+    rest_Asia.plot(ax=ax, color=color_not_plotted, edgecolor='grey',linewidth=row_width,rasterized=True)
+    Asia[Asia['region']=='Disputed'].to_crs(crs_proj4).plot(ax=ax, color=color_not_plotted, edgecolor='grey', linestyle='--',linewidth=row_width,rasterized=True)
     
     GEM_proj = gpd.clip(GEM, gdf_bbox).to_crs(crs_proj4)
     GEM_proj['x'] = GEM_proj.geometry.x
@@ -541,7 +577,7 @@ def plot_main(plot_type,country,scenario='NPI',ind='0',plot_capacity=True,savefi
 
     var = 'Employment|Coal|Downscaled'
     t1= 2020
-    ax, cbar = map_employment(ax,var,t1,scenario,zlim,colormap,highlight_regions,crs,norm)
+    ax, cbar = map_employment(ax,var,t1,scenario,zlim,colormap,crs,norm,highlight_regions=highlight_regions)
 
 
     sm = cm.ScalarMappable(norm=norm, cmap=colormap)
@@ -599,6 +635,84 @@ def plot_main(plot_type,country,scenario='NPI',ind='0',plot_capacity=True,savefi
 
     return ax
 
+#%%
+def plot_summary(plot_type,scenario='NZ_CCS1',plot_capacity=False,show_uncertainty=False):
+    Scenarios = ['NDC_CCS1','NZ_CCS1','NPI','NDC','NZ']
+    Scenarios_names = ['NDC-LTT w/CCS','1.5°C w/CCS','NPi','NDC-LTT','1.5°C']
+
+
+    crs = ccrs.AlbersEqualArea(central_longitude=100, central_latitude=30)
+
+
+
+    T1 = 2050
+    fig, ax = plt.subplots(1,1,subplot_kw={"projection": crs}, figsize=(15, 12))
+                            
+
+    zlim = [0,300]
+
+
+
+
+    vmin, vmax = zlim[0], zlim[1]
+    colormap = plt.cm.OrRd
+    norm = mcolors.Normalize(vmin=vmin, vmax=vmax)
+    
+        
+    highlight_regions = ['Jharkhand','Shanxi']
+
+
+    var = 'Employment|Coal|Downscaled'
+    t1= 2020
+    ax, cbar = map_employment(ax,var,t1,scenario,zlim,colormap,crs,norm,highlight_regions=highlight_regions)
+
+
+    sm = cm.ScalarMappable(norm=norm, cmap=colormap)
+    sm.set_array([])  # Required for colorbar creation
+
+    # Create an axis for the colorbar (customize position [left, bottom, width, height])
+    cbar_ax = fig.add_axes([0.25, 0.07, 0.5, 0.03])  # Adjust position as needed
+    cbar = plt.colorbar(sm, cax=cbar_ax, orientation='horizontal', extend='max')  # Arrow on right
+    cbar_ax.set_xlabel('Coal workforce [thousand workers]', fontsize=20)
+    cbar.ax.tick_params(labelsize=20)
+
+    ax.axis('off')
+
+
+    side_reg  = ['China','India']
+
+    if plot_capacity:
+        r_axis1 = ax.inset_axes([1.45, 0.55, 0.50, 0.6])
+        r_axis2 = ax.inset_axes([1.45, -0.3, 0.50, 0.6])
+
+        c_axis1 = ax.inset_axes([1.15, 0.55 , 0.15, 0.7])
+        c_axis2 = ax.inset_axes([1.15, -0.3, 0.15, 0.7])
+
+    else:
+        r_axis1 = ax.inset_axes([1.15, 0.7, 0.7, 0.6])
+        r_axis2 = ax.inset_axes([1.15, -0.2, 0.7, 0.6])
+
+    side_axes = [r_axis1,r_axis2]
+    for axis, region in zip(side_axes,side_reg):
+        if plot_type == 'Line':
+            axis = plot_labour_graph(axis,region,Scenarios)
+        elif plot_type == 'Wedge':
+            axis = plot_labour_wedges(axis,region,scenario,position='left',T1=T1)
+            axis.set_ylim([-200,4000])
+
+        if plot_type == 'Productivity':
+            axis = plot_productivity_graph(axis,region,Scenarios)
+
+    if plot_capacity:
+        c_axes = [c_axis1,c_axis2]
+        xlabels = [False,True]
+        for axis, region,xlabel in zip(c_axes,side_reg,xlabels):
+            axis = plot_mines_capacity(region,axis,xlabel=xlabel)
+
+
+    return ax
+
+plot_summary('Wedge')
 
 #%%
 

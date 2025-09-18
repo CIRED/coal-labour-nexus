@@ -1969,6 +1969,8 @@ def exposure_scatter(T,Result_data,shade=False):
 
     Scenarios_names = ['1.5°C','NDC-LTT','NPi','1.5°C-CCS','NDC-LTT-CCS']
     All_data = find_destination_data(T,Result_data,with_cntry=False)
+    print('Workforce Shanxi  :',All_data.loc['Shanxi','Workforce'])
+    print('Workforce Jharkhand  :',All_data.loc['Jharkhand','Workforce'])
     T1 = 2035
     fig, (ax, ax2) = plt.subplots(1,2,figsize=(7,6),width_ratios=[1, 0.15])
     ax.axvline(x=0, color='k', linestyle='-',linewidth = 0.5,zorder=0)
