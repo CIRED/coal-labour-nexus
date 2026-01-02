@@ -244,12 +244,13 @@ def plot_national_employment_trajectories(T,Result_data,Historical_data,Step=5,S
             if (Scenarios[j] in  ['NPI','NDC','NZ','NDC_CCS1','NZ_CCS1']) & ~(('_CCS1' in Scenarios[j])&(country=='China')):               
                 if COAL_emp.values[0][6:][
                         T < 2070][-1] < COAL_emp.values[0][6:][5] / 2:
-                    
-                    ax.scatter(T[COAL_emp.values[0][6:] < COAL_emp.values[0][6:][5] /2][0],
+                    t_half = T[COAL_emp.values[0][6:] < COAL_emp.values[0][6:][5] /2][0]
+                    ax.scatter(t_half,
                             -0.125,
                             color=Colors[scenario.split('_PG0')[0]],
                             marker='o',
                             s=20)
+                    print(f'In {country} under {Scenarios[j]}, 50% of jobs disappear by {t_half} \n')
                     
                     if COAL_emp.values[0][6:][
                         T < 2070][-1] < COAL_emp.values[0][6:][5] *0.05:
@@ -279,7 +280,7 @@ def plot_national_employment_trajectories(T,Result_data,Historical_data,Step=5,S
                         marker= Rmarker[Scen_type_ind],
                         markersize = 3,
                         markevery=int(Step/5))
-            
+                
             
             if (scenario in Scen_type) & Show_uncertainty:
                 ax.fill_between(T[T < 2070][0:-1:Step],
@@ -1607,7 +1608,7 @@ def destination_share(Result_data,country,scenario,t0,T1):
                 (~Result_data['Downscaled Region'].isin(exclude_downscaled_regions))&
                 (Result_data.Scenario==scenario)].drop(['Model','Region','Scenario','Variable','Unit'],axis=1).groupby('Downscaled Region').sum().loc[:,[str(x) for x in range(2020,T1)]].sum(axis=1)
 
-    Share_R = R/(R+TotDestination)
+    Share_R = 1-R/(R+TotDestination)
     Share_R=Share_R.dropna()
     return Share_U, Share_R, TotDestination
 
@@ -1821,7 +1822,7 @@ def find_destination_data(T,Result_data,with_cntry=True):
     # - Heatmap
 
     Scenarios = ['NPI','NDC','NDC_CCS1','NZ','NZ_CCS1']
-    Scenarios_names = ['1.5°C','NDC-LTT','NPi','1.5°C-CCS','NDC-LTT-CCS']
+    Scenarios_names = ['NPi','NDC-LTT','NDC-LTT-CCS','1.5°C','1.5°C-CCS']
     scenario = Scenarios[0]
     var = 'Workforce'
     T1 = 2035
@@ -1963,11 +1964,10 @@ def print_subnational_employment_results(T,Result_data):
 
 #%% Main 3 - Exposure of regions to coal transition
 def exposure_scatter(T,Result_data,shade=False):
-    Scenarios = ['WO-15C-ElecIndus-CCS0', 'WO-NDCLTT-ElecIndus-CCS0','WO-NPi-ElecIndus-CCS0',
-        'WO-15C-ElecIndus-CCS1','WO-NDCLTT-ElecIndus-CCS1']
+    Scenarios = ['WO-NDCLTT-ElecIndus-CCS1','WO-15C-ElecIndus-CCS1','WO-NPi-ElecIndus-CCS0', 'WO-NDCLTT-ElecIndus-CCS0','WO-15C-ElecIndus-CCS0']
 
 
-    Scenarios_names = ['1.5°C','NDC-LTT','NPi','1.5°C-CCS','NDC-LTT-CCS']
+    Scenarios_names = ['NDC-LTT-CCS','1.5°C-CCS','NPi','NDC-LTT','1.5°C']
     All_data = find_destination_data(T,Result_data,with_cntry=False)
     print('Workforce Shanxi  :',All_data.loc['Shanxi','Workforce'])
     print('Workforce Jharkhand  :',All_data.loc['Jharkhand','Workforce'])
@@ -1975,13 +1975,38 @@ def exposure_scatter(T,Result_data,shade=False):
     fig, (ax, ax2) = plt.subplots(1,2,figsize=(7,6),width_ratios=[1, 0.15])
     ax.axvline(x=0, color='k', linestyle='-',linewidth = 0.5,zorder=0)
     for ind_region, region in enumerate(All_data.index):
-        ax.scatter(All_data.loc[region, 'Workforce'],len(All_data.index)-ind_region-1, s=25,color='k', label=region)
-        ax2.scatter(All_data.loc[region, 'Workforce'],len(All_data.index)-ind_region-1, s=25,color='k', label=region)
+        y = len(All_data.index)-ind_region-1
+        ax.scatter(All_data.loc[region, 'Workforce'],y, s=25,color='k', label=region,marker='|')
+        ax2.scatter(All_data.loc[region, 'Workforce'],y, s=25,color='k', label=region,marker='|')
         for ind_scenario, scenario in enumerate(Scenarios_names):
-            ax.scatter(All_data.loc[region, scenario+'\n'+str(T1)],len(All_data.index)-ind_region-1, s=25, label=region, color=defining_waysout_colour_scheme()[Scenarios[ind_scenario]])
+            ax.scatter(All_data.loc[region, scenario+'\n'+str(T1)],y, s=25, label=region, color=defining_waysout_colour_scheme()[Scenarios[ind_scenario]])
         ax.plot([min([All_data.loc[region, x+'\n'+str(T1)] for x in Scenarios_names]),max([All_data.loc[region, x+'\n'+str(T1)] for x in Scenarios_names])],
-                [len(All_data.index)-ind_region-1]*2,color='gray',zorder=0,alpha=0.4,linewidth=3.75)
+                [y]*2,color='gray',zorder=0,alpha=0.4,linewidth=3.75)
+        
+        if region == 'Ningxia':
+            mnx = max([All_data.loc[region, x+'\n'+str(T1)] for x in Scenarios_names])
+            mxx = All_data.loc[region, 'Workforce']
+            ax.plot([mnx,mxx],
+                    [y-0.5]*2,color='gray',zorder=0,alpha=0.4,linewidth=1)
+            
+            for lim in [mnx,mxx]:
+                ax.plot([lim,lim],
+                        [y-0.5-0.1,y-0.5+0.1],color='gray',zorder=0,alpha=0.4,linewidth=1)
+            ax.annotate('Remaining employment',
+                        xy=(mnx+(mxx-mnx)*0.7,y-0.5),arrowprops=dict(arrowstyle='-|>', color='gray', lw=1,alpha=0.4),
+                        xytext=(mxx,y-1.5),fontsize=6,color='gray',zorder=0,ha='center',va='top')
+        if region == 'Shanxi':
+            [ax.annotate(
+                ' ', 
+                xy=(0, y), 
+                xytext=(lim, y),
+                arrowprops=dict(arrowstyle='<-', color='k', lw=1.5, alpha=0.4),
+                annotation_clip=False,
+                va='center',
 
+            ) for lim in [-0.004,0.004]]
+            ax.text(-0.0035,y,'employment\nincrease',fontsize=6,color='k',zorder=0,ha='right',va='bottom')
+            ax.text( 0.004,y,'employment\ndecrease',fontsize=6,color='k',zorder=0,ha='left',va='bottom')
 
     ax.set_yticks(range(len(All_data.index)))
     ax.set_yticklabels(All_data.index[::-1])
@@ -2005,14 +2030,14 @@ def exposure_scatter(T,Result_data,shade=False):
     ax2.plot([0, 0], [0, 1], transform=ax2.transAxes, **kwargs)
 
 
-    ax.set_xlabel('Share of labour force')
-
+    ax.set_xlabel('Employment destruction as a share of labour force')
+    Scenarios_namess = ['NDC-LTT w/CCS','1.5°C w/CCS','NPi','NDC-LTT','1.5°C']
     alines = []
-    alines.append(ax.scatter([],[],color='k',label='Share of labour force in coal workforce'))
+    alines.append(ax.scatter([],[],color='k',label='Share of labour force in coal workforce',marker='|'))
     for ind_scenario, scenario in enumerate(Scenarios):
         alines.append(ax.scatter([],[],
                                 color=defining_waysout_colour_scheme()[scenario],
-                                label=['NPi','NDC-LTT','NDC-LTT w/CCS','1.5°C','1.5°C w/CCS'][ind_scenario]))
+                                label=Scenarios_namess[ind_scenario]))
 
     labels = [la.get_label() for la in alines]
     
@@ -2028,6 +2053,8 @@ def exposure_scatter(T,Result_data,shade=False):
                 bbox_to_anchor=(0.5, 0.05),
                 frameon=False,
                 ncol=2)
+    
+
     return fig
 #%% Main 4 - Boxplot of share not finding per scenario
 
@@ -2093,7 +2120,7 @@ def boxplot_share_not_finding(Result_data,T,t0s = [2020, 2020],t1s = [2030,2050]
 
                 pos = x+[-0.35,-0.17,0,0.17,0.35][ind_scenario]
 
-                for ind_var, var in enumerate([Share_U,Share_R]):
+                for ind_var, var in enumerate([Share_R,Share_U]):
                     
                     ax = axs[ind_t,ind_var]
                     # ax = axs[ind_var]
@@ -2102,8 +2129,8 @@ def boxplot_share_not_finding(Result_data,T,t0s = [2020, 2020],t1s = [2030,2050]
                         ax.arrow(0.8,0.5,0.1,0,head_width=0.04,color='k')
                         ax.text(0.82,0.25,"increased\n vulnerability",fontsize=5,fontweight='normal')
                     else:
-                        ax.arrow(0.2,0.5,-0.1,0,head_width=0.04,color='k')
-                        ax.text(0.11,0.25,"increased\n vulnerability",fontsize=5,fontweight='normal')
+                        ax.arrow(0.8,0.5,0.1,0,head_width=0.04,color='k')
+                        ax.text(0.82,0.25,"increased\n vulnerability",fontsize=5,fontweight='normal')
 
 
                     bxplot=ax.boxplot(var,
@@ -2152,11 +2179,11 @@ def boxplot_share_not_finding(Result_data,T,t0s = [2020, 2020],t1s = [2030,2050]
 
     if np.size(axs[0])>1:
         [ax.set_xticklabels([]) for ax in axs[0,:]]
-        axs[1,0].set_xlabel('Share layoffs not finding employment')
-        axs[1,1].set_xlabel('Share destruction in retirement')
+        axs[1,1].set_xlabel('Share layoffs not finding employment')
+        axs[1,0].set_xlabel('Share destruction not in retirement')
     else:
-        axs[0].set_xlabel('Share layoffs not finding employment')
-        axs[1].set_xlabel('Share destruction in retirement')
+        axs[1].set_xlabel('Share layoffs not finding employment')
+        axs[0].set_xlabel('Share destruction not in retirement')
 
 
 
@@ -2375,7 +2402,7 @@ def main_regions_destination_bars(provincesChina, provincesIndia, Result_data, T
     Scenarioss_name = [[ 'NPi', 'NDC\nLTT', 'NDC\nLTT-CCS', '1.5°C', '1.5°C\nCCS']]*3
 
     T0s = [2020]*3
-    T1s = [2030,2050,'80%']
+    T1s = [2035,2030,2050]
 
     Xs = [
         list(range(len(Scenarioss[0])))
@@ -2423,8 +2450,8 @@ def main_regions_destination_bars(provincesChina, provincesIndia, Result_data, T
 
 
                 if (Scenario == 'NZ')&(stype_index == 1):
-                    u = round(data_save[(region, Scenario,2030)][3]*1000)
-                    print(f'Under {Scenario}, in {region}, {u} thousand workers will not find new employment by 2030')
+                    u = round(data_save[(region, Scenario,2035)][3]*1000)
+                    print(f'Under {Scenario}, in {region}, {u} thousand workers will not find new employment by 2035')
 
 
             alines = [x[0] for x in alines]
@@ -2995,7 +3022,7 @@ def boxplot_share_not_finding_demand(Result_data, T):
                 
                 pos = x+[-0.87,-0.7,-0.52,-0.35,-0.17,0,0.17,0.35,0.52,0.7,0.87][ind_scenario]/2
 
-                for ind_var, var in enumerate([Share_U,Share_R]):
+                for ind_var, var in enumerate([Share_R,Share_U]):
                     
                     ax = axs[ind_t,ind_var]
                 
@@ -3003,8 +3030,8 @@ def boxplot_share_not_finding_demand(Result_data, T):
                         ax.arrow(0.8,0.5,0.1,0,head_width=0.03,color='k')
                         ax.text(0.85,0.24,"increased\n vulnerability",fontsize=5,fontweight='normal')
                     else:
-                        ax.arrow(0.2,0.5,-0.1,0,head_width=0.03,color='k')
-                        ax.text(0.11,0.24,"increased\n vulnerability",fontsize=5,fontweight='normal')
+                        ax.arrow(0.8,0.5,0.1,0,head_width=0.03,color='k')
+                        ax.text(0.85,0.24,"increased\n vulnerability",fontsize=5,fontweight='normal')
 
 
                     bxplot=ax.boxplot(var,
@@ -3053,11 +3080,11 @@ def boxplot_share_not_finding_demand(Result_data, T):
 
     if np.size(axs[0])>1:
         [ax.set_xticklabels([]) for ax in axs[0,:]]
-        axs[1,0].set_xlabel('Share layoffs not finding employment')
-        axs[1,1].set_xlabel('Share destruction in retirement')
+        axs[1,1].set_xlabel('Share layoffs not finding employment')
+        axs[1,0].set_xlabel('Share destruction not in retirement')
     else:
-        axs[0].set_xlabel('Share layoffs not finding employment')
-        axs[1].set_xlabel('Share destruction in retirement')
+        axs[1].set_xlabel('Share layoffs not finding employment')
+        axs[0].set_xlabel('Share destruction not in retirement')
 
 
 
@@ -3182,8 +3209,8 @@ def plot_productivity_contribution(L,L0,T,ax,start,stop_date,step):
     ax2 = ax.twinx()
     ax2.plot(T[start:stop_date:step],
              productivity_share[start:stop_date:step],
-            color='k',
-            linestyle='--',
+            color='red',
+            linestyle='-',
             linewidth=0.7)
     
 
@@ -3192,21 +3219,21 @@ def plot_productivity_contribution(L,L0,T,ax,start,stop_date,step):
 
 
 
-
 def wedge_legend(ax,fig):
     alines = []
+    alines.append(ax.plot([],[],color='k',label='Net employment'))
+    alines.append(ax.plot([],[],color='k',linestyle='--',label='Current policies with no productivity growth'))
+    alines.append(ax.plot([],[],color='red',linestyle='-',label='Net contribution of productivity (right axis)'))
+    alines.append(ax.plot([],[],color='white',linestyle='--',label=' '))
     alines.append(ax.fill_between([],[],[],color=sns.color_palette('Set2')[1],alpha=0.7,label='Impact of production change'))
     alines.append(ax.fill_between([],[],[],color=sns.color_palette('Set2')[2],alpha=0.7,label='Impact of productivity change occuring in the NPi trajectory'))
-    alines.append(ax.fill_between([],[],[],color=sns.color_palette('Set2')[3],alpha=0.7,label='Reduced productivity-led cuts'))
-    alines.append(ax.fill_between([],[],[],color=sns.color_palette('Set2')[4],alpha=0.7,label='Additional productivity-led cuts'))
-    alines.append(ax.plot([],[],color='k',label='Net destruction'))
-    alines.append(ax.plot([],[],color='k',linestyle=':',label='Baseline with no productivity growth'))
-    alines.append(ax.plot([],[],color='k',linestyle='--',label='Net contribution of productivity (right axis)'))
+    alines.append(ax.fill_between([],[],[],color=sns.color_palette('Set2')[4],alpha=0.7,label='Concentration effects: Additional productivity-led cuts'))
+    alines.append(ax.fill_between([],[],[],color='grey',alpha=0.7,label='Dynamic effects: Reduced productivity-led cuts')) #sns.color_palette('Set2')[3]
 
 
 
-    labels = [la.get_label() for la in alines[:4]]+[la[0].get_label() for la in alines[4:]]
-    handles = [label for label in alines[:4]]+[label[0] for label in alines[4:]]
+    labels = [la[0].get_label() for la in alines[:4]]+[la.get_label() for la in alines[4:]]
+    handles = [label[0] for label in alines[:4]]+[label for label in alines[4:]]
 
     fig.legend(handles=handles,
             labels=labels,
@@ -3215,6 +3242,8 @@ def wedge_legend(ax,fig):
             bbox_to_anchor=(0.5, -0.15),
             fontsize=9,
             frameon=False)
+
+
     return fig
 
 
@@ -3275,14 +3304,14 @@ def plot_productivity_wedge(T,Result_data,step=5,threshold_percentage=95):
             ax.fill_between(T[start:stop_date:step],
                             L_NPI0[start:stop_date:step],
                             (L_NPI0-addiproductivity_negative)[start:stop_date:step],
-                            color=sns.color_palette('Set2')[3],alpha=0.7,edgecolor=None)
+                            color='grey',alpha=0.7,edgecolor=None)#sns.color_palette('Set2')[3]
             ax.fill_between(T[start:stop_date:step],
                             (L_NPI0-production-productivityNPI)[start:stop_date:step],
                             (L_NPI0-production-productivityNPI-addiproductivity_positive)[start:stop_date:step],
                             color=sns.color_palette('Set2')[4],alpha=0.7,edgecolor=None)
             
             ax.plot(T[start:end:step],L[start:end:step],color='k')
-            ax.plot(T[start:stop_date:step],L_NPI0[start:stop_date:step],color='k',linestyle=':',linewidth=0.75)
+            ax.plot(T[start:stop_date:step],L_NPI0[start:stop_date:step],color='k',linestyle='--',linewidth=0.75)
             print(f'{region}  {scenario}')
             ax2 = plot_productivity_contribution(L,L0,T,ax,start,stop_date,step)
             

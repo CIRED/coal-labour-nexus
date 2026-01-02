@@ -110,22 +110,22 @@ Region_indexes = pd.read_csv('../coal.labour.nexus/data/Coal_labour/Downscaling/
 
 #%% MAIN ====================================================================================
 # ===========================================================================================================================
-#%% Main 1-  National employment trajectories
+#%% Main 2-  National employment trajectories
 # ===========================================================================================================================
 
-def M1():
+def M2(form='jpeg'):
     Step = 5
     Show_uncertainty = False
     Show_alternatives = False
     Show_supply = False
     fig = pf.plot_national_employment_trajectories(T,Result_data,Historical_data,Step,Show_alternatives,Show_supply,Show_uncertainty)
-    pf.save_figure(fig,'M2_employment_trajectories','pdf')
+    pf.save_figure(fig,'M2_employment_trajectories',form)
 
-#%% Main 2 - Subnational employment trajectories
+#%% Main 3 - Subnational employment trajectories
 # ===========================================================================================================================
 
 
-def M2():
+def M3(form='jpeg'):
     Show_alternatives=False
     representation = 2
     grid_size_chn = pf.regional_grid(representation)[2][0]
@@ -136,27 +136,27 @@ def M2():
     fig=pf.Grid_Employment_Destruction(fig,axs[:grid_size_chn[0],:],T,Result_data,0,False,Show_alternatives=Show_alternatives,grid_scale_same=True,representation=representation,remove_splin=True)
     fig=pf.Grid_Employment_Destruction(fig,axs[grid_size_chn[0]:,:],T,Result_data,1,False,Show_alternatives=Show_alternatives,grid_scale_same=True,representation=representation,remove_splin=True)
         
-    pf.save_figure(fig,'M3_Grid_employment_'+['','alternatives_'][Show_alternatives]+str(representation),'pdf')
+    pf.save_figure(fig,'M3_Grid_employment_'+['','alternatives_'][Show_alternatives]+str(representation),form)
 
     pf.print_subnational_employment_results(T,Result_data)
 
 
-#%% Main 3 - Drivers of job cuts
-def M3():
+#%% Main 4 - Drivers of job cuts
+def M4(form='svg'):
     fig = pf.plot_productivity_wedge(T,Result_data)
-    pf.save_figure(fig,'M4_Job_cut_driver_wedges','pdf')
-#%% Main 4 - Exposure of regions to coal transition
+    pf.save_figure(fig,'M4_Job_cut_driver_wedges',form)
+#%% Main 5 - Exposure of regions to coal transition
 # ===========================================================================================================================
-def M4():
+def M5(form='jpeg'):
     fig = pf.exposure_scatter(T,Result_data,shade=True)
-    pf.save_figure(fig,'M5_Exposure_scatter','pdf')
+    pf.save_figure(fig,'M5_Exposure_scatter',form)
 
 
-#%% Main 5 - Boxplot of share not finding per scenario
+#%% Main 6 - Boxplot of share not finding per scenario
 # ===========================================================================================================================
-def M5():
+def M6(form='svg'):
     fig = pf.boxplot_share_not_finding(Result_data,T)
-    pf.save_figure(fig,'M6_Vulnerability_Boxplot','pdf',dpi=700)
+    pf.save_figure(fig,'M6_Vulnerability_Boxplot',form,dpi=700)
 
 #%% EXTENDED DATA =============================================================================
 # ===========================================================================================================================
@@ -309,18 +309,19 @@ def P2():
 
 #%% MAIN ====================================================================================
 if __name__ == "__main__":
+    form = 'pdf'
     plot_main = True
-    plot_extended = False
+    plot_extended = True
     plot_supplementary = False
     plot_presentation = False
 
     if plot_main:
         print('Plotting main figures')
-        M1()
-        M2()
-        M3()
+        M2(form)
+        M3(form)
         M4()
-        M5()
+        M5(form)
+        M6()
     if plot_extended:
         print('Plotting extended data figures')
         ED1()
@@ -340,4 +341,3 @@ if __name__ == "__main__":
     if plot_presentation:
         print('Plotting presentation figures')
         P1()
-
