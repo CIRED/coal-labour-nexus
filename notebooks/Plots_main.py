@@ -121,11 +121,18 @@ def M2(form='jpeg'):
     fig = pf.plot_national_employment_trajectories(T,Result_data,Historical_data,Step,Show_alternatives,Show_supply,Show_uncertainty)
     pf.save_figure(fig,'M2_employment_trajectories',form)
 
-#%% Main 3 - Subnational employment trajectories
+
+#%% Main 3 - Drivers of job cuts
+# ===========================================================================================================================
+def M3(form='svg'):
+    fig = pf.plot_productivity_wedge(T,Result_data)
+    pf.save_figure(fig,'M3_Job_cut_driver_wedges',form)
+
+#%% Main 4 - Subnational employment trajectories
 # ===========================================================================================================================
 
 
-def M3(form='jpeg'):
+def M4(form='jpeg'):
     Show_alternatives=False
     representation = 2
     grid_size_chn = pf.regional_grid(representation)[2][0]
@@ -136,15 +143,12 @@ def M3(form='jpeg'):
     fig=pf.Grid_Employment_Destruction(fig,axs[:grid_size_chn[0],:],T,Result_data,0,False,Show_alternatives=Show_alternatives,grid_scale_same=True,representation=representation,remove_splin=True)
     fig=pf.Grid_Employment_Destruction(fig,axs[grid_size_chn[0]:,:],T,Result_data,1,False,Show_alternatives=Show_alternatives,grid_scale_same=True,representation=representation,remove_splin=True)
         
-    pf.save_figure(fig,'M3_Grid_employment_'+['','alternatives_'][Show_alternatives]+str(representation),form)
+    pf.save_figure(fig,'M4_Grid_employment_'+['','alternatives_'][Show_alternatives]+str(representation),form)
 
     pf.print_subnational_employment_results(T,Result_data)
 
 
-#%% Main 4 - Drivers of job cuts
-def M4(form='svg'):
-    fig = pf.plot_productivity_wedge(T,Result_data)
-    pf.save_figure(fig,'M4_Job_cut_driver_wedges',form)
+
 #%% Main 5 - Exposure of regions to coal transition
 # ===========================================================================================================================
 def M5(form='jpeg'):
@@ -341,3 +345,5 @@ if __name__ == "__main__":
     if plot_presentation:
         print('Plotting presentation figures')
         P1()
+
+# %%

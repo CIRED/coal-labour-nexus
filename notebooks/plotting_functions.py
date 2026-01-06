@@ -156,7 +156,7 @@ def get_cumulated_array(data, **kwargs):
 #==================================================================================================================================================================================================================
 
 
-def plot_national_employment_trajectories(T,Result_data,Historical_data,Step=5,Show_alternatives=False,Show_supply=False,Show_uncertainty=False,hide_spline=False):
+def plot_national_employment_trajectories(T,Result_data,Historical_data,Step=5,Show_alternatives=False,Show_supply=False,Show_uncertainty=False,hide_spline=False,savedata=True):
     Colors = defining_waysout_colour_scheme()
     Countries = ['China','India']
     Regions = [
@@ -332,6 +332,19 @@ def plot_national_employment_trajectories(T,Result_data,Historical_data,Step=5,S
         dif = (Scen_y.loc['NPI_PG0',55]-Scen_y.loc['NPI',55])*1e3
         print(f'In {country} under NPI, {dif} jobs are destroyed by productivity')
 
+        if savedata:
+            if country == "China":
+                savedata_df = Scen_y.reset_index()
+                savedata_df.loc[:,"Country"]=country
+            elif country == "India":
+                Scen_y.reset_index(inplace=True)
+                Scen_y.loc[:,"Country"]=country
+                savedata_df = pd.concat([savedata_df,Scen_y],ignore_index=True)
+                savedata_df = savedata_df.loc[:,['index','Country'] + [ind_t for ind_t,t in enumerate(T[T < 2070][0:-1:Step])]]
+                savedata_df.columns = ['Scenario','Country']+list(T[T < 2070][0:-1:Step])
+                savedata_df.loc[:,list(T[T < 2070][0:-1:Step])] = savedata_df.loc[:,list(T[T < 2070][0:-1:Step])].round(3)
+                savedata_df.to_csv("..\Extract_data\Figure_2.csv",index=False)
+
 
     # LEGENDS)
     alines = []
@@ -410,6 +423,7 @@ def plot_national_employment_trajectories(T,Result_data,Historical_data,Step=5,S
             ncol=4+Show_alternatives+Show_uncertainty,
             bbox_to_anchor=(0.5, -0.18),
             frameon=False)
+
     return fig
 
 
@@ -1402,7 +1416,7 @@ def regional_grid(representation):
     return provincesChina,provincesIndia, grid_size
 
 
-def Grid_Employment_Destruction(fig,axs,T,Result_data,ind_country,U,Show_alternatives=False,grid_scale_same = True,representation=1,remove_splin=False):
+def Grid_Employment_Destruction(fig,axs,T,Result_data,ind_country,U,Show_alternatives=False,grid_scale_same = True,representation=1,remove_splin=False,savedata=True):
     fig_width = fig.get_figwidth()
     fig_scale = fig_width/26
     Step = 5
@@ -1426,6 +1440,7 @@ def Grid_Employment_Destruction(fig,axs,T,Result_data,ind_country,U,Show_alterna
         axs.flatten()[-1].spines['left'].set_visible(False)
         axs.flatten()[-1].tick_params(left=False,  labelleft=False)
     
+    save_data_df = pd.DataFrame(columns=['Region','Scenario']+list(T[(t0<=T)&(T<=t1)][0:-1:Step]))
 
     for region, position in regions.items():
         ax = axs[position]
@@ -1464,6 +1479,7 @@ def Grid_Employment_Destruction(fig,axs,T,Result_data,ind_country,U,Show_alterna
                     (Result_data.Variable==variable)
                 ].apply(pd.to_numeric,errors='coerce')*1e-3
             
+            save_data_df = pd.concat([save_data_df,pd.DataFrame({'Region':region,"Scenario":scenario, **dict(zip(T[(t0<=T)&(T<=t1)][0:-1:Step],y.values[0][6:][(t0<=T)&(T<=t1)][0:-1:Step].round(0)))},index=[0])],ignore_index=True)
 
             
             if y.sum(axis=1).values[0]==0:
@@ -1485,6 +1501,8 @@ def Grid_Employment_Destruction(fig,axs,T,Result_data,ind_country,U,Show_alterna
                     (Result_data.Scenario==scenario+'_PG0')&
                     (Result_data.Variable==variable)
                 ].apply(pd.to_numeric,errors='coerce')*1e-3
+                save_data_df = pd.concat([save_data_df,pd.DataFrame({'Region':region,"Scenario":scenario+'PG0', **dict(zip(T[(t0<=T)&(T<=t1)][0:-1:Step],y.values[0][6:][(t0<=T)&(T<=t1)][0:-1:Step].round(0)))},index=[0])],ignore_index=True)
+
                 ax2.plot(
                     T[(t0<=T)&(T<=t1)][0:-1:Step],
                     y.values[0][6:][(t0<=T)&(T<=t1)][0:-1:Step],
@@ -1532,7 +1550,8 @@ def Grid_Employment_Destruction(fig,axs,T,Result_data,ind_country,U,Show_alterna
         ax.legend(fontsize=25*fig_scale,ncol=3,
             loc='upper center',
             bbox_to_anchor=(0.5, -0.25))
-        
+    if savedata:
+        save_data_df.to_csv(f"..\Extract_data\Figure_4_{ind_country}.csv",index=False)
 
     return fig
 
@@ -1963,10 +1982,10 @@ def print_subnational_employment_results(T,Result_data):
             print(f'{scenario} a near total phase-out by {t95} in {region} ')
 
 #%% Main 3 - Exposure of regions to coal transition
-def exposure_scatter(T,Result_data,shade=False):
+def exposure_scatter(T,Result_data,shade=False,savedata=True):
     Scenarios = ['WO-NDCLTT-ElecIndus-CCS1','WO-15C-ElecIndus-CCS1','WO-NPi-ElecIndus-CCS0', 'WO-NDCLTT-ElecIndus-CCS0','WO-15C-ElecIndus-CCS0']
 
-
+    
     Scenarios_names = ['NDC-LTT-CCS','1.5°C-CCS','NPi','NDC-LTT','1.5°C']
     All_data = find_destination_data(T,Result_data,with_cntry=False)
     print('Workforce Shanxi  :',All_data.loc['Shanxi','Workforce'])
@@ -2007,7 +2026,12 @@ def exposure_scatter(T,Result_data,shade=False):
             ) for lim in [-0.004,0.004]]
             ax.text(-0.0035,y,'employment\nincrease',fontsize=6,color='k',zorder=0,ha='right',va='bottom')
             ax.text( 0.004,y,'employment\ndecrease',fontsize=6,color='k',zorder=0,ha='left',va='bottom')
-
+    if savedata:
+        Scenarios_names = ['NDC-LTT-CCS','1.5°C-CCS','NPi','NDC-LTT','1.5°C']
+        Savedata_df  = All_data.loc[:,['Workforce']+[x+'\n2035' for x in Scenarios_names]]
+        Savedata_df.columns = ['Workforce']+Scenarios_names
+        Savedata_df = (100*Savedata_df).round(2)
+        Savedata_df.to_csv('..\Extract_data\Figure_5.csv')
     ax.set_yticks(range(len(All_data.index)))
     ax.set_yticklabels(All_data.index[::-1])
     ax.set_ylim([-0.5,33.5])
@@ -2058,7 +2082,7 @@ def exposure_scatter(T,Result_data,shade=False):
     return fig
 #%% Main 4 - Boxplot of share not finding per scenario
 
-def boxplot_share_not_finding(Result_data,T,t0s = [2020, 2020],t1s = [2030,2050]):
+def boxplot_share_not_finding(Result_data,T,t0s = [2020, 2020],t1s = [2030,2050],save_data=True):
     all_region_names = False
 
     region_indices = def_region_indices()
@@ -2081,7 +2105,7 @@ def boxplot_share_not_finding(Result_data,T,t0s = [2020, 2020],t1s = [2030,2050]
         "Odisha":(0.85,0.8),
         'Chhattisgarh':(0.1,1)}
 
-
+    save_data_df = pd.DataFrame(columns=['Country','Region','Scenario','Variable','Timeframe','Value'])
     
      
     fig, axs = plt.subplots(2,2,figsize=(16/2.54,9/2.54))
@@ -2117,6 +2141,23 @@ def boxplot_share_not_finding(Result_data,T,t0s = [2020, 2020],t1s = [2030,2050]
                     su = Share_U[region]
                     tu = (TotDestination*Share_U)[region]
                     print(f'Under {scenario} in {region}, {su:0.2f}% (ie {tu:0.0f} workers) may not find employment')
+
+                if save_data:
+                    save_U = Share_U.reset_index()
+                    save_U.columns = ['Region','Value']
+                    save_U['Country'] = country
+                    save_U['Scenario'] = scenario
+                    save_U['Variable'] = 'Share_Not_Finding_Employment'
+                    save_U['Timeframe'] = str(t0)+'-'+str(t1)
+                    save_data_df = pd.concat([save_data_df,save_U],ignore_index=True)
+
+                    save_R = Share_R.reset_index()
+                    save_R.columns = ['Region','Value']
+                    save_R['Country'] = country
+                    save_R['Scenario'] = scenario
+                    save_R['Variable'] = 'Share_Destruction_Not_in_Retirement'
+                    save_R['Timeframe'] = str(t0)+'-'+str(t1)
+                    save_data_df = pd.concat([save_data_df,save_R],ignore_index=True)
 
                 pos = x+[-0.35,-0.17,0,0.17,0.35][ind_scenario]
 
@@ -2211,6 +2252,9 @@ def boxplot_share_not_finding(Result_data,T,t0s = [2020, 2020],t1s = [2030,2050]
 
     fig.set_tight_layout('tight')
 
+    if save_data:
+        save_data_df.loc[:,'Value'] = save_data_df.loc[:,'Value'].apply(pd.to_numeric,errors='coerce').round(3)
+        save_data_df.to_csv('..\Extract_data\Figure_6.csv',index=False)
     return fig
 
 #%% EXTENDED DATA =============================================================================
@@ -3247,7 +3291,7 @@ def wedge_legend(ax,fig):
     return fig
 
 
-def plot_productivity_wedge(T,Result_data,step=5,threshold_percentage=95):
+def plot_productivity_wedge(T,Result_data,step=5,threshold_percentage=95,savedata=True):
 
     Scenarios = [ 'NPI','NDC','NZ'] 
     Regions   = ['China','India','Shanxi','Jharkhand','Inner Mongolia','Henan']
@@ -3263,6 +3307,8 @@ def plot_productivity_wedge(T,Result_data,step=5,threshold_percentage=95):
     start = 2015-2101
 
     fig, axs = plt.subplots(len(Regions),len(Scenarios),figsize=(20/2.54,12/2.54))
+
+    savedata_df = pd.DataFrame(columns = ['Scenario','Region','Variable']+[t for t in T[start:end:step]])
 
     for ind_region, region in enumerate(Regions):
         for ind_scenario, scenario in enumerate(Scenarios):
@@ -3315,6 +3361,15 @@ def plot_productivity_wedge(T,Result_data,step=5,threshold_percentage=95):
             print(f'{region}  {scenario}')
             ax2 = plot_productivity_contribution(L,L0,T,ax,start,stop_date,step)
             
+            if savedata:
+                savedata_df = pd.concat([savedata_df,pd.DataFrame({'Scenario': scenario, "Region": region, "Variable":"Net employment",           **dict(zip(T[start:end:step],L[start:end:step]))},index=[0])],ignore_index=True)
+                savedata_df = pd.concat([savedata_df,pd.DataFrame({'Scenario': scenario, "Region": region, "Variable":"NPi_pg0",                  **dict(zip(T[start:end:step],L_NPI0[start:end:step]))},index=[0])],ignore_index=True)
+                savedata_df = pd.concat([savedata_df,pd.DataFrame({'Scenario': scenario, "Region": region, "Variable":"Net contribution productivity", **dict(zip(T[start:end:step],L[start:end:step]))},index=[0])],ignore_index=True)
+                savedata_df = pd.concat([savedata_df,pd.DataFrame({'Scenario': scenario, "Region": region, "Variable":"Impact: production",       **dict(zip(T[start:end:step],production[start:end:step]))},index=[0])],ignore_index=True)
+                savedata_df = pd.concat([savedata_df,pd.DataFrame({'Scenario': scenario, "Region": region, "Variable":"Impact: NPi productivity", **dict(zip(T[start:end:step],productivityNPI[start:end:step]))},index=[0])],ignore_index=True)
+                savedata_df = pd.concat([savedata_df,pd.DataFrame({'Scenario': scenario, "Region": region, "Variable":"Impact: concentration",    **dict(zip(T[start:end:step],addiproductivity_positive[start:end:step]))},index=[0])],ignore_index=True)
+                savedata_df = pd.concat([savedata_df,pd.DataFrame({'Scenario': scenario, "Region": region, "Variable":"Impact: dynamic",          **dict(zip(T[start:end:step],addiproductivity_negative[start:end:step]))},index=[0])],ignore_index=True)
+                
             # Format 
             if region in region_ylim.keys():
                 ax.set_ylim(region_ylim[region])
@@ -3329,7 +3384,9 @@ def plot_productivity_wedge(T,Result_data,step=5,threshold_percentage=95):
             if scenario != "NZ":
                 ax2.set_yticklabels([])
             ax2.axhline(y=0.5,color='k',linewidth=0.5,linestyle=':')
-
+    if savedata:
+        savedata_df.loc[:,list(T[T < 2070][0:-1:step])] = savedata_df.loc[:,list(T[T < 2070][0:-1:step])].round(3)
+        savedata_df.to_csv("..\Extract_data\Figure_3.csv",index=False)
     # Format
     [ax.set_yticklabels([]) for ax in axs[:,1:].flatten()]
     [ax.set_xticklabels([]) for ax in axs[:-1,:].flatten()]
