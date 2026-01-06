@@ -12,6 +12,7 @@ input_file = os.path.join(input_path,'Database.csv')
 
 Data = pd.read_csv(input_file)
 output_path = os.path.join("Coal_labour","Downscaling")
+os.makedirs(output_path, exist_ok=True)
 #%%
 China_regions = [x for x in Data[Data['Country']=="China"]['Region'].unique() if x != 'China']
 India_regions = [x for x in Data[Data['Country']=="India"]['Region'].unique() if x not in ['India','Ladakh','Daman & Diu','Dadra & Nagar Haveli','Lakshadweep']] #Neglecting a number of smaller states/cities with inconsistent data and no coal production, this will not affect results
@@ -29,9 +30,11 @@ def calculate_share(database, variable_type, country):
     region_data = []
 
     for region in regions:
+        # Calculate the total value for the current region
         region_value = filtered_data[filtered_data['Region'] == region]['Value'].sum()
         region_share = region_value / filtered_data['Value'].sum()
-        region_data.append({'Region': region,  'Share': region_share}) #'Value': region_value,
+        region_data.append({'Region': region, 'Share': region_share})
+        
 
     total_value = filtered_data['Value'].sum()
     total_share = total_value / filtered_data['Value'].sum()
@@ -39,7 +42,18 @@ def calculate_share(database, variable_type, country):
 
     return pd.DataFrame(region_data)
 
-
+def calc_productivity(df,Prod,productivity_rate):
+    year = df.Year.values[-1]
+    value= df.Value.values[-1]
+    # Start by calculating production 
+    calc = pd.DataFrame(columns=[x for x in range(2003,2024)])
+    calc.loc['product',year] = Prod[year].values[0]/value
+    calc.loc['Emp',year]=value
+    
+    for t in range(2003,2023): #Forward productivity calculations
+        calc.loc['product',t] = calc.loc['product',year] * (1+productivity_rate*1e-2)**(t-year)
+        calc.loc['Emp',t] = Prod[t].values[0]/calc.loc['product',t]
+    return calc
 
 #%% Unemployment China
 # Assume that the unemployment rate is the same for urban and rural areas
@@ -137,7 +151,7 @@ data_china['ET'] = (data_china['Oil'] + data_china['Gas'])/2
 Column_names = ['Coal', 'Coal_GEM', 'Oil', 'Gas', 'Electricity', 'Construction', 'Agriculture', 'Industry']
 type_india = ['Coal output','Coal output','Oil output','Gas output','GDP from electricity','GDP from construction','GDP from agriculture','GDP from manufacturing']
 sources = ['Pai and Zerriffi (2021), "Indian coal mine location and production - December 2020"','Global Energy Monitor (2023) Global Coal Mine Tracker']+['India Ministry of Petroleum and Natural Gas - Annual Report 2022-23']*2+['Handbook Of Statistics On Indian Economy 2023']*4
-years = [2019,2023]+[2021]*6
+years = [2019,2022]+[2021]*6
 
 data_india = pd.DataFrame()
 data_india['Region'] = ['India'] +India_regions
@@ -231,22 +245,46 @@ data_standard.drop(
 #                             Coal employment
 # ===============================================================================================
 # ===============================================================================================
+
+
+
 # China
 # For China, we take 2015 total coal employment from China Statistical Yearbook
 # We assume it is distributed in the same way as given in the China Labour Statistical Yearbook
 # We use the absolute value of the former source as they are not constrained to urban workers
 
 # taking 2015 sum
-tot_china = Data[(Data['Type']=='Coal Employment') & (Data['Year']==2015) & (Data['Region']=='China')]['Value'].values[0]
 
-# Taking latest distribution
+#=============== Mid
+tot_china_mid = Data[(Data['Type']=='Coal Employment') & 
+                 (Data['Year']==2015) & 
+                 (Data['Region']=='China')&
+                 (Data['Source']=='China Labour Statistical Yearbook 2016')]['Value'].values[0]
+
+#=============== High
+tot_china_max = Data[(Data['Type']=='Coal Employment') & 
+                 (Data['Year']==2015) & 
+                 (Data['Region']=='China')&
+                 (Data['Source']=='China statistical yearbook 2016')]['Value'].values[0]
+
+#=============== Low
+tot_china_min = Data[(Data['Type']=='Coal Employment') & 
+                 (Data['Region']=='China')&
+                 (Data['Source'].str.contains('IEA'))&
+                 (Data['Note'].str.contains("Direct calculated"))]
+Prod=Data[(Data.Region=='China')&(Data.Type=="Coal Production (Mt)")].pivot_table(values='Value',columns='Year')
+calc= calc_productivity(tot_china_min,Prod,10.78)
+tot_china_min = calc.loc['Emp',2015]
+
 l_china = calculate_share(Data[Data['Year']==2018],'Coal Employment','China')
-l_china['Value'] = l_china['Share'] * tot_china
-
-# Removing regions with no coal production
 l_china = l_china.merge(data_china[['Region','Coal']], on='Region')
-l_china.loc[l_china['Coal']==0,'Value'] = 0
-l_china.loc[l_china['Region']=='China','Value'] = l_china[l_china['Region']!='China']['Value'].sum()
+l_china.loc[l_china['Coal']==0,'Share'] = 0
+
+for ind_scenario,scenario in enumerate(['mid','min','max']):
+    l_china.loc[:,scenario] = l_china.loc[:,'Share'] * [tot_china_mid,tot_china_min,tot_china_max][ind_scenario]
+    # Removing regions with no coal production
+    l_china.loc[l_china['Region']=='China',scenario] = l_china[l_china['Region']!='China'][scenario].sum()
+
 
 
 #%% India
@@ -254,11 +292,26 @@ l_china.loc[l_china['Region']=='China','Value'] = l_china[l_china['Region']!='Ch
 # We then distribute this according to the values found by Pai and Zerriffi (2020)
 # This assumes the 1/3 direct to indirect job ratio is constant throughout the country
 
+Prod=Data[(Data.Region=='India')&(Data.Type=="Coal Production (Mt)")].pivot_table(values='Value',columns='Year')
 
-tot_india = Data[(Data['Source']=='Imaclim-GTAP-ILO')&(Data['Region']=='India')]['Value'].values[0]
+tot_india_mid = Data[(Data['Source']=='Imaclim-GTAP-ILO')&
+                 (Data['Region']=='India')]['Value'].values[0]
+
+tot_india_min = Data[(Data['Source'].str.contains('Dsouza and Singhal'))&
+                 (Data['Note'].str.contains('Scenario 1'))]
+
+tot_india_max = Data[(Data['Source'].str.contains('Dsouza and Singhal'))&
+                 (Data['Note'].str.contains('Scenario 3'))]
+
+tot_india_min= calc_productivity(tot_india_min,Prod,10.78).loc['Emp',2015]
+tot_india_max= calc_productivity(tot_india_max,Prod,10.78).loc['Emp',2015]
+
+
 # Taking distribution from Pai and Zerriffi (2020)
 l_india = calculate_share(Data[Data['Year']==2021],'Coal employment','India')
-l_india['Value'] = l_india['Share'] * tot_india
+
+for ind_scenario,scenario in enumerate(['mid','min','max']):
+    l_india[scenario] = l_india['Share'] * [tot_india_mid,tot_india_min,tot_india_max][ind_scenario]
 
 
 
@@ -298,23 +351,24 @@ for c_index in [0,1]:
 
 l_GEM.to_csv(os.path.join(output_path,'Coal_jobs_2015_2021_GEM.csv'),index=False)
 #%% Aggregating coal employment data
-l_standard = pd.DataFrame(columns = ['Region_code','Subregion_code','Region_name','Subregion_name','2015'])
+l_standard = pd.DataFrame(columns = ['Region_code','Subregion_code','Region_name','Subregion_name','mid','min','max'])
 l_standard['Subregion_name'] = ['China'] + China_regions + ['India'] + India_regions
 
-countries = ['CHN', 'IND']
-for c_index in [0,1]:
-    country = countries[c_index]
-    cdata = [l_china, l_india][c_index]
+for ind_scenario, scenario in enumerate(['mid','min','max']):
+    countries = ['CHN', 'IND']
+    for c_index in [0,1]:
+        country = countries[c_index]
+        cdata = [l_china, l_india][c_index]
 
-    regs = [['China']+China_regions,['India']+India_regions][c_index]
-    for ind_reg in range(len(regs)):
-        reg = regs[ind_reg]
-        l_standard.loc[l_standard['Subregion_name']==reg,'Region_code'] = [6,7][c_index]
-        l_standard.loc[l_standard['Subregion_name']==reg,'Subregion_code'] = ind_reg
-        l_standard.loc[l_standard['Subregion_name']==reg,'Region_name'] = country
-        l_standard.loc[l_standard['Subregion_name']==reg,'2015'] = cdata[cdata['Region']==reg]['Value'].values[0]
+        regs = [['China']+China_regions,['India']+India_regions][c_index]
+        for ind_reg in range(len(regs)):
+            reg = regs[ind_reg]
+            l_standard.loc[l_standard['Subregion_name']==reg,'Region_code'] = [6,7][c_index]
+            l_standard.loc[l_standard['Subregion_name']==reg,'Subregion_code'] = ind_reg
+            l_standard.loc[l_standard['Subregion_name']==reg,'Region_name'] = country
+            l_standard.loc[l_standard['Subregion_name']==reg,scenario] = cdata[cdata['Region']==reg][scenario].values[0]
 
-l_standard.to_csv(os.path.join(output_path,'Coal_jobs_2015_2021.csv'),index=False)
+l_standard.to_csv(os.path.join(output_path,'Coal_jobs_2015.csv'),index=False)
 #%% Population distribution
 
 pop_india = pd.DataFrame()

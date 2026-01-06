@@ -10,7 +10,7 @@ regions = ['China','India']
 LF_age = [20,59]
 
 output_path = os.path.join("Coal_labour","SSP")
-
+os.makedirs(output_path, exist_ok=True)
 # %% Reading UN data
 #=================================================================================================================================================================================================================
 UN_data = pd.read_csv( "/data/public_data/UNO_world_population_prospect/normalized/WPP2022_PopulationExposureBySingleAgeSex_Medium_1950-2021.csv", delimiter='|', encoding="utf-8")
@@ -107,21 +107,34 @@ for scenario in ['SSP'+str(x) for x in range(1,6)]:
         pop_china_age.loc['LF',2:] = pop_china_age.loc[[x for x in range(LF_age[0],LF_age[1]+1)]].sum() 
         pop_china_age.loc['tx_entry',2:] = pop_china_age.loc[LF_age[0]]/pop_china_age.loc['LF']
         pop_china_age.loc['tx_exit',2:] = pop_china_age.loc[LF_age[1]+1]/pop_china_age.loc['LF']
+        pop_china_age.loc['tx_Lact',2:] = pop_china_age.loc['LF',:].diff()/pop_china_age.loc['LF',:].shift(1)
+
         pop_china_age.loc[:,'Country'] = region
         pop_china_age.loc[:,'Scenario'] = scenario
         pop_age = pop_age.append(pop_china_age)
 
+
+
+
+# Calculating the evolution rate of the labour force population
+# CAREFUL: this is only calculated for China and India rather than the 12 regions of Imaclim
+# This is because other regions would need the definition of aggregation rules which are not necessary for this exercise
 
 for i_s, scenario in enumerate(['SSP'+str(x) for x in range(1,6)]):
     txEntry = pd.DataFrame(index=range(0,12),columns=range(2015,2101))
     txEntry[txEntry.isna()]=1
 
     txExit = txEntry.copy()
+    txLact = txEntry.copy()
 
     for i_r, region in enumerate(regions):
         txEntry.loc[5+i_r] = pop_age.loc[(pop_age.Country==region)&(pop_age.Scenario==scenario)].loc["tx_entry"].values[2:]
         txExit.loc[5+i_r]  = pop_age.loc[(pop_age.Country==region)&(pop_age.Scenario==scenario)].loc["tx_exit"].values[2:]
+        txLact.loc[5+i_r]  = pop_age.loc[(pop_age.Country==region)&(pop_age.Scenario==scenario)].loc["tx_Lact"].values[2:]
 
     txEntry.to_csv(os.path.join(output_path,'txEntry_'+scenario+'.csv'),index=False,header=False)
     txExit.to_csv(os.path.join(output_path,'txExit_'+scenario+'.csv'),index=False,header=False)
+
+    # txLact is only saved from 2016 on
+    txLact.iloc[:,1:].to_csv(os.path.join(output_path,'txLact_'+scenario+'.csv'),index=False,header=False)
 # %%

@@ -9,7 +9,7 @@ export scilabdata_imaclim='/data/software/scilab-5.4.1/bin/scilab'
 #################################################################
 
 $python3data_imaclim Building_age_pyramid.py
-# $python3data_imaclim Process_waysout_data.py
+$python3data_imaclim Process_waysout_data.py
 
 
 
