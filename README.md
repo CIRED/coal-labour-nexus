@@ -1,14 +1,31 @@
-# coal.labour.nexus
+# Coal productivity and labour nexus
 
 ## Overview
-> The coal.labour.nexus is a standalone module to analyse the labour implications of IAM pathways. 
-> The module downscales pathways across regions of China and India to determine the ability of coal mining workers to find new employment. 
-> It was originally developed as an ex-post module for Imaclim-R World V2.0. It can be used with any transition scenario. Filler scenarios can be provided if pathways miss crucial variables.
+> The coal productivity and labour nexus are two standalone module to analyse the labour implications of IAM pathways.
+> The modules downscales pathways across regions of China and India. The `coal.productivity.nexus` determines subnational coal productivity, production and employment pathways. The `coal.labour.nexus` determines the ability of coal mining workers to find new employment based on macroeconomic conditions.
+> Both modules were originally developed as an ex-post module for Imaclim-R World V2.0. They can be used with any transition scenario. Filler scenarios can be provided if pathways miss crucial variables.
+
+
+## Structure
+- `coal.labour.nexus`: contains the coal labour nexus module and data treatment code
+- `coal.productivity.nexus`: contains the coal productivity nexus module and data treatment code
+- `notebooks`: contains code for the analysis of and plotting of results for the paper: "*Coal mine workers in the climate transition: subnational vulnerability disparities in China and India*" 
+- `structural.change`: contains code for the analysis of alternative scenarios where downscaling follows different structural change rules.
+
 
 ## Disclaimer
-The module is still in development.
+The modules are still in development.
 
 
+# coal.productivity.nexus
+The productivity module is based on the analysis of the Global Energy Monitor's Global Coal Mine Tracker[^1]. Our analysis is based on the April 2024 release but could be adapted to future release.
+First, `CoalStudy_MineProductivity.R` code is run to pretreat data. 
+Then `nexus.coal.productivity.sce` is run to downscale nationwide IAM coal production trajectories to the subnational scale in China and India. Downscaling accounts for subnational productivity and reserve dynamics based on mine-level data accounting for mines age, workforce and geology as well as forthcoming mining projects. 
+
+The outputs of `nexus.coal.productivity.sce` can then be used as inputs to the `coal.labour.nexus` alongside the same IAM pathways.
+
+
+# coal.labour.nexus
 ## Using the module
 ### Data and preprocessing
 Input data for the coal labour nexus is not made available here as it contains data which cannot be shared freely. Two sorts of input data is required to run the module:
@@ -17,7 +34,7 @@ Input data for the coal labour nexus is not made available here as it contains d
 
 The data is processed by running `coal.labour.nexus\data\process_data.sh` which calls `Building_age_pyramid.py` and `Process_waysout_data.py` which treat each type of data respectively.
 
-For default scenarios, demographic data are based on the 2015 UN age pyramid data[^1] and demographic projections from SSP scenario data[^2]. The user is free to use demographic projections consistent with the analysed scenario.
+For default scenarios, demographic data are based on the 2015 UN age pyramid data[^2] and demographic projections from SSP scenario data[^3]. The user is free to use demographic projections consistent with the analysed scenario.
 
 Other data are stored in a `Database.csv` file with the following format:
 
@@ -53,13 +70,12 @@ Coal labour is then found from coal production and productivity increase in `V2_
 
 
 ### Outputs
-For each run results are saved alongside log files in a folder in `coal.labour.nexus\output`. A csv file is created for each scenario in a format analogous to the IAMC's. 
+For each run results are saved alongside log files in a folder in `coal.labour.nexus\output`. A csv file is created for each scenario in a format analogous to the IAMC's[^4]. 
 
 
-### Plots
-The `notebooks` folder contains code to plot useful figures. `Plots_main.py` contains the code for figures used for the paper *Regional employment vulnerability to rapid coal transition in China and India, an integrated and downscaled assessment* (unpublished).
 
 ## References
-[^1]: United Nations, 2022. World Population Prospects 2022. 
-[^2]: Kc, S., Lutz, W., 2017. The human core of the shared socioeconomic pathways: Population scenarios by age, sex and level of education for all countries to 2100. *Glob. Environ. Change* 42, 181–192. https://doi.org/10.1016/j.gloenvcha.2014.06.004 
-[^3]: https://www.iamconsortium.org/scientific-working-groups/data-protocols-and-management/iamc-time-series-data-template/
+[^1]: Global Energy Monitor. ‘Global Coal Mine Tracker (April 2024 Release)’. Version April 2024 release. 2024. https://globalenergymonitor.org/projects/global-coal-mine-tracker/download-data/.
+[^2]: United Nations, 2022. World Population Prospects 2022. 
+[^3]: Kc, S., Lutz, W., 2017. The human core of the shared socioeconomic pathways: Population scenarios by age, sex and level of education for all countries to 2100. *Glob. Environ. Change* 42, 181–192. https://doi.org/10.1016/j.gloenvcha.2014.06.004 
+[^4]: https://www.iamconsortium.org/scientific-working-groups/data-protocols-and-management/iamc-time-series-data-template/
